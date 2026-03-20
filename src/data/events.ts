@@ -11,7 +11,7 @@ const zone01Events: GameEvent[] = [
     title: 'Reaver Scouts',
     category: 'encounter',
     narration:
-      'Two figures emerge from behind a wrecked tanker, scrap-armor glinting. Reaver Scouts — they move in pairs and fight dirty. Your rover emits a warning chirp.',
+      'Two figures peel out from behind a wrecked tanker, scrap-armor stitched together from license plates and riot shields. Reaver Scouts — young, desperate, and riding the edge between thrill and hunger. Your rover emits a warning chirp as they fan out, one high on the overpass, one low along the cracked shoulder.',
     choices: [
       {
         id: 'fight',

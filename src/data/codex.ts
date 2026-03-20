@@ -14,7 +14,7 @@ const codexEntries: CodexEntry[] = [
     icon: '🌍',
     alwaysVisible: true,
     content:
-      'Fifty years after the Collapse — a cascade of climate disasters, economic implosion, and the Glassstorm phenomenon — America is a patchwork of controlled zones, lawless corridors, and dead cities. The Directorate governs what remains of federal infrastructure. Everyone else survives on the Trail.',
+      'The year is 2079, and the United States is a scar across a broken continent. What began as street protests and rolling blackouts spiraled into a slow-motion civil war: cities split by barricades, states declaring their own orders, and federal forces answering dissent with drones and precision strikes. When neither side would yield, the fighting escalated into tactical nukes and orbital bombardments that shattered power grids, poisoned rivers, and turned suburbs into crater chains.',
   },
   {
     id: 'codex-trail-concept',
@@ -41,7 +41,7 @@ const codexEntries: CodexEntry[] = [
     title: 'Rustbelt Verge',
     icon: '🏭',
     content:
-      'The crumbling industrial corridor that marks the start of the Trail for most drifters heading west. Rusted factories, collapsed rail yards, and Directorate checkpoints define the landscape. The Free Bands maintain a fragile presence through trading posts and signal fires. Raiders are opportunistic but rarely organized. The real danger is the infrastructure itself — roads collapse, acid rain eats metal, and the old machines sometimes wake up.',
+      'Former industrial sprawl: derelict factories, train yards, and skeletal skylines smothered in dust. Directorate patrols use the Verge as a live-fire training ground, running drills through abandoned streets and along the rusted rails. Free Bands slip through the gaps between exercises, raiding ammo dumps, escorting refugees, and trading in whatever the Directorate leaves behind. Every safe route is marked in chalk and cut metal; every shortcut is lined with stories of people who didn\'t make it.',
   },
 
   // ─── FACTIONS ───

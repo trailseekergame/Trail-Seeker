@@ -19,7 +19,7 @@ const zone01: Zone = {
       name: 'Waystation Diner',
       type: 'hub',
       description:
-        'A gutted roadside diner. Flickering signage reads "EAT" in dying neon. Your rover is parked outside, half-charged. The Trail begins here.',
+        'You wake in a half-collapsed waystation diner, its neon sign flickering between EAT, EXIT, and EXIST. Posters and graffiti layer the walls: Directorate slogans, Free Band manifestos, and handwritten missing-person notes. Somewhere behind the counter, a generator coughs and dies, leaving only the dim emergency strips along the floor and the quiet ticking of the rover\'s optics as it comes online beside you.',
       connections: ['node-01'],
       x: 10,
       y: 50,
