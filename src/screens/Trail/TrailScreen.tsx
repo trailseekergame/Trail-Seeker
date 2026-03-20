@@ -11,7 +11,7 @@ import { useEventEngine } from '../../hooks/useEventEngine';
 import { ZoneNode, EventChoice, EventOutcome, GameEvent, MAX_RUN_DAYS, OutcomeQuality } from '../../types';
 import zone01 from '../../data/zone01';
 import { drawTrailOutcome, getTierColor, getTierIcon } from '../../systems/trailOutcomes';
-import { purchaseExtraMove } from '../../services/solana';
+import { purchaseExtraMove, purchaseRevive, REVIVE_COST_SKR } from '../../services/solana';
 import { colors, spacing, fontSize } from '../../theme';
 
 export default function TrailScreen() {
@@ -137,6 +137,37 @@ export default function TrailScreen() {
     [rollAndApply, applyOutcome, currentZone, state.currentNodeId, state.visitedNodes, dispatch]
   );
 
+  const handleRevive = async () => {
+    Alert.alert(
+      '💉 Revive Drifter',
+      `Burn ${REVIVE_COST_SKR} $SKR (~$5) to revive your character with 30 HP. Your run continues from where you fell. This cannot be undone.`,
+      [
+        { text: 'Accept Death', style: 'cancel' },
+        {
+          text: `Spend ${REVIVE_COST_SKR} $SKR`,
+          style: 'destructive',
+          onPress: async () => {
+            const success = await purchaseRevive();
+            if (success) {
+              dispatch({ type: 'REVIVE_PLAYER' });
+              Alert.alert(
+                '❤️ Revived',
+                'The med-kit hisses. Adrenaline floods your veins. You gasp, cough, and sit up. 30 HP. Make it count.',
+                [{ text: 'Press On' }]
+              );
+            } else {
+              Alert.alert(
+                'Insufficient $SKR',
+                `You need ${REVIVE_COST_SKR} $SKR to revive. Connect your wallet and ensure you have enough tokens.`,
+                [{ text: 'OK' }]
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleExtraMove = async () => {
     Alert.alert(
       'Extra Move',
@@ -229,6 +260,25 @@ export default function TrailScreen() {
                 ? 'Your body gave out on the Rustbelt Verge. The Trail continues for those who survive.'
                 : `Day ${MAX_RUN_DAYS} reached. Your run through the Rustbelt Verge is over.`}
             </Text>
+            {state.trailOverReason === 'hp_zero' && (
+              <View style={styles.reviveSection}>
+                <View style={styles.reviveDivider} />
+                <Text style={styles.reviveFlavorText}>
+                  A faint pulse. The rover's emergency med-kit crackles to life.
+                  For a price, you can cheat death — this time.
+                </Text>
+                <NeonButton
+                  title={`Revive — ${REVIVE_COST_SKR} $SKR (~$5)`}
+                  onPress={handleRevive}
+                  variant="primary"
+                  icon="💉"
+                  style={styles.reviveBtn}
+                />
+                <Text style={styles.reviveNote}>
+                  Restores 30 HP. Your run continues where you fell.
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -392,6 +442,35 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  reviveSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  reviveDivider: {
+    height: 1,
+    width: '60%',
+    backgroundColor: colors.neonAmber + '30',
+    marginVertical: spacing.md,
+  },
+  reviveFlavorText: {
+    fontSize: fontSize.sm,
+    color: colors.neonAmber,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontStyle: 'italic',
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  reviveBtn: {
+    width: '100%',
+  },
+  reviveNote: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   extraMoveBtn: {
     marginTop: spacing.lg,

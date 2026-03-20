@@ -41,7 +41,8 @@ type GameAction =
   | { type: 'REVEAL_NODE'; payload: string }
   | { type: 'ADJUST_ALIGNMENT'; payload: Partial<FactionAlignment> }
   | { type: 'SET_ALIGNMENT_FLAG'; payload: AlignmentFlag }
-  | { type: 'SET_TRAIL_OVER'; payload: TrailOverReason };
+  | { type: 'SET_TRAIL_OVER'; payload: TrailOverReason }
+  | { type: 'REVIVE_PLAYER' };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -193,6 +194,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_TRAIL_OVER':
       return { ...state, trailOver: true, trailOverReason: action.payload };
+
+    case 'REVIVE_PLAYER':
+      return {
+        ...state,
+        playerHealth: 30,
+        trailOver: false,
+        trailOverReason: undefined,
+      };
 
     default:
       return state;

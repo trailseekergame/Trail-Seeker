@@ -145,3 +145,26 @@ export async function purchaseReroll(): Promise<boolean> {
   // TODO: Send 0.005 SOL or 2 SKR
   return true;
 }
+
+/**
+ * Revive a dead character (~$5 worth of $SKR).
+ * Burns SKR tokens to restore the player to 30 HP and continue the run.
+ * STUB: Always succeeds, no real payment.
+ *
+ * Pricing: ~$5 USD equivalent in $SKR at current market rate.
+ * This is intentionally expensive — death should sting, but
+ * players who are deep into a run can pay to keep going.
+ */
+export const REVIVE_COST_SKR = 50; // ~$5 USD in $SKR (adjust with market rate)
+
+export async function purchaseRevive(): Promise<boolean> {
+  console.log(`[Solana Stub] purchaseRevive called — ${REVIVE_COST_SKR} $SKR`);
+  // TODO: Burn REVIVE_COST_SKR tokens via SPL Token transfer to burn address
+  // const result = await burnSkr(GAME_TREASURY_PUBKEY, REVIVE_COST_SKR);
+  // return result.success;
+  if (walletState.skrBalance < REVIVE_COST_SKR) {
+    return false;
+  }
+  walletState.skrBalance -= REVIVE_COST_SKR;
+  return true;
+}
