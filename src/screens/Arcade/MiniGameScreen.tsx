@@ -349,6 +349,7 @@ const styles = StyleSheet.create({
   },
   playerIcon: {
     fontSize: PLAYER_SIZE - 4,
+    transform: [{ scaleX: -1 }],
   },
   obstacle: {
     position: 'absolute',

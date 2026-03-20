@@ -248,3 +248,4 @@ export const INITIAL_GAME_STATE: GameState = {
 
 export const MAX_FREE_MOVES = 3;
 export const MOVE_REFRESH_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const MAX_RUN_DAYS = 30;

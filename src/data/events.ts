@@ -53,7 +53,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-trail-taxmen',
     title: 'Trail Taxmen',
     category: 'encounter',
-    nodeIds: ['node-03'],
+    nodeIds: ['node-03', 'node-09', 'node-12'],
     narration:
       'A Directorate checkpoint. Two Trail Taxmen in cracked riot visors step into the road, scanner wands humming. "Identification and toll, drifter."',
     choices: [
@@ -98,7 +98,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-survey-drone',
     title: 'Survey Drone Swarm',
     category: 'hazard',
-    nodeIds: ['node-07'],
+    nodeIds: ['node-07', 'node-09', 'node-12'],
     narration:
       'A cluster of Directorate survey drones descends from the cloud cover, scanning everything. Their red sensor beams sweep toward you.',
     choices: [
@@ -130,7 +130,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-glassborn-teaser',
     title: 'Something in the Haze',
     category: 'encounter',
-    nodeIds: ['node-06', 'node-07'],
+    nodeIds: ['node-06', 'node-07', 'node-12b'],
     oneTime: true,
     narration:
       'The air shimmers. Through the chemical haze, you see a shape — not human, not machine. It moves like liquid mercury, with limbs that refract light. It watches you. Then it\'s gone.',
@@ -191,7 +191,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-scrap-deposit',
     title: 'Scrap Deposit',
     category: 'discovery',
-    nodeIds: ['node-01', 'node-06'],
+    nodeIds: ['node-01', 'node-06', 'node-11', 'node-11b'],
     narration:
       'A collapsed section of factory floor has exposed a vein of usable scrap — circuit boards, copper wiring, intact servos. Your rover\'s drill attachment could extract it.',
     choices: [
@@ -219,7 +219,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-iron-caravan',
     title: 'Iron Caravan Traders',
     category: 'trade',
-    nodeIds: ['node-02', 'node-05'],
+    nodeIds: ['node-02', 'node-05', 'node-10', 'node-14'],
     narration:
       'A rumbling convoy of armored trucks — the Iron Caravan. Their lead driver leans out and waves. "Got goods, drifter. Fair prices. Mostly."',
     choices: [
@@ -255,7 +255,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-lantern-camp',
     title: 'Lantern Signal Fire',
     category: 'trade',
-    nodeIds: ['node-04'],
+    nodeIds: ['node-04', 'node-10b'],
     narration:
       'A signal fire burns atop the overpass — the Lanterns. A hooded figure beckons. "Rest here, friend. We ask only that you share what you can spare."',
     choices: [
@@ -351,7 +351,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-old-terminal',
     title: 'Functioning Terminal',
     category: 'lore',
-    nodeIds: ['node-01', 'node-05', 'node-07'],
+    nodeIds: ['node-01', 'node-05', 'node-07', 'node-09', 'node-12'],
     narration:
       'A dusty terminal flickers to life at your touch. Pre-collapse data streams across the screen — news feeds, corporate memos, personal messages from people long gone.',
     choices: [
@@ -460,7 +460,7 @@ const zone01Events: GameEvent[] = [
     id: 'evt-sunken-market',
     title: 'Sunken Overpass Market',
     category: 'trade',
-    nodeIds: ['node-05'],
+    nodeIds: ['node-05', 'node-10', 'node-14'],
     narration:
       'The Sunken Overpass hums with activity. Traders from three factions haggle under tarps. A mechanic offers rover repairs. A Lantern elder tends a cook fire. For a moment, it almost feels normal.',
     choices: [
