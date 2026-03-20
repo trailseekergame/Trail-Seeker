@@ -69,12 +69,20 @@ export interface TrailOutcome {
 // ─── Event Types ───
 export type EventCategory = 'encounter' | 'discovery' | 'trade' | 'hazard' | 'lore' | 'faction';
 
+export type ChoiceRisk = 'safe' | 'moderate' | 'risky' | 'reckless';
+
 export interface EventChoice {
   id: string;
   text: string;
   outcome: EventOutcome;
+  riskLevel?: ChoiceRisk; // defaults to 'moderate' if omitted
   requiresItem?: string;
+  requiresEquipped?: Partial<EquippedCosmetics>; // gear-gated option
+  requiresFlag?: AlignmentFlag; // faction-gated option
+  requiresMinAlignment?: Partial<FactionAlignment>; // faction-gated option
 }
+
+export type OutcomeQuality = 'GOOD' | 'NEUTRAL' | 'BAD';
 
 export interface EventOutcome {
   narration: string;
@@ -89,6 +97,11 @@ export interface EventOutcome {
   // Alignment effects
   alignmentChanges?: Partial<FactionAlignment>;
   setFlags?: AlignmentFlag[];
+  // Risk outcome variants (if provided, roll determines which applies)
+  goodNarration?: string; // override narration on GOOD roll
+  badNarration?: string;  // override narration on BAD roll
+  goodBonus?: Partial<PlayerResources>; // extra resources on GOOD
+  badPenalty?: { damage?: number; resourceChanges?: Partial<PlayerResources> }; // extra punishment on BAD
 }
 
 export interface GameEvent {
@@ -167,11 +180,15 @@ export interface LeaderboardEntry {
 }
 
 // ─── Game State ───
+export type TrailOverReason = 'hp_zero' | 'run_complete';
+
 export interface GameState {
   // Player identity
   playerName: string;
   backstory: PlayerBackstory | null;
   onboardingComplete: boolean;
+  trailOver: boolean;
+  trailOverReason?: TrailOverReason;
 
   // Trail state
   currentZoneId: string;
@@ -213,6 +230,8 @@ export const INITIAL_GAME_STATE: GameState = {
   playerName: 'Drifter',
   backstory: null,
   onboardingComplete: false,
+  trailOver: false,
+  trailOverReason: undefined,
   currentZoneId: 'zone-01',
   currentNodeId: 'node-start',
   visitedNodes: ['node-start'],

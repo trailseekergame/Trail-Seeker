@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Animated, Easing, Modal } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import ResourceBar from '../../components/common/ResourceBar';
 import ZoneMap from '../../components/trail/ZoneMap';
@@ -8,171 +8,28 @@ import NeonButton from '../../components/common/NeonButton';
 import HealthBar from '../../components/common/HealthBar';
 import { useGame } from '../../context/GameContext';
 import { useEventEngine } from '../../hooks/useEventEngine';
-import { ZoneNode, EventChoice, GameEvent, TrailOutcome, MAX_RUN_DAYS } from '../../types';
+import { ZoneNode, EventChoice, EventOutcome, GameEvent, MAX_RUN_DAYS, OutcomeQuality } from '../../types';
 import zone01 from '../../data/zone01';
 import { drawTrailOutcome, getTierColor, getTierIcon } from '../../systems/trailOutcomes';
 import { purchaseExtraMove } from '../../services/solana';
 import { colors, spacing, fontSize } from '../../theme';
 
-// ─── Roll Animation Phrases ───
-const ROLL_PHRASES = [
-  'Reading the Trail...',
-  'Dust settles...',
-  'Scanning ahead...',
-  'The rover hums...',
-  'Rolling the dice...',
-  'Fate turns...',
-  'Checking the wind...',
-  'Signal flickers...',
-];
-
 export default function TrailScreen() {
   const { state, dispatch } = useGame();
-  const { getEventForNode, applyOutcome, applyTrailOutcome } = useEventEngine();
+  const { getEventForNode, getAvailableChoices, rollAndApply, applyOutcome, applyTrailOutcome } = useEventEngine();
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [eventVisible, setEventVisible] = useState(false);
-
-  // Roll animation state
-  const [isRolling, setIsRolling] = useState(false);
-  const [rollPhrase, setRollPhrase] = useState('');
-  const [rollResult, setRollResult] = useState<TrailOutcome | null>(null);
-  const [showResult, setShowResult] = useState(false);
-  const rollOpacity = useRef(new Animated.Value(0)).current;
-  const rollScale = useRef(new Animated.Value(0.8)).current;
-  const resultSlide = useRef(new Animated.Value(30)).current;
-  const resultOpacity = useRef(new Animated.Value(0)).current;
-  const pendingNodeRef = useRef<ZoneNode | null>(null);
+  const [availableChoices, setAvailableChoices] = useState<EventChoice[]>([]);
 
   const currentZone = zone01; // For now, only Zone 01
 
   // Check for run end
-  const isRunOver = state.dayNumber > MAX_RUN_DAYS;
+  const isRunOver = state.dayNumber > MAX_RUN_DAYS || state.trailOver;
 
   /**
-   * Animate the "Rolling the Trail..." sequence, then resolve the outcome.
+   * New flow: Tap node → USE_MOVE → move to node → apply trail outcome silently →
+   * check for event → if event, open EventModal; if no event, briefly show trail outcome.
    */
-  const startRollSequence = useCallback(
-    (node: ZoneNode) => {
-      pendingNodeRef.current = node;
-
-      // Pick a random phrase
-      setRollPhrase(ROLL_PHRASES[Math.floor(Math.random() * ROLL_PHRASES.length)]);
-      setShowResult(false);
-      setRollResult(null);
-      setIsRolling(true);
-
-      // Fade-in the roll overlay
-      rollOpacity.setValue(0);
-      rollScale.setValue(0.8);
-      resultOpacity.setValue(0);
-      resultSlide.setValue(30);
-
-      Animated.parallel([
-        Animated.timing(rollOpacity, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.spring(rollScale, {
-          toValue: 1,
-          friction: 6,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // After a brief pause, draw the outcome and reveal it
-      setTimeout(() => {
-        const outcome = drawTrailOutcome(state);
-        setRollResult(outcome);
-        setShowResult(true);
-
-        // Animate result appearance
-        Animated.parallel([
-          Animated.timing(resultOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(resultSlide, {
-            toValue: 0,
-            duration: 300,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }, 900);
-    },
-    [state, rollOpacity, rollScale, resultOpacity, resultSlide]
-  );
-
-  /**
-   * Player dismisses the roll result — apply effects, move, and check for events.
-   */
-  const resolveRoll = useCallback(() => {
-    const outcome = rollResult;
-    const node = pendingNodeRef.current;
-    if (!outcome || !node) return;
-
-    // Close the roll overlay
-    setIsRolling(false);
-    setRollResult(null);
-    setShowResult(false);
-
-    // Apply the trail outcome effects
-    applyTrailOutcome(outcome);
-
-    // Check if the outcome is a setback that blocks forward progress
-    if (outcome.movePlayer && outcome.movePlayer < 0) {
-      Alert.alert(
-        `${getTierIcon(outcome.tier)} ${outcome.title}`,
-        `${outcome.narration}\n\nYou couldn't make it to ${node.name}. The move is lost.`,
-        [{ text: 'Press On' }]
-      );
-      return;
-    }
-
-    // Move to the target node
-    dispatch({ type: 'MOVE_TO_NODE', payload: node.id });
-
-    // Check for a node event after the outcome
-    const event = getEventForNode(node.id);
-
-    if (outcome.triggerEvent && event) {
-      Alert.alert(
-        `${getTierIcon(outcome.tier)} ${outcome.title}`,
-        outcome.narration + (outcome.addItem ? `\n\n+ Found: ${outcome.addItem}` : ''),
-        [{
-          text: 'Something Ahead...',
-          onPress: () => {
-            setActiveEvent(event);
-            setEventVisible(true);
-          },
-        }]
-      );
-    } else if (event) {
-      // Show outcome briefly, then open event
-      Alert.alert(
-        `${getTierIcon(outcome.tier)} ${outcome.title}`,
-        outcome.narration + (outcome.addItem ? `\n\n+ Found: ${outcome.addItem}` : ''),
-        [{
-          text: 'Continue',
-          onPress: () => {
-            setActiveEvent(event);
-            setEventVisible(true);
-          },
-        }]
-      );
-    } else {
-      // No node event — just show the outcome
-      const lootText = outcome.addItem ? `\n\n+ Found: ${outcome.addItem}` : '';
-      Alert.alert(
-        `${getTierIcon(outcome.tier)} ${outcome.title}`,
-        outcome.narration + lootText,
-        [{ text: 'OK' }]
-      );
-    }
-  }, [rollResult, dispatch, getEventForNode, applyTrailOutcome]);
-
   const handleNodePress = useCallback(
     (node: ZoneNode) => {
       // If tapping current node, show its description
@@ -187,13 +44,12 @@ export default function TrailScreen() {
         return;
       }
 
-      // Check if run is over
+      // Check if trail is over
       if (isRunOver) {
-        Alert.alert(
-          'Run Complete',
-          `Day ${MAX_RUN_DAYS} has passed. Your run through the Rustbelt Verge is over. Check your score in the Arcade tab.`,
-          [{ text: 'OK' }]
-        );
+        const reason = state.trailOverReason === 'hp_zero'
+          ? 'Your body gave out. The Trail claimed another drifter.'
+          : `Day ${MAX_RUN_DAYS} has passed. Your run through the Rustbelt Verge is over.`;
+        Alert.alert('Trail Over', reason, [{ text: 'OK' }]);
         return;
       }
 
@@ -207,30 +63,66 @@ export default function TrailScreen() {
         return;
       }
 
-      // Use move and start the roll animation
+      // Use move
       dispatch({ type: 'USE_MOVE' });
-      startRollSequence(node);
+
+      // Draw trail outcome (resource changes from the move itself)
+      const trailOutcome = drawTrailOutcome(state);
+
+      // Check if trail outcome blocks movement (setback)
+      if (trailOutcome.movePlayer && trailOutcome.movePlayer < 0) {
+        applyTrailOutcome(trailOutcome);
+        Alert.alert(
+          `${getTierIcon(trailOutcome.tier)} ${trailOutcome.title}`,
+          `${trailOutcome.narration}\n\nYou couldn't make it to ${node.name}. The move is lost.`,
+          [{ text: 'Press On' }]
+        );
+        return;
+      }
+
+      // Apply trail outcome silently (resources etc)
+      applyTrailOutcome(trailOutcome);
+
+      // Move to the target node
+      dispatch({ type: 'MOVE_TO_NODE', payload: node.id });
+
+      // Check for a node event
+      const event = getEventForNode(node.id);
+
+      if (event) {
+        // Open event modal — the roll animation + outcome all happen inside the modal now
+        const choices = getAvailableChoices(event);
+        setAvailableChoices(choices);
+        setActiveEvent(event);
+        setEventVisible(true);
+      }
+      // If no event, the trail outcome effects were already applied silently.
+      // The player sees their HP/resources update in the bars.
     },
-    [state.currentNodeId, state.movesRemaining, isRunOver, currentZone, dispatch, startRollSequence]
+    [state, isRunOver, currentZone, dispatch, getEventForNode, getAvailableChoices, applyTrailOutcome]
   );
 
+  /**
+   * Event choice handler — performs hidden roll, applies effects, returns quality + outcome for UI.
+   */
   const handleEventChoice = useCallback(
-    (eventId: string, choice: EventChoice) => {
-      applyOutcome(eventId, choice.outcome);
+    (eventId: string, choice: EventChoice): { quality: OutcomeQuality; outcome: EventOutcome } => {
+      const { quality, outcome } = rollAndApply(eventId, choice);
+
+      // Apply the modified outcome effects
+      applyOutcome(eventId, outcome);
 
       // Handle movePlayer
-      if (choice.outcome.movePlayer) {
+      if (outcome.movePlayer) {
         const currentNode = currentZone.nodes.find((n) => n.id === state.currentNodeId);
         if (currentNode) {
-          if (choice.outcome.movePlayer > 0 && currentNode.connections.length > 0) {
-            // Move forward to next connected node
+          if (outcome.movePlayer > 0 && currentNode.connections.length > 0) {
             const forwardNodes = currentNode.connections.filter(
               (id) => !state.visitedNodes.includes(id) || id !== state.currentNodeId
             );
             const nextId = forwardNodes[0] || currentNode.connections[0];
             if (nextId) dispatch({ type: 'MOVE_TO_NODE', payload: nextId });
-          } else if (choice.outcome.movePlayer < 0) {
-            // Move back to a visited connected node
+          } else if (outcome.movePlayer < 0) {
             const backNodes = currentNode.connections.filter((id) =>
               state.visitedNodes.includes(id)
             );
@@ -239,8 +131,10 @@ export default function TrailScreen() {
           }
         }
       }
+
+      return { quality, outcome };
     },
-    [applyOutcome, currentZone, state.currentNodeId, state.visitedNodes, dispatch]
+    [rollAndApply, applyOutcome, currentZone, state.currentNodeId, state.visitedNodes, dispatch]
   );
 
   const handleExtraMove = async () => {
@@ -297,13 +191,13 @@ export default function TrailScreen() {
             value={state.playerHealth}
             max={100}
             label="Player Health"
-            color={colors.neonGreen}
+            color={state.playerHealth <= 25 ? colors.neonRed : colors.neonGreen}
           />
           <HealthBar
             value={state.roverHealth}
             max={100}
             label="Rover Condition"
-            color={colors.neonCyan}
+            color={state.roverHealth <= 25 ? colors.neonRed : colors.neonCyan}
           />
         </View>
 
@@ -324,11 +218,16 @@ export default function TrailScreen() {
           )}
         </View>
 
-        {/* Run Complete Banner */}
+        {/* Trail Over Banner */}
         {isRunOver && (
           <View style={styles.runOverBanner}>
+            <Text style={styles.runOverTitle}>
+              {state.trailOverReason === 'hp_zero' ? '💀 TRAIL OVER' : '🏁 RUN COMPLETE'}
+            </Text>
             <Text style={styles.runOverText}>
-              RUN COMPLETE — Day {MAX_RUN_DAYS} reached.
+              {state.trailOverReason === 'hp_zero'
+                ? 'Your body gave out on the Rustbelt Verge. The Trail continues for those who survive.'
+                : `Day ${MAX_RUN_DAYS} reached. Your run through the Rustbelt Verge is over.`}
             </Text>
           </View>
         )}
@@ -377,128 +276,30 @@ export default function TrailScreen() {
                 variant="ghost"
                 size="sm"
               />
+              <NeonButton
+                title="–20 HP"
+                onPress={() => dispatch({ type: 'TAKE_DAMAGE', payload: 20 })}
+                variant="ghost"
+                size="sm"
+              />
             </View>
           </View>
         )}
       </ScrollView>
 
-      {/* ─── Roll Overlay ─── */}
-      <Modal visible={isRolling} transparent animationType="none">
-        <Animated.View style={[styles.rollOverlay, { opacity: rollOpacity }]}>
-          <Animated.View style={[styles.rollBox, { transform: [{ scale: rollScale }] }]}>
-            {!showResult ? (
-              <>
-                {/* Rolling phase */}
-                <Text style={styles.rollDice}>🎲</Text>
-                <Text style={styles.rollPhrase}>{rollPhrase}</Text>
-                <View style={styles.rollDots}>
-                  <RollingDots />
-                </View>
-              </>
-            ) : rollResult ? (
-              <>
-                {/* Result phase */}
-                <Animated.View
-                  style={{
-                    opacity: resultOpacity,
-                    transform: [{ translateY: resultSlide }],
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.rollTierIcon,
-                      { color: getTierColor(rollResult.tier) },
-                    ]}
-                  >
-                    {getTierIcon(rollResult.tier)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rollTierLabel,
-                      { color: getTierColor(rollResult.tier) },
-                    ]}
-                  >
-                    {rollResult.tier.toUpperCase()}
-                  </Text>
-                  <Text style={styles.rollTitle}>{rollResult.title}</Text>
-                  <Text style={styles.rollNarration}>{rollResult.narration}</Text>
-                  {rollResult.addItem && (
-                    <Text style={styles.rollLoot}>+ Found: {rollResult.addItem}</Text>
-                  )}
-                  <NeonButton
-                    title="Continue"
-                    onPress={resolveRoll}
-                    variant="primary"
-                    style={styles.rollContinue}
-                  />
-                </Animated.View>
-              </>
-            ) : null}
-          </Animated.View>
-        </Animated.View>
-      </Modal>
-
-      {/* Event Modal */}
+      {/* Event Modal — handles narrative → roll → outcome all in one place */}
       <EventModal
         event={activeEvent}
         visible={eventVisible}
         onChoose={handleEventChoice}
+        availableChoices={availableChoices}
         onDismiss={() => {
           setEventVisible(false);
           setActiveEvent(null);
+          setAvailableChoices([]);
         }}
       />
     </ScreenWrapper>
-  );
-}
-
-/**
- * Simple animated dots component for the rolling state.
- */
-function RollingDots() {
-  const dot1 = useRef(new Animated.Value(0.3)).current;
-  const dot2 = useRef(new Animated.Value(0.3)).current;
-  const dot3 = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    const createPulse = (dot: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(dot, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(dot, {
-            toValue: 0.3,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-
-    const a1 = createPulse(dot1, 0);
-    const a2 = createPulse(dot2, 200);
-    const a3 = createPulse(dot3, 400);
-    a1.start();
-    a2.start();
-    a3.start();
-
-    return () => {
-      a1.stop();
-      a2.stop();
-      a3.stop();
-    };
-  }, [dot1, dot2, dot3]);
-
-  return (
-    <View style={styles.dotsRow}>
-      <Animated.Text style={[styles.dot, { opacity: dot1 }]}>●</Animated.Text>
-      <Animated.Text style={[styles.dot, { opacity: dot2 }]}>●</Animated.Text>
-      <Animated.Text style={[styles.dot, { opacity: dot3 }]}>●</Animated.Text>
-    </View>
   );
 }
 
@@ -573,17 +374,24 @@ const styles = StyleSheet.create({
   runOverBanner: {
     marginTop: spacing.lg,
     padding: spacing.md,
-    backgroundColor: colors.neonAmber + '15',
+    backgroundColor: colors.neonRed + '10',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.neonAmber + '40',
+    borderColor: colors.neonRed + '30',
     alignItems: 'center',
   },
-  runOverText: {
-    fontSize: fontSize.md,
+  runOverTitle: {
+    fontSize: fontSize.lg,
     fontWeight: '700',
-    color: colors.neonAmber,
-    letterSpacing: 1,
+    color: colors.neonRed,
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+  },
+  runOverText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   extraMoveBtn: {
     marginTop: spacing.lg,
@@ -606,79 +414,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     gap: spacing.sm,
-  },
-  // ─── Roll Overlay Styles ───
-  rollOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  rollBox: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
-    padding: spacing.xl,
-    width: '100%',
-    maxWidth: 340,
-    alignItems: 'center',
-  },
-  rollDice: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
-  },
-  rollPhrase: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  rollDots: {
-    marginTop: spacing.md,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  dot: {
-    fontSize: 18,
-    color: colors.neonCyan,
-  },
-  rollTierIcon: {
-    fontSize: 40,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  rollTierLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
-    letterSpacing: 3,
-    marginBottom: spacing.sm,
-  },
-  rollTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  rollNarration: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  rollLoot: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.neonGreen,
-    marginBottom: spacing.md,
-  },
-  rollContinue: {
-    width: 180,
   },
 });

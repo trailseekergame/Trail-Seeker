@@ -35,16 +35,23 @@ function TabIcon({ icon, label, focused }: { icon: string; label: string; focuse
   return (
     <View style={tabIconStyles.container}>
       <Text style={[tabIconStyles.icon, focused && tabIconStyles.iconActive]}>{icon}</Text>
-      <Text style={[tabIconStyles.label, focused && tabIconStyles.labelActive]}>{label}</Text>
+      <Text
+        style={[tabIconStyles.label, focused && tabIconStyles.labelActive]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
 
 const tabIconStyles = StyleSheet.create({
-  container: { alignItems: 'center', justifyContent: 'center', paddingTop: 4 },
+  container: { alignItems: 'center', justifyContent: 'center', paddingTop: 4, minWidth: 60 },
   icon: { fontSize: 22 },
   iconActive: { fontSize: 24 },
-  label: { fontSize: 10, color: colors.tabInactive, marginTop: 2 },
+  label: { fontSize: 11, color: colors.tabInactive, marginTop: 2, textAlign: 'center' },
   labelActive: { color: colors.tabActive, fontWeight: '600' },
 });
 
@@ -146,7 +153,7 @@ function MainTabs() {
         component={SettlementStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🏘️" label="Settlement" focused={focused} />
+            <TabIcon icon="🏘️" label="Camp" focused={focused} />
           ),
         }}
       />

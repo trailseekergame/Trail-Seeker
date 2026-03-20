@@ -100,6 +100,8 @@ export default function MiniGameScreen({ navigation }: any) {
 
     const finalDistance = distanceRef.current;
     const finalCollisions = collisionsRef.current;
+    setCollisions(finalCollisions);
+    setDistance(finalDistance);
     const efficiency = finalCollisions === 0 ? finalDistance : Math.floor(finalDistance / (finalCollisions + 1));
     const compositeScore = finalDistance + efficiency;
 
@@ -298,9 +300,19 @@ export default function MiniGameScreen({ navigation }: any) {
             <View style={styles.overlay}>
               <Text style={styles.overlayTitle}>TRAIL OVER</Text>
               <Text style={styles.overlayDistance}>{distance}m</Text>
-              <Text style={styles.overlaySubtitle}>
-                Collisions: {collisions}
-              </Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{collisions}</Text>
+                  <Text style={styles.statLabel}>Collisions</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {collisions === 0 ? distance : Math.floor(distance / (collisions + 1))}
+                  </Text>
+                  <Text style={styles.statLabel}>Efficiency</Text>
+                </View>
+              </View>
               <View style={styles.overButtons}>
                 <NeonButton
                   title="Play Again"
@@ -409,5 +421,30 @@ const styles = StyleSheet.create({
   overButtons: {
     marginTop: spacing.xl,
     width: 200,
+    alignItems: 'center' as const,
+  },
+  statsRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginTop: spacing.md,
+  },
+  statItem: {
+    alignItems: 'center' as const,
+    paddingHorizontal: spacing.lg,
+  },
+  statValue: {
+    fontSize: fontSize.xl,
+    fontWeight: '700' as const,
+    color: colors.textPrimary,
+  },
+  statLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: colors.surfaceLight,
   },
 });

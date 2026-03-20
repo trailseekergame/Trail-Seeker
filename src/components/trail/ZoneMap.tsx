@@ -5,8 +5,9 @@ import { ZoneNode } from '../../types';
 import { useGame } from '../../context/GameContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MAP_HEIGHT = 220;
-const NODE_SIZE = 36;
+const MAP_HEIGHT = 320;
+const NODE_SIZE = 32;
+const MAP_PADDING = 20; // inner padding so nodes don't touch edges
 
 interface Props {
   nodes: ZoneNode[];
@@ -63,10 +64,12 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
             // Only draw line once (from lower to higher index)
             if (nodes.indexOf(node) > nodes.indexOf(connNode)) return null;
 
-            const x1 = (node.x / 100) * (SCREEN_WIDTH - 64) + NODE_SIZE / 2;
-            const y1 = (node.y / 100) * MAP_HEIGHT;
-            const x2 = (connNode.x / 100) * (SCREEN_WIDTH - 64) + NODE_SIZE / 2;
-            const y2 = (connNode.y / 100) * MAP_HEIGHT;
+            const usableWidth = SCREEN_WIDTH - 64 - MAP_PADDING * 2;
+            const usableHeight = MAP_HEIGHT - MAP_PADDING * 2;
+            const x1 = MAP_PADDING + (node.x / 100) * usableWidth + NODE_SIZE / 2;
+            const y1 = MAP_PADDING + (node.y / 100) * usableHeight;
+            const x2 = MAP_PADDING + (connNode.x / 100) * usableWidth + NODE_SIZE / 2;
+            const y2 = MAP_PADDING + (connNode.y / 100) * usableHeight;
             const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
             const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
 
@@ -102,8 +105,8 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
                   styles.node,
                   styles.hiddenNode,
                   {
-                    left: (node.x / 100) * (SCREEN_WIDTH - 64),
-                    top: (node.y / 100) * MAP_HEIGHT,
+                    left: MAP_PADDING + (node.x / 100) * (SCREEN_WIDTH - 64 - MAP_PADDING * 2),
+                    top: MAP_PADDING + (node.y / 100) * (MAP_HEIGHT - MAP_PADDING * 2),
                   },
                 ]}
               >
@@ -124,8 +127,8 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
               style={[
                 styles.node,
                 {
-                  left: (node.x / 100) * (SCREEN_WIDTH - 64),
-                  top: (node.y / 100) * MAP_HEIGHT,
+                  left: MAP_PADDING + (node.x / 100) * (SCREEN_WIDTH - 64 - MAP_PADDING * 2),
+                  top: MAP_PADDING + (node.y / 100) * (MAP_HEIGHT - MAP_PADDING * 2),
                   borderColor: nodeColor,
                   backgroundColor: isCurrent ? nodeColor + '30' : colors.surface,
                 },

@@ -10,6 +10,7 @@ import {
   LeaderboardEntry,
   FactionAlignment,
   AlignmentFlag,
+  TrailOverReason,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 
@@ -39,7 +40,8 @@ type GameAction =
   | { type: 'INCREMENT_DAY' }
   | { type: 'REVEAL_NODE'; payload: string }
   | { type: 'ADJUST_ALIGNMENT'; payload: Partial<FactionAlignment> }
-  | { type: 'SET_ALIGNMENT_FLAG'; payload: AlignmentFlag };
+  | { type: 'SET_ALIGNMENT_FLAG'; payload: AlignmentFlag }
+  | { type: 'SET_TRAIL_OVER'; payload: TrailOverReason };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -119,8 +121,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
       };
 
-    case 'TAKE_DAMAGE':
-      return { ...state, playerHealth: Math.max(0, state.playerHealth - action.payload) };
+    case 'TAKE_DAMAGE': {
+      const newHealth = Math.max(0, state.playerHealth - action.payload);
+      if (newHealth <= 0) {
+        return { ...state, playerHealth: 0, trailOver: true, trailOverReason: 'hp_zero' };
+      }
+      return { ...state, playerHealth: newHealth };
+    }
 
     case 'HEAL':
       return { ...state, playerHealth: Math.min(100, state.playerHealth + action.payload) };
@@ -183,6 +190,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.alignmentFlags.includes(action.payload)) return state;
       return { ...state, alignmentFlags: [...state.alignmentFlags, action.payload] };
     }
+
+    case 'SET_TRAIL_OVER':
+      return { ...state, trailOver: true, trailOverReason: action.payload };
 
     default:
       return state;
