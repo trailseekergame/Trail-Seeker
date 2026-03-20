@@ -244,7 +244,7 @@ export default function MiniGameScreen({ navigation }: any) {
               },
             ]}
           >
-            <Text style={styles.playerIcon}>🛸</Text>
+            <Text style={styles.playerIcon}>🛻</Text>
           </Animated.View>
 
           {/* Obstacles */}

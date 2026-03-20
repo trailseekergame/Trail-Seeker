@@ -8,7 +8,7 @@ import { Zone } from '../types';
 const zone01: Zone = {
   id: 'zone-01',
   name: 'Rustbelt Verge',
-  subtitle: 'Industrial Corridor — Days 1–10',
+  subtitle: 'Industrial Corridor — Days 1–30',
   description:
     'The crumbling edge of the old manufacturing belt. Smokestacks pierce the haze like broken teeth, and every overpass hides a toll or a trap. The Directorate patrols are thin here — but the Free Bands and raiders fill the gaps.',
   startNodeId: 'node-start',

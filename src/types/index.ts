@@ -27,6 +27,45 @@ export interface Zone {
   endNodeId: string;
 }
 
+// ─── Rarity & Loot ───
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'relic';
+
+export const RARITY_ORDER: ItemRarity[] = ['common', 'uncommon', 'rare', 'relic'];
+
+// ─── Faction Alignment ───
+export interface FactionAlignment {
+  directorate: number; // -100 (hostile) to +100 (allied)
+  freeBands: number;
+  raiders: number;
+}
+
+export type AlignmentFlag =
+  | 'listened_to_broadcast'
+  | 'jammed_broadcast'
+  | 'paid_directorate_toll'
+  | 'bluffed_checkpoint'
+  | 'ran_checkpoint'
+  | 'helped_lanterns'
+  | 'shared_with_lanterns'
+  | 'fought_reavers'
+  | 'bribed_reavers';
+
+// ─── Trail Move Outcome System ───
+export type TrailOutcomeTier = 'good' | 'neutral' | 'bad';
+
+export interface TrailOutcome {
+  tier: TrailOutcomeTier;
+  title: string;
+  narration: string;
+  resourceChanges?: Partial<PlayerResources>;
+  damage?: number;
+  heal?: number;
+  addItem?: string;
+  itemRarity?: ItemRarity;
+  movePlayer?: number; // -1 setback (lose the move's progress)
+  triggerEvent?: boolean; // also trigger a node event after this outcome
+}
+
 // ─── Event Types ───
 export type EventCategory = 'encounter' | 'discovery' | 'trade' | 'hazard' | 'lore' | 'faction';
 
@@ -47,6 +86,9 @@ export interface EventOutcome {
   heal?: number;
   addItem?: string;
   removeItem?: string;
+  // Alignment effects
+  alignmentChanges?: Partial<FactionAlignment>;
+  setFlags?: AlignmentFlag[];
 }
 
 export interface GameEvent {
@@ -58,6 +100,10 @@ export interface GameEvent {
   choices: EventChoice[];
   minVisits?: number; // Minimum times the node was visited
   oneTime?: boolean;
+  // Conditional: only show if player has these alignment flags
+  requiresFlags?: AlignmentFlag[];
+  // Conditional: only show if alignment meets threshold (e.g. { directorate: 10 } = need 10+)
+  requiresAlignment?: Partial<FactionAlignment>;
 }
 
 // ─── Player & Resources ───
@@ -73,12 +119,12 @@ export interface CosmeticItem {
   slot: CosmeticSlot;
   description: string;
   icon: string; // emoji or icon name
-  rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
+  rarity: ItemRarity;
   unlocked: boolean;
   unlockCondition?: string;
 }
 
-export type CosmeticSlot = 'headgear' | 'coat' | 'backItem' | 'patch' | 'roverDecal' | 'accessory';
+export type CosmeticSlot = 'headgear' | 'coat' | 'backItem' | 'patch' | 'roverDecal' | 'accessory' | 'weapon' | 'tech' | 'charm';
 
 export interface EquippedCosmetics {
   headgear?: string; // cosmetic item ID
@@ -87,6 +133,9 @@ export interface EquippedCosmetics {
   patch?: string;
   roverDecal?: string;
   accessory?: string;
+  weapon?: string;
+  tech?: string;
+  charm?: string;
 }
 
 export interface PlayerBackstory {
@@ -140,6 +189,10 @@ export interface GameState {
   roverHealth: number; // 0-100
   playerHealth: number; // 0-100
 
+  // Faction alignment & flags
+  alignment: FactionAlignment;
+  alignmentFlags: AlignmentFlag[];
+
   // Codex
   unlockedCodexIds: string[];
 
@@ -174,6 +227,12 @@ export const INITIAL_GAME_STATE: GameState = {
   },
   roverHealth: 100,
   playerHealth: 100,
+  alignment: {
+    directorate: 0,
+    freeBands: 0,
+    raiders: 0,
+  },
+  alignmentFlags: [],
   unlockedCodexIds: ['codex-world-overview', 'codex-trail-concept'],
   unlockedCosmeticIds: ['cos-basic-goggles', 'cos-drifter-coat', 'cos-standard-pack'],
   equipped: {

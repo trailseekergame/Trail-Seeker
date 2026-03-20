@@ -8,6 +8,8 @@ import {
   PlayerBackstory,
   EquippedCosmetics,
   LeaderboardEntry,
+  FactionAlignment,
+  AlignmentFlag,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 
@@ -35,7 +37,9 @@ type GameAction =
   | { type: 'COMPLETE_EVENT'; payload: string }
   | { type: 'ADD_LEADERBOARD_ENTRY'; payload: LeaderboardEntry }
   | { type: 'INCREMENT_DAY' }
-  | { type: 'REVEAL_NODE'; payload: string };
+  | { type: 'REVEAL_NODE'; payload: string }
+  | { type: 'ADJUST_ALIGNMENT'; payload: Partial<FactionAlignment> }
+  | { type: 'SET_ALIGNMENT_FLAG'; payload: AlignmentFlag };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -158,6 +162,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'REVEAL_NODE': {
       // This is handled via zone data, but we track visited for now
       return state;
+    }
+
+    case 'ADJUST_ALIGNMENT': {
+      const changes = action.payload;
+      const newAlignment = { ...state.alignment };
+      if (changes.directorate !== undefined) {
+        newAlignment.directorate = Math.max(-100, Math.min(100, newAlignment.directorate + changes.directorate));
+      }
+      if (changes.freeBands !== undefined) {
+        newAlignment.freeBands = Math.max(-100, Math.min(100, newAlignment.freeBands + changes.freeBands));
+      }
+      if (changes.raiders !== undefined) {
+        newAlignment.raiders = Math.max(-100, Math.min(100, newAlignment.raiders + changes.raiders));
+      }
+      return { ...state, alignment: newAlignment };
+    }
+
+    case 'SET_ALIGNMENT_FLAG': {
+      if (state.alignmentFlags.includes(action.payload)) return state;
+      return { ...state, alignmentFlags: [...state.alignmentFlags, action.payload] };
     }
 
     default:

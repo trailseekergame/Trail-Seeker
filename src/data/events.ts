@@ -22,6 +22,8 @@ const zone01Events: GameEvent[] = [
           resourceChanges: { scrap: 8 },
           damage: 10,
           unlockCodex: ['codex-enemy-reavers'],
+          alignmentChanges: { raiders: -15 },
+          setFlags: ['fought_reavers'],
         },
       },
       {
@@ -41,6 +43,8 @@ const zone01Events: GameEvent[] = [
           narration:
             'You throw a pouch of parts at their feet. They rummage through it, grunting approval, and wave you on. Costly, but clean.',
           resourceChanges: { scrap: -5 },
+          alignmentChanges: { raiders: 10 },
+          setFlags: ['bribed_reavers'],
         },
       },
     ],
@@ -60,6 +64,8 @@ const zone01Events: GameEvent[] = [
           narration: 'You hand over the scrap. They scan you, note your rover class, and wave you through. Business as usual on the Directorate\'s highway.',
           resourceChanges: { scrap: -8 },
           unlockCodex: ['codex-faction-directorate'],
+          alignmentChanges: { directorate: 10 },
+          setFlags: ['paid_directorate_toll'],
         },
       },
       {
@@ -69,6 +75,8 @@ const zone01Events: GameEvent[] = [
           narration:
             'Your chip reads green — barely. The Taxman squints at you but steps aside. "Move along." Your heart rate doesn\'t normalize for another mile.',
           unlockCodex: ['codex-faction-directorate'],
+          alignmentChanges: { directorate: -5 },
+          setFlags: ['bluffed_checkpoint'],
         },
       },
       {
@@ -80,6 +88,8 @@ const zone01Events: GameEvent[] = [
           damage: 5,
           movePlayer: 1,
           unlockCodex: ['codex-faction-directorate'],
+          alignmentChanges: { directorate: -15 },
+          setFlags: ['ran_checkpoint'],
         },
       },
     ],
@@ -161,6 +171,7 @@ const zone01Events: GameEvent[] = [
         outcome: {
           narration: 'You load up the rover. The supplies are old but usable. A good find.',
           resourceChanges: { supplies: 8 },
+          alignmentChanges: { freeBands: -5 },
         },
       },
       {
@@ -171,6 +182,7 @@ const zone01Events: GameEvent[] = [
             'You take what you need and mark the cache with a Lantern symbol. Maybe someone else will need it more.',
           resourceChanges: { supplies: 4 },
           unlockCodex: ['codex-faction-lanterns'],
+          alignmentChanges: { freeBands: 10 },
         },
       },
     ],
@@ -256,6 +268,8 @@ const zone01Events: GameEvent[] = [
           resourceChanges: { supplies: -3 },
           heal: 15,
           unlockCodex: ['codex-faction-lanterns'],
+          alignmentChanges: { freeBands: 15 },
+          setFlags: ['shared_with_lanterns'],
         },
       },
       {
@@ -266,6 +280,8 @@ const zone01Events: GameEvent[] = [
             'They let you rest, but the warmth is noticeably less. Still — a safe night on the Trail is worth something.',
           heal: 5,
           unlockCodex: ['codex-faction-lanterns'],
+          alignmentChanges: { freeBands: 5 },
+          setFlags: ['helped_lanterns'],
         },
       },
     ],
@@ -412,15 +428,30 @@ const zone01Events: GameEvent[] = [
         text: 'Listen to the full broadcast.',
         outcome: {
           narration:
-            'Propaganda, mostly. But between the lines, you catch useful intel: patrol schedules, supply route mentions, and a hint about a new scanning protocol.',
+            'Propaganda, mostly. But between the lines, you catch useful intel: patrol schedules, supply route mentions, and a hint about a new scanning protocol. The Directorate notes your compliance.',
           unlockCodex: ['codex-faction-directorate'],
+          alignmentChanges: { directorate: 10, freeBands: -5 },
+          setFlags: ['listened_to_broadcast'],
         },
       },
       {
         id: 'jam-it',
         text: 'Jam the signal and move on.',
         outcome: {
-          narration: 'Static fills the airwaves. Small rebellion, but it feels good.',
+          narration: 'Static fills the airwaves. A small rebellion — but the Free Bands pick up the interference pattern and mark you as a friend.',
+          alignmentChanges: { directorate: -10, freeBands: 10 },
+          setFlags: ['jammed_broadcast'],
+        },
+      },
+      {
+        id: 'relay',
+        text: 'Relay the frequency to nearby drifters.',
+        outcome: {
+          narration:
+            'You bounce the signal to anyone listening. The Free Bands decode patrol routes from it. The Directorate won\'t know who leaked it — yet.',
+          unlockCodex: ['codex-faction-directorate'],
+          alignmentChanges: { freeBands: 15, directorate: -5 },
+          setFlags: ['jammed_broadcast'],
         },
       },
     ],

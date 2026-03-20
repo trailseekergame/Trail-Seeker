@@ -16,12 +16,18 @@ const SLOT_LABELS: Record<CosmeticSlot, string> = {
   patch: 'Patch / Emblem',
   roverDecal: 'Rover Decal',
   accessory: 'Accessory',
+  weapon: 'Weapon',
+  tech: 'Tech / Gadget',
+  charm: 'Charm / Relic',
 };
 
 const SLOT_ORDER: CosmeticSlot[] = [
   'headgear',
   'coat',
   'backItem',
+  'weapon',
+  'tech',
+  'charm',
   'patch',
   'roverDecal',
   'accessory',
@@ -80,7 +86,7 @@ export default function WardrobeScreen() {
         return colors.neonGreen;
       case 'rare':
         return colors.neonCyan;
-      case 'legendary':
+      case 'relic':
         return colors.neonPurple;
       default:
         return colors.textSecondary;

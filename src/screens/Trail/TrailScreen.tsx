@@ -8,16 +8,18 @@ import NeonButton from '../../components/common/NeonButton';
 import HealthBar from '../../components/common/HealthBar';
 import { useGame } from '../../context/GameContext';
 import { useEventEngine } from '../../hooks/useEventEngine';
-import { ZoneNode, EventChoice, GameEvent } from '../../types';
+import { ZoneNode, EventChoice, GameEvent, TrailOutcome } from '../../types';
 import zone01 from '../../data/zone01';
+import { drawTrailOutcome, getTierColor, getTierIcon } from '../../systems/trailOutcomes';
 import { purchaseExtraMove } from '../../services/solana';
 import { colors, spacing, fontSize } from '../../theme';
 
 export default function TrailScreen() {
   const { state, dispatch } = useGame();
-  const { getEventForNode, applyOutcome } = useEventEngine();
+  const { getEventForNode, applyOutcome, applyTrailOutcome } = useEventEngine();
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [eventVisible, setEventVisible] = useState(false);
+  const [pendingNode, setPendingNode] = useState<string | null>(null);
 
   const currentZone = zone01; // For now, only Zone 01
 
@@ -45,18 +47,89 @@ export default function TrailScreen() {
         return;
       }
 
-      // Move player
+      // Use move and draw from the trail outcome deck
       dispatch({ type: 'USE_MOVE' });
+
+      const outcome = drawTrailOutcome(state);
+
+      // Apply the trail outcome effects immediately
+      applyTrailOutcome(outcome);
+
+      // Check if the outcome is a setback that blocks forward progress
+      if (outcome.movePlayer && outcome.movePlayer < 0) {
+        // Bad outcome with setback — don't move forward
+        Alert.alert(
+          `${getTierIcon(outcome.tier)} ${outcome.title}`,
+          `${outcome.narration}\n\nYou couldn't make it to ${node.name}. The move is lost.`,
+          [{ text: 'Press On' }]
+        );
+        return;
+      }
+
+      // Move to the target node
       dispatch({ type: 'MOVE_TO_NODE', payload: node.id });
 
-      // Trigger event
-      const event = getEventForNode(node.id);
-      if (event) {
-        setActiveEvent(event);
-        setEventVisible(true);
+      // Show the trail outcome, then optionally trigger a node event after
+      if (outcome.tier === 'neutral' && !outcome.triggerEvent) {
+        // Neutral with no event trigger — show brief outcome, then check for node event
+        const event = getEventForNode(node.id);
+        if (event) {
+          // Show outcome briefly via alert, then open event modal
+          Alert.alert(
+            `${getTierIcon(outcome.tier)} ${outcome.title}`,
+            outcome.narration,
+            [{
+              text: 'Continue',
+              onPress: () => {
+                setActiveEvent(event);
+                setEventVisible(true);
+              },
+            }]
+          );
+        } else {
+          Alert.alert(
+            `${getTierIcon(outcome.tier)} ${outcome.title}`,
+            outcome.narration,
+            [{ text: 'OK' }]
+          );
+        }
+      } else if (outcome.triggerEvent) {
+        // Outcome says to also trigger an event
+        const event = getEventForNode(node.id);
+        Alert.alert(
+          `${getTierIcon(outcome.tier)} ${outcome.title}`,
+          outcome.narration + (outcome.addItem ? `\n\n+ Found: ${outcome.addItem}` : ''),
+          [{
+            text: event ? 'Something Ahead...' : 'OK',
+            onPress: () => {
+              if (event) {
+                setActiveEvent(event);
+                setEventVisible(true);
+              }
+            },
+          }]
+        );
+      } else {
+        // Good or bad outcome — show result
+        const lootText = outcome.addItem ? `\n\n+ Found: ${outcome.addItem}` : '';
+        Alert.alert(
+          `${getTierIcon(outcome.tier)} ${outcome.title}`,
+          outcome.narration + lootText,
+          [{
+            text: 'Continue',
+            onPress: () => {
+              // After good/bad, also check for node event
+              const event = getEventForNode(node.id);
+              if (event) {
+                setActiveEvent(event);
+                setEventVisible(true);
+              }
+            },
+          }]
+        );
       }
     },
-    [state.currentNodeId, state.movesRemaining, currentZone, dispatch, getEventForNode]
+    [state, currentZone, dispatch, getEventForNode, applyTrailOutcome]
   );
 
   const handleEventChoice = useCallback(
