@@ -8,7 +8,26 @@
  * 1. Install @solana-mobile/mobile-wallet-adapter-protocol
  * 2. Install @solana/web3.js
  * 3. Replace each stub with the actual MWA flow
+ *
+ * ─── $SKR Token Economy ───
+ * All $SKR spending in-game is split 50/50:
+ *   • 50% BURNED — permanently removed from circulating supply (deflationary)
+ *   • 50% SEASON REWARD POOL — deposited into a PDA-controlled vault
+ *     that pays out to top performers at the end of each season.
+ *
+ * This applies to: revives, extra moves, cosmetics, rerolls, and any
+ * future $SKR sinks. The burn creates long-term scarcity; the pool
+ * creates competitive incentive.
+ *
+ * On-chain implementation:
+ *   1. SPL Token burn instruction for the burn half
+ *   2. SPL Token transfer to SEASON_POOL_PUBKEY for the pool half
+ *   3. Both instructions bundled in a single atomic transaction
  */
+
+// ─── Addresses (replace with real keys at launch) ───
+const BURN_ADDRESS = '1nc1nerator11111111111111111111111111111111'; // SPL burn
+const SEASON_POOL_PUBKEY = 'SEASON_POOL_STUB_ADDRESS'; // PDA vault for end-of-season rewards
 
 // ─── Types ───
 export interface WalletState {
@@ -112,59 +131,111 @@ export async function sendSol(
   };
 }
 
-// ─── Game Economy Integration ───
+// ─── $SKR Split Logic ───
 
 /**
- * Purchase extra Trail move with SOL/SKR.
- * STUB: Always succeeds, no real payment.
+ * Core spending function: splits $SKR 50/50 between burn and season pool.
+ * Every $SKR transaction in the game routes through this.
+ *
+ * STUB: Deducts from mock balance, logs the split.
+ * REAL: Builds an atomic Solana transaction with two instructions:
+ *   1. SPL Token burn (burnHalf)
+ *   2. SPL Token transfer to SEASON_POOL_PUBKEY (poolHalf)
  */
+async function spendSkr(
+  amount: number,
+  reason: string
+): Promise<{ success: boolean; burned: number; pooled: number; signature?: string }> {
+  console.log(`[Solana Stub] spendSkr(${amount} $SKR) — reason: ${reason}`);
+
+  if (walletState.skrBalance < amount) {
+    return { success: false, burned: 0, pooled: 0 };
+  }
+
+  const burnHalf = Math.ceil(amount / 2);
+  const poolHalf = amount - burnHalf; // floor to ensure total = amount
+
+  console.log(`  → Burn: ${burnHalf} $SKR to ${BURN_ADDRESS}`);
+  console.log(`  → Pool: ${poolHalf} $SKR to ${SEASON_POOL_PUBKEY}`);
+
+  // TODO: Build atomic transaction:
+  // const burnIx = createBurnInstruction(playerTokenAccount, skrMint, playerPubkey, burnHalf);
+  // const poolIx = createTransferInstruction(playerTokenAccount, poolTokenAccount, playerPubkey, poolHalf);
+  // const tx = new Transaction().add(burnIx, poolIx);
+  // const sig = await transact(async (wallet) => wallet.signAndSendTransactions({ transactions: [tx] }));
+
+  walletState.skrBalance -= amount;
+  seasonPoolBalance += poolHalf;
+
+  return {
+    success: true,
+    burned: burnHalf,
+    pooled: poolHalf,
+    signature: 'STUB_SIG_' + Date.now().toString(36),
+  };
+}
+
+// ─── Season Reward Pool (local tracking for stub) ───
+let seasonPoolBalance = 0;
+
+/**
+ * Get current season pool balance.
+ * STUB: Returns local tracked value.
+ * REAL: Query the PDA vault token account balance on-chain.
+ */
+export function getSeasonPoolBalance(): number {
+  return seasonPoolBalance;
+}
+
+// ─── Game Economy Integration ───
+// All $SKR costs below route through spendSkr() for the 50/50 split.
+
+/**
+ * Purchase extra Trail move.
+ * Cost: 5 $SKR → 3 burned, 2 pooled
+ */
+export const EXTRA_MOVE_COST_SKR = 5;
+
 export async function purchaseExtraMove(): Promise<boolean> {
   console.log('[Solana Stub] purchaseExtraMove called');
-  // TODO: Send 0.01 SOL or 5 SKR to game treasury
-  // const result = await sendSol(GAME_TREASURY_PUBKEY, 0.01);
-  // return result.success;
-  return true;
+  const result = await spendSkr(EXTRA_MOVE_COST_SKR, 'extra_move');
+  return result.success;
 }
 
 /**
- * Purchase a cosmetic item with SOL/SKR.
- * STUB: Always succeeds.
+ * Purchase a cosmetic item.
+ * Cost varies by rarity — passed as argument.
  */
-export async function purchaseCosmetic(cosmeticId: string): Promise<boolean> {
+export async function purchaseCosmetic(cosmeticId: string, costSkr: number = 20): Promise<boolean> {
   console.log(`[Solana Stub] purchaseCosmetic(${cosmeticId}) called`);
-  // TODO: Send appropriate SOL/SKR amount based on cosmetic rarity
-  return true;
+  const result = await spendSkr(costSkr, `cosmetic:${cosmeticId}`);
+  return result.success;
 }
 
 /**
  * Purchase a special reroll for risk/reward events.
- * STUB: Always succeeds.
+ * Cost: 10 $SKR → 5 burned, 5 pooled
  */
+export const REROLL_COST_SKR = 10;
+
 export async function purchaseReroll(): Promise<boolean> {
   console.log('[Solana Stub] purchaseReroll called');
-  // TODO: Send 0.005 SOL or 2 SKR
-  return true;
+  const result = await spendSkr(REROLL_COST_SKR, 'reroll');
+  return result.success;
 }
 
 /**
  * Revive a dead character (~$5 worth of $SKR).
- * Burns SKR tokens to restore the player to 30 HP and continue the run.
- * STUB: Always succeeds, no real payment.
+ * Cost: 50 $SKR → 25 burned, 25 pooled
  *
  * Pricing: ~$5 USD equivalent in $SKR at current market rate.
- * This is intentionally expensive — death should sting, but
- * players who are deep into a run can pay to keep going.
+ * Intentionally expensive — death should sting, but players
+ * deep into a run can pay to keep going.
  */
-export const REVIVE_COST_SKR = 50; // ~$5 USD in $SKR (adjust with market rate)
+export const REVIVE_COST_SKR = 50;
 
 export async function purchaseRevive(): Promise<boolean> {
   console.log(`[Solana Stub] purchaseRevive called — ${REVIVE_COST_SKR} $SKR`);
-  // TODO: Burn REVIVE_COST_SKR tokens via SPL Token transfer to burn address
-  // const result = await burnSkr(GAME_TREASURY_PUBKEY, REVIVE_COST_SKR);
-  // return result.success;
-  if (walletState.skrBalance < REVIVE_COST_SKR) {
-    return false;
-  }
-  walletState.skrBalance -= REVIVE_COST_SKR;
-  return true;
+  const result = await spendSkr(REVIVE_COST_SKR, 'revive');
+  return result.success;
 }
