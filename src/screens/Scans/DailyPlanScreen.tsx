@@ -12,6 +12,7 @@ import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
+import CoachMark, { COACH } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
 
 // ─── Short gear effect labels for the summary strip ───
@@ -160,6 +161,14 @@ export default function DailyPlanScreen() {
               ))}
             </View>
           )}
+
+          {/* Coach: gear matters */}
+          <CoachMark
+            id={COACH.GEAR_MATTERS}
+            text="Your gear shapes every scan. Different loadouts change what you find and how often signals hit. Check Equipment to see stats."
+            visible={ss.sessionResults.length === 0}
+            delay={1000}
+          />
 
           {/* Link to full Equipment screen */}
           {!ss.gearLockedToday && (

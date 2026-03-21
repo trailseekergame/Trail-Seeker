@@ -12,6 +12,7 @@ import { ScanType, ScanResult, ScanOutcome, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
 import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
 import { getDailyObjective, getSessionSummary } from '../../systems/dailyObjective';
+import CoachMark, { COACH, hasBeenShown } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
 
 // ─── Constants ───
@@ -364,6 +365,13 @@ export default function ScanScreen() {
         </View>
       </View>
 
+      {/* ─── Coach: first tile ─── */}
+      <CoachMark
+        id={COACH.FIRST_TILE}
+        text="Tap a lit tile to target it. Green tiles are in range."
+        visible={ss.sessionResults.length === 0}
+      />
+
       {/* ─── 5x5 SECTOR GRID with path connectors ─── */}
       <View style={styles.gridContainer}>
         <View style={styles.gridInner}>
@@ -474,6 +482,14 @@ export default function ScanScreen() {
           ))}
         </View>
 
+        {/* Coach: scan types */}
+        <CoachMark
+          id={COACH.SCAN_TYPES}
+          text="Scout probes safe. Seeker pushes deeper. Gambit risks it all for the best signal."
+          visible={ss.sessionResults.length === 1 && !hasBeenShown(COACH.SCAN_TYPES)}
+          delay={300}
+        />
+
         <View style={styles.scanButtonRow}>
           {(['scout', 'seeker', 'gambit'] as ScanType[]).map(type => {
             const isSelected = selectedScan === type;
@@ -545,6 +561,13 @@ export default function ScanScreen() {
             <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
               {Math.round(whiffRates[selectedScan] * 100)}% miss chance
             </Text>
+            {selectedScan === 'gambit' && (
+              <CoachMark
+                id={COACH.GAMBIT_INTRO}
+                text="Gambit burns the scan for one deep read. High miss rate, but it's the only way to pull Legendary signals and relic fragments."
+                delay={200}
+              />
+            )}
             <View style={styles.confirmButtons}>
               <NeonButton
                 title="Scan"
@@ -644,9 +667,25 @@ export default function ScanScreen() {
 
                   {/* Whiff guidance */}
                   {effectiveOutcome === 'whiff' && (
-                    <Text style={styles.whiffHint}>
-                      Dead air. The signal was there and then it wasn't. Choose a different approach or move on.
-                    </Text>
+                    <>
+                      <Text style={styles.whiffHint}>
+                        Dead air. The signal was there and then it wasn't. Choose a different approach or move on.
+                      </Text>
+                      <CoachMark
+                        id={COACH.FIRST_WHIFF}
+                        text="Dead signals are the cost of pushing hard. Scout scans almost never miss. Gambits miss often — but pay off big."
+                        delay={800}
+                      />
+                    </>
+                  )}
+
+                  {/* Rare+ coach */}
+                  {['rare', 'legendary', 'component'].includes(effectiveOutcome) && (
+                    <CoachMark
+                      id={COACH.FIRST_RARE}
+                      text="Good pull. Your gear loadout affects how often these show up. Better rig, better reads."
+                      delay={600}
+                    />
                   )}
 
                   {/* Sector progress */}
