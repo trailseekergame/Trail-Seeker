@@ -1,0 +1,93 @@
+{
+  "version": "1.1.0",
+  "updated": "2026-03-20",
+
+  "balance_rails": {
+    "max_daily_scans": 10,
+    "max_gear_bonus_scans": 2,
+    "max_skr_bonus_scans": 1,
+    "max_rare_chance_boost": 0.30,
+    "max_whiff_reduction": 0.15,
+    "gambit_whiff_floor": 0.25,
+    "max_sector_progress_bonus": 2,
+    "max_refund_chance": 0.30,
+    "max_active_gear_slots": 3,
+    "pathfinder_active_slots": 4
+  },
+
+  "streak_ladder": {
+    "base_scans": 4,
+    "bonus_by_day": [0, 0, 1, 1, 2, 2, 3, 3],
+    "rare_boost_by_day": [0, 0, 0, 0.05, 0.05, 0.10, 0.10, 0.15],
+    "sector_bonus_by_day": [0, 0, 0, 0, 0, 0, 1, 1],
+    "miss_penalty_steps": 1
+  },
+
+  "risk_tiers": {
+    "scout": {
+      "whiff_rate": 0.05,
+      "loot_table": { "common": 0.95, "uncommon": 0.05, "rare": 0, "legendary": 0 },
+      "sector_progress": { "base": 1, "bonus_chance": 0 }
+    },
+    "seeker": {
+      "whiff_rate": 0.20,
+      "loot_table": { "common": 0.60, "uncommon": 0.30, "rare": 0.10, "legendary": 0 },
+      "sector_progress": { "base": 1, "bonus_chance": 0.30 }
+    },
+    "gambit": {
+      "whiff_rate": 0.40,
+      "loot_table": { "common": 0, "uncommon": 0.40, "rare": 0.35, "legendary": 0.15 },
+      "component_chance": 0.10,
+      "sector_progress": { "base": 2, "bonus_chance": 0.30 }
+    }
+  },
+
+  "gear_stats": {
+    "optics_rig": {
+      "standard":  { "rare_boost": 0.02 },
+      "enhanced":  { "rare_boost": 0.04 },
+      "perfected": { "rare_boost": 0.07 }
+    },
+    "exo_vest": {
+      "standard":  { "bonus_scans": 1 },
+      "enhanced":  { "bonus_scans": 1, "loot_quality_boost": 0.05 },
+      "perfected": { "bonus_scans": 2, "loot_quality_boost": 0.05 }
+    },
+    "grip_gauntlets": {
+      "standard":  { "whiff_reduction": 0.02 },
+      "enhanced":  { "whiff_reduction": 0.04 },
+      "perfected": { "whiff_reduction": 0.07 }
+    },
+    "nav_boots": {
+      "standard":  { "sector_bonus": 0.5 },
+      "enhanced":  { "sector_bonus": 1.0 },
+      "perfected": { "sector_bonus": 1.0, "double_progress_chance": 0.15 }
+    },
+    "cortex_link": {
+      "standard":  { "gambit_legendary_boost": 0.03 },
+      "enhanced":  { "gambit_legendary_boost": 0.06 },
+      "perfected": { "gambit_legendary_boost": 0.10, "component_boost": 0.03 }
+    },
+    "salvage_drone": {
+      "standard":  { "refund_chance": 0.08 },
+      "enhanced":  { "refund_chance": 0.15 },
+      "perfected": { "refund_chance": 0.25 }
+    }
+  },
+
+  "skr_costs": {
+    "streak_shield": 5,
+    "whiff_protection": 10,
+    "rare_boost": 15,
+    "rare_boost_value": 0.10,
+    "gear_reroll": 20,
+    "scan_recharge": 25,
+    "scan_recharge_amount": 1
+  },
+
+  "pathfinder_module": {
+    "components_required": 4,
+    "quality_boost_all": 0.05,
+    "unlocks_slot_count": 4
+  }
+}
