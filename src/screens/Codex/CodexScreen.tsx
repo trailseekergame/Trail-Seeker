@@ -13,7 +13,7 @@ const CATEGORIES: { key: CodexCategory; label: string; icon: string }[] = [
   { key: 'zones', label: 'Zones', icon: 'map-marker' },
   { key: 'factions', label: 'Factions', icon: 'account-group' },
   { key: 'enemies', label: 'Enemies', icon: 'sword-cross' },
-  { key: 'loot', label: 'Loot', icon: 'star-four-points' },
+  { key: 'loot', label: 'Salvage', icon: 'star-four-points' },
   { key: 'personal', label: 'Personal', icon: 'account' },
 ];
 

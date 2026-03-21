@@ -240,9 +240,9 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
     if (outcome.damage) changes.push({ icon: 'heart', text: `-${outcome.damage} Health`, positive: false });
     if (outcome.heal) changes.push({ icon: 'heart', text: `+${outcome.heal} Health`, positive: true });
     if (outcome.addItem) changes.push({ icon: 'plus-box', text: outcome.addItem, positive: true });
-    if (outcome.unlockCodex?.length) changes.push({ icon: 'book-open-variant', text: 'New codex entry', positive: true });
-    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push({ icon: 'arrow-right-bold', text: 'Pushed forward', positive: true });
-    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push({ icon: 'arrow-left-bold', text: 'Pushed back', positive: false });
+    if (outcome.unlockCodex?.length) changes.push({ icon: 'book-open-variant', text: 'Intel logged', positive: true });
+    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push({ icon: 'arrow-right-bold', text: 'Ground gained', positive: true });
+    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push({ icon: 'arrow-left-bold', text: 'Forced back', positive: false });
     return changes;
   };
 
@@ -427,7 +427,7 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
                 )}
 
                 <NeonButton
-                  title="Continue"
+                  title="Move on"
                   onPress={handleDismiss}
                   variant="primary"
                   style={styles.continueButton}

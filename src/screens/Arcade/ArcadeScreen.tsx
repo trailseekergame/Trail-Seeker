@@ -14,7 +14,7 @@ export default function ArcadeScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>Arcade</Text>
         <Text style={styles.subtitle}>
-          Blow off steam between Trail moves. Earn rewards and bragging rights.
+          Downtime between runs. Keep sharp, pull some scrap on the side.
         </Text>
 
         {/* Trail Flier */}
@@ -74,9 +74,9 @@ export default function ArcadeScreen({ navigation }: any) {
         </Card>
 
         {/* Rewards Info */}
-        <Card title="Rewards" icon="gift">
+        <Card title="Payouts" icon="cog">
           <Text style={styles.gameDesc}>
-            Playing mini-games earns small resource rewards:
+            Time in the sim pays out:
           </Text>
           <View style={styles.rewardsList}>
             <Text style={styles.rewardItem}>• Play a round: +1 Scrap</Text>

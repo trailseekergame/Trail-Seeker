@@ -83,8 +83,8 @@ export default function DailyPlanScreen() {
 
   // Build the scan breakdown note
   const breakdownParts: string[] = [];
-  if (gearBonus > 0) breakdownParts.push(`+${gearBonus} from Exo-Vest`);
-  if (streakBonus > 0) breakdownParts.push(`+${streakBonus} from streak`);
+  if (gearBonus > 0) breakdownParts.push(`+${gearBonus} Vest rig`);
+  if (streakBonus > 0) breakdownParts.push(`+${streakBonus} streak edge`);
   const breakdownNote = breakdownParts.length > 0 ? breakdownParts.join(' · ') : null;
 
   return (
@@ -195,7 +195,7 @@ export default function DailyPlanScreen() {
           </Text>
           {ss.currentSector.completed && (
             <Text style={styles.sectorReward}>
-              Sector Clear Bonus: +{10 + ((ss.sectorsCompleted) * 5)} Scrap
+              Sector stripped: +{10 + ((ss.sectorsCompleted) * 5)} Scrap recovered
             </Text>
           )}
         </View>
@@ -246,7 +246,7 @@ export default function DailyPlanScreen() {
               : 'Window\'s closed. Signal resets at dawn.'}
           </Text>
           {ss.activeGearSlots.length === 0 && (
-            <Text style={styles.warningText}>Select at least 1 gear slot above</Text>
+            <Text style={styles.warningText}>Rig empty. Equip at least 1 piece of gear.</Text>
           )}
         </View>
       </ScrollView>

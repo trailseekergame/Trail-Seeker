@@ -20,7 +20,7 @@ const GEAR_STAT_LINE: Record<GearSlotId, (q: string) => string> = {
   exo_vest: (q) => {
     const s = (gameBalance.gear_stats.exo_vest as any)[q];
     const scans = s?.bonus_scans || 0;
-    const loot = s?.loot_quality_boost ? ` · +${Math.round(s.loot_quality_boost * 100)}% loot quality` : '';
+    const loot = s?.loot_quality_boost ? ` · +${Math.round(s.loot_quality_boost * 100)}% signal quality` : '';
     return `+${scans} Scans per day${loot}`;
   },
   grip_gauntlets: (q) => {
@@ -215,7 +215,7 @@ export default function WardrobeScreen() {
           <View style={[styles.pathfinderRow, styles.pathfinderActive]}>
             <Text style={styles.pathfinderActiveText}>PATHFINDER MODULE ACTIVE</Text>
             <Text style={styles.pathfinderActiveDesc}>
-              +{Math.round(gameBalance.pathfinder_module.quality_boost_all * 100)}% all loot quality · 4th gear slot unlocked
+              +{Math.round(gameBalance.pathfinder_module.quality_boost_all * 100)}% signal clarity · 4th gear slot unlocked
             </Text>
           </View>
         )}

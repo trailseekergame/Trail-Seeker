@@ -132,7 +132,7 @@ export default function SettlementScreen({ navigation }: any) {
               <Text style={[styles.resourceValue, { color: colors.specialLoot }]}>
                 {state.resources.specialLoot.length}
               </Text>
-              <Text style={styles.resourceLabel}>Special Loot</Text>
+              <Text style={styles.resourceLabel}>Rare Finds</Text>
             </View>
           </View>
 
@@ -280,7 +280,7 @@ export default function SettlementScreen({ navigation }: any) {
             })}
           </View>
           <NeonButton
-            title="Open Equipment →"
+            title="Open Loadout"
             onPress={() => navigation.navigate('Wardrobe')}
             variant="ghost"
             size="sm"
