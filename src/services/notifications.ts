@@ -1,8 +1,16 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GameState } from '../types';
+
+// Lazy-load expo-notifications to avoid crash in Expo Go (SDK 53+ removed push support)
+let Notifications: any = null;
+let Device: any = null;
+try {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+} catch (e) {
+  console.warn('[Notifications] expo-notifications not available');
+}
 
 // ─── Constants ───
 
@@ -70,6 +78,7 @@ export async function saveNotificationPrefs(prefs: NotificationPrefs): Promise<v
  * Call once at app startup.
  */
 export function configureNotifications(): void {
+  if (!Notifications) return;
   try {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
@@ -89,6 +98,7 @@ export function configureNotifications(): void {
  * Request notification permissions. Returns true if granted.
  */
 export async function requestPermissions(): Promise<boolean> {
+  if (!Notifications || !Device) return false;
   try {
     if (!Device.isDevice) {
       console.log('[Notifications] Must use physical device for push notifications');
@@ -240,6 +250,7 @@ function adjustForQuietHours(triggerDate: Date, quietStart: number, quietEnd: nu
  * Call this when the player ends a session or the app goes to background.
  */
 export async function scheduleReminders(state: GameState): Promise<void> {
+  if (!Notifications) return;
   try {
   const prefs = await loadNotificationPrefs();
 
@@ -319,6 +330,7 @@ export async function scheduleReminders(state: GameState): Promise<void> {
  * Call this when the player opens the app (they don't need reminding anymore).
  */
 export async function cancelAllReminders(): Promise<void> {
+  if (!Notifications) return;
   try {
     await Notifications.cancelScheduledNotificationAsync(NOTIF_ID_DAILY);
   } catch (_) {
@@ -341,6 +353,7 @@ export async function cancelAllReminders(): Promise<void> {
  * Get count of currently scheduled notifications (for debug/settings UI).
  */
 export async function getScheduledCount(): Promise<number> {
+  if (!Notifications) return 0;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     return scheduled.length;
