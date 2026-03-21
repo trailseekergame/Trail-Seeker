@@ -44,6 +44,9 @@ function createTestState(
     sectorsCompleted: 0,
     sessionResults: [],
     sessionStartTime: Date.now(),
+    pathfinderComponents: 0,
+    pathfinderUnlocked: false,
+    lastRefreshDate: new Date().toISOString().split('T')[0],
   };
 }
 

@@ -87,14 +87,15 @@ export default function DailyPlanScreen() {
     dispatch({ type: 'ADVANCE_STREAK' });
   }, []);
 
-  // Compute daily scans when streak/gear changes
+  // Recompute daily scan count when gear selection changes (only before first scan)
   useEffect(() => {
     if (ss.gearInventory.length === 0) return;
+    if (ss.gearLockedToday) return;
     const total = computeDailyScans(ss.streakDay, ss.activeGearSlots, ss.gearInventory);
     if (total !== ss.scansTotal) {
-      dispatch({ type: 'REFRESH_DAILY_SCANS', payload: total });
+      dispatch({ type: 'UPDATE_SCAN_TOTAL', payload: total });
     }
-  }, [ss.streakDay, ss.activeGearSlots, ss.gearInventory]);
+  }, [ss.activeGearSlots]);
 
   const rareBoost = getStreakRareBoost(ss.streakDay);
   const streakBonus = gameBalance.streak_ladder.bonus_by_day[Math.min(ss.streakDay, 7)] || 0;
@@ -246,7 +247,44 @@ export default function DailyPlanScreen() {
           <Text style={styles.sectorProgress}>
             {tilesCleared}/{totalTiles} tiles cleared
           </Text>
+          {ss.currentSector.completed && (
+            <Text style={styles.sectorReward}>
+              Sector Clear Bonus: +{10 + ((ss.sectorsCompleted) * 5)} Scrap
+            </Text>
+          )}
         </View>
+
+        {/* ─── 4b. PATHFINDER PROGRESS ─── */}
+        {!ss.pathfinderUnlocked && ss.pathfinderComponents > 0 && (
+          <View style={styles.pathfinderCard}>
+            <Text style={styles.pathfinderTitle}>PATHFINDER MODULE</Text>
+            <Text style={styles.pathfinderDesc}>
+              Collect {gameBalance.pathfinder_module.components_required} components from Gambit scans
+            </Text>
+            <View style={styles.pathfinderDots}>
+              {Array.from({ length: gameBalance.pathfinder_module.components_required }, (_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.pathfinderDot,
+                    i < ss.pathfinderComponents && styles.pathfinderDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+            <Text style={styles.pathfinderCount}>
+              {ss.pathfinderComponents}/{gameBalance.pathfinder_module.components_required}
+            </Text>
+          </View>
+        )}
+        {ss.pathfinderUnlocked && (
+          <View style={[styles.pathfinderCard, styles.pathfinderCardUnlocked]}>
+            <Text style={styles.pathfinderUnlockedText}>PATHFINDER MODULE ACTIVE</Text>
+            <Text style={styles.pathfinderDesc}>
+              +{Math.round(gameBalance.pathfinder_module.quality_boost_all * 100)}% all loot quality · 4th gear slot unlocked
+            </Text>
+          </View>
+        )}
 
         {/* ─── 5. PRIMARY CTA ─── */}
         <View style={styles.ctaContainer}>
@@ -530,6 +568,70 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: spacing.xs,
+  },
+  sectorReward: {
+    fontSize: fontSize.sm,
+    color: colors.neonGreen,
+    fontWeight: '600',
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+
+  // ─── 4b. Pathfinder ───
+  pathfinderCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    marginHorizontal: spacing.md,
+    alignItems: 'center',
+  },
+  pathfinderCardUnlocked: {
+    borderColor: colors.neonCyan + '60',
+    backgroundColor: colors.surfaceHighlight,
+  },
+  pathfinderTitle: {
+    fontSize: fontSize.xs,
+    color: colors.neonCyan,
+    letterSpacing: 2,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+  },
+  pathfinderDesc: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  pathfinderDots: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  pathfinderDot: {
+    width: 20,
+    height: 20,
+    borderRadius: borderRadius.full,
+    borderWidth: 2,
+    borderColor: colors.surfaceLight,
+    backgroundColor: 'transparent',
+  },
+  pathfinderDotActive: {
+    borderColor: colors.neonCyan,
+    backgroundColor: colors.neonCyan + '30',
+  },
+  pathfinderCount: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  pathfinderUnlockedText: {
+    fontSize: fontSize.sm,
+    color: colors.neonCyan,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
   },
 
   // ─── 5. CTA ───

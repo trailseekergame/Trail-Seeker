@@ -20,6 +20,9 @@ import { saveGameState, loadGameState } from '../services/storage';
 import { ALL_GEAR_ITEMS } from '../data/gearItems';
 import { generateTestSector } from '../data/testSector';
 import { computeDailyScans } from '../systems/scanEngine';
+import gameBalanceConfig from '../config/gameBalance.json';
+
+const config = gameBalanceConfig;
 
 // ─── Actions ───
 type GameAction =
@@ -58,6 +61,9 @@ type GameAction =
   | { type: 'REFRESH_DAILY_SCANS'; payload: number }
   | { type: 'CLEAR_TILE'; payload: string }
   | { type: 'COMPLETE_SECTOR' }
+  | { type: 'ADD_PATHFINDER_COMPONENT' }
+  | { type: 'UNLOCK_PATHFINDER' }
+  | { type: 'UPDATE_SCAN_TOTAL'; payload: number }
   | { type: 'RESET_SESSION' };
 
 // ─── Reducer ───
@@ -240,6 +246,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!result.droneProc) {
         usedToday[result.scanType] = (usedToday[result.scanType] || 0) + 1;
       }
+      // Track Pathfinder components from Gambit component drops
+      let newComponents = ss.pathfinderComponents;
+      let newPathfinderUnlocked = ss.pathfinderUnlocked;
+      if (result.outcome === 'component' && !ss.pathfinderUnlocked) {
+        newComponents = Math.min(newComponents + 1, config.pathfinder_module.components_required);
+        if (newComponents >= config.pathfinder_module.components_required) {
+          newPathfinderUnlocked = true;
+        }
+      }
       return {
         ...state,
         seekerScans: {
@@ -248,6 +263,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           scansUsedToday: usedToday,
           sessionResults: [...ss.sessionResults, result],
           gearLockedToday: true,
+          pathfinderComponents: newComponents,
+          pathfinderUnlocked: newPathfinderUnlocked,
         },
       };
     }
@@ -296,6 +313,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'REFRESH_DAILY_SCANS': {
+      const today = new Date().toISOString().split('T')[0];
+      // Guard: only do a full refresh if it's a new day (prevents mid-session resets)
+      if (state.seekerScans.lastRefreshDate === today) {
+        return state;
+      }
       return {
         ...state,
         seekerScans: {
@@ -306,6 +328,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           gearLockedToday: false,
           sessionResults: [],
           sessionStartTime: Date.now(),
+          lastRefreshDate: today,
+        },
+      };
+    }
+
+    case 'UPDATE_SCAN_TOTAL': {
+      // Light update: only adjusts total + remaining (for pre-lock gear changes)
+      if (state.seekerScans.gearLockedToday) return state;
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          scansRemaining: action.payload,
+          scansTotal: action.payload,
         },
       };
     }
@@ -330,12 +366,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'COMPLETE_SECTOR': {
+      // Sector completion rewards: bonus scrap + rare loot chance
+      const sectorCount = state.seekerScans.sectorsCompleted + 1;
+      const bonusScrap = 10 + (sectorCount * 5); // escalating: 15, 20, 25...
+      return {
+        ...state,
+        resources: {
+          ...state.resources,
+          scrap: state.resources.scrap + bonusScrap,
+        },
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: { ...state.seekerScans.currentSector, completed: true },
+          sectorsCompleted: sectorCount,
+        },
+      };
+    }
+
+    case 'ADD_PATHFINDER_COMPONENT': {
+      const comps = Math.min(
+        state.seekerScans.pathfinderComponents + 1,
+        config.pathfinder_module.components_required
+      );
       return {
         ...state,
         seekerScans: {
           ...state.seekerScans,
-          currentSector: { ...state.seekerScans.currentSector, completed: true },
-          sectorsCompleted: state.seekerScans.sectorsCompleted + 1,
+          pathfinderComponents: comps,
+          pathfinderUnlocked: comps >= config.pathfinder_module.components_required,
+        },
+      };
+    }
+
+    case 'UNLOCK_PATHFINDER': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          pathfinderUnlocked: true,
         },
       };
     }
@@ -390,15 +458,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      // Advance streak and refresh scans
+      // Advance streak and conditionally refresh scans (only on new day)
       dispatch({ type: 'ADVANCE_STREAK' });
       const scansState = loaded.seekerScans || INITIAL_GAME_STATE.seekerScans;
-      const totalScans = computeDailyScans(
-        scansState.streakDay,
-        scansState.activeGearSlots,
-        scansState.gearInventory.length > 0 ? scansState.gearInventory : ALL_GEAR_ITEMS
-      );
-      dispatch({ type: 'REFRESH_DAILY_SCANS', payload: totalScans });
+      const today = new Date().toISOString().split('T')[0];
+      if (scansState.lastRefreshDate !== today) {
+        const totalScans = computeDailyScans(
+          scansState.streakDay,
+          scansState.activeGearSlots,
+          scansState.gearInventory.length > 0 ? scansState.gearInventory : ALL_GEAR_ITEMS
+        );
+        dispatch({ type: 'REFRESH_DAILY_SCANS', payload: totalScans });
+      }
 
       setIsLoading(false);
     })();

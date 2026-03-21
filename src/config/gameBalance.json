@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "updated": "2026-03-20",
+  "version": "1.2.0",
+  "updated": "2026-03-21",
 
   "balance_rails": {
     "max_daily_scans": 10,
@@ -44,9 +44,9 @@
 
   "gear_stats": {
     "optics_rig": {
-      "standard":  { "rare_boost": 0.02 },
-      "enhanced":  { "rare_boost": 0.04 },
-      "perfected": { "rare_boost": 0.07 }
+      "standard":  { "rare_boost": 0.04 },
+      "enhanced":  { "rare_boost": 0.06 },
+      "perfected": { "rare_boost": 0.09 }
     },
     "exo_vest": {
       "standard":  { "bonus_scans": 1 },
@@ -54,9 +54,9 @@
       "perfected": { "bonus_scans": 2, "loot_quality_boost": 0.05 }
     },
     "grip_gauntlets": {
-      "standard":  { "whiff_reduction": 0.02 },
-      "enhanced":  { "whiff_reduction": 0.04 },
-      "perfected": { "whiff_reduction": 0.07 }
+      "standard":  { "whiff_reduction": 0.04 },
+      "enhanced":  { "whiff_reduction": 0.06 },
+      "perfected": { "whiff_reduction": 0.09 }
     },
     "nav_boots": {
       "standard":  { "sector_bonus": 0.5 },

@@ -279,6 +279,9 @@ export const INITIAL_GAME_STATE: GameState = {
     sectorsCompleted: 0,
     sessionResults: [],
     sessionStartTime: Date.now(),
+    pathfinderComponents: 0,
+    pathfinderUnlocked: false,
+    lastRefreshDate: new Date().toISOString().split('T')[0],
   },
 };
 
@@ -340,6 +343,9 @@ export interface SeekerScanState {
   sectorsCompleted: number;
   sessionResults: ScanResult[];
   sessionStartTime: number;
+  pathfinderComponents: number; // 0-4, unlocks Pathfinder Module at 4
+  pathfinderUnlocked: boolean;
+  lastRefreshDate: string; // tracks when scans were last refreshed to prevent mid-session resets
 }
 
 export const MAX_FREE_MOVES = 3;
