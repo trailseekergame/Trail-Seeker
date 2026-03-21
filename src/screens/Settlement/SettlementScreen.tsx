@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import Card from '../../components/common/Card';
 import NeonButton from '../../components/common/NeonButton';
 import HealthBar from '../../components/common/HealthBar';
 import { useGame } from '../../context/GameContext';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import {
+  loadNotificationPrefs,
+  saveNotificationPrefs,
+  NotificationPrefs,
+  getScheduledCount,
+} from '../../services/notifications';
 
 interface TradeOption {
   id: string;
@@ -39,6 +45,20 @@ const REPAIR_COST = 5; // scrap per 15 repair points
 
 export default function SettlementScreen({ navigation }: any) {
   const { state, dispatch } = useGame();
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs | null>(null);
+  const [scheduledCount, setScheduledCount] = useState(0);
+
+  useEffect(() => {
+    loadNotificationPrefs().then(setNotifPrefs);
+    getScheduledCount().then(setScheduledCount);
+  }, []);
+
+  const updateNotifPref = async (key: keyof NotificationPrefs, value: boolean) => {
+    if (!notifPrefs) return;
+    const updated = { ...notifPrefs, [key]: value };
+    setNotifPrefs(updated);
+    await saveNotificationPrefs(updated);
+  };
 
   const handleTrade = (trade: TradeOption) => {
     const currentGive =
@@ -158,6 +178,39 @@ export default function SettlementScreen({ navigation }: any) {
           />
         </Card>
 
+        {/* Notifications */}
+        <Card title="Notifications" icon="🔔">
+          <Text style={styles.tradeDesc}>
+            Daily reminders to claim your Seeker Scans and protect your streak.
+          </Text>
+          {notifPrefs && (
+            <>
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Daily Reminders</Text>
+                <Switch
+                  value={notifPrefs.enabled}
+                  onValueChange={(v) => updateNotifPref('enabled', v)}
+                  trackColor={{ false: colors.surfaceLight, true: colors.neonGreen + '60' }}
+                  thumbColor={notifPrefs.enabled ? colors.neonGreen : colors.textMuted}
+                />
+              </View>
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Streak Warnings</Text>
+                <Switch
+                  value={notifPrefs.streakWarningsEnabled}
+                  onValueChange={(v) => updateNotifPref('streakWarningsEnabled', v)}
+                  trackColor={{ false: colors.surfaceLight, true: colors.neonAmber + '60' }}
+                  thumbColor={notifPrefs.streakWarningsEnabled ? colors.neonAmber : colors.textMuted}
+                />
+              </View>
+              <Text style={styles.settingHint}>
+                Quiet hours: {notifPrefs.quietHourStart}:00 – {notifPrefs.quietHourEnd}:00
+                {' '}· {scheduledCount} pending
+              </Text>
+            </>
+          )}
+        </Card>
+
         {/* Wardrobe */}
         <Card
           title="Wardrobe"
@@ -261,5 +314,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.neonPurple,
     textTransform: 'capitalize',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceLight,
+  },
+  settingLabel: {
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  settingHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
 });
