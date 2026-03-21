@@ -1,6 +1,18 @@
-import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Lazy-load native modules to avoid crash in Expo Go
+let Audio: any = null;
+let Haptics: any = null;
+try {
+  Audio = require('expo-av').Audio;
+} catch (e) {
+  console.warn('[AudioManager] expo-av not available');
+}
+try {
+  Haptics = require('expo-haptics');
+} catch (e) {
+  console.warn('[AudioManager] expo-haptics not available');
+}
 
 // ─── Asset registries ───
 
@@ -51,14 +63,16 @@ const DEFAULT_SETTINGS: AudioSettings = {
 
 class AudioManagerClass {
   private settings: AudioSettings = { ...DEFAULT_SETTINGS };
-  private sfxCache: Map<string, Audio.Sound> = new Map();
-  private currentMusic: Audio.Sound | null = null;
+  private sfxCache: Map<string, any> = new Map();
+  private currentMusic: any = null;
   private currentMusicName: string | null = null;
   private initialized = false;
 
   async init(): Promise<void> {
     if (this.initialized) return;
     this.initialized = true;
+
+    if (!Audio) return;
 
     try {
       await Audio.setAudioModeAsync({
@@ -83,6 +97,7 @@ class AudioManagerClass {
   // ─── SFX ───
 
   async playSfx(name: string): Promise<void> {
+    if (!Audio) return;
     if (!this.settings.sfxEnabled) return;
     if (!SFX_ASSETS[name]) return;
 
@@ -114,6 +129,7 @@ class AudioManagerClass {
   // ─── Music ───
 
   async setMusic(name: string): Promise<void> {
+    if (!Audio) return;
     if (!this.settings.musicEnabled) {
       this.currentMusicName = name;
       return;
@@ -150,6 +166,7 @@ class AudioManagerClass {
   }
 
   async stopMusic(): Promise<void> {
+    if (!Audio) return;
     if (this.currentMusic) {
       await this.fadeOutMusic(this.currentMusic);
     }
@@ -157,7 +174,7 @@ class AudioManagerClass {
     this.currentMusicName = null;
   }
 
-  private async fadeOutMusic(sound: Audio.Sound): Promise<void> {
+  private async fadeOutMusic(sound: any): Promise<void> {
     try {
       const steps = 10;
       const stepMs = CROSSFADE_MS / steps;
@@ -178,6 +195,7 @@ class AudioManagerClass {
   // ─── Haptics ───
 
   async vibrate(style: 'light' | 'medium' | 'heavy' = 'medium'): Promise<void> {
+    if (!Haptics) return;
     if (!this.settings.vibrationEnabled) return;
     try {
       const map = {
