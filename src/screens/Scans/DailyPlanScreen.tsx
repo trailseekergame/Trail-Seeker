@@ -73,7 +73,7 @@ export default function DailyPlanScreen() {
   const breakdownParts: string[] = [];
   if (gearBonus > 0) breakdownParts.push(`+${gearBonus} from Exo-Vest`);
   if (streakBonus > 0) breakdownParts.push(`+${streakBonus} from streak`);
-  const breakdownNote = breakdownParts.length > 0 ? breakdownParts.join(' \u00b7 ') : null;
+  const breakdownNote = breakdownParts.length > 0 ? breakdownParts.join(' · ') : null;
 
   return (
     <ScreenWrapper>
@@ -84,8 +84,7 @@ export default function DailyPlanScreen() {
             Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> on the Trail
           </Text>
           <Text style={styles.headerSubtext}>
-            Streak: {ss.streakDay} {ss.streakDay === 1 ? 'day' : 'days'}
-            {rareBoost > 0 ? ` \u2014 Rare +${Math.round(rareBoost * 100)}%` : ''}
+            {rareBoost > 0 ? `Rare loot +${Math.round(rareBoost * 100)}%` : 'Keep your streak going for better odds'}
           </Text>
           {/* Streak progress dots */}
           <View style={styles.streakDots}>
@@ -110,8 +109,8 @@ export default function DailyPlanScreen() {
           <View style={styles.scanCardTop}>
             <Text style={styles.scanNumber}>{ss.scansRemaining}</Text>
             <View style={styles.scanLabelCol}>
-              <Text style={styles.scanLabel}>Seeker Scans</Text>
-              <Text style={styles.scanLabelSub}>Today</Text>
+              <Text style={styles.scanLabel}>Scans Available</Text>
+              <Text style={styles.scanLabelSub}>Use them before reset</Text>
             </View>
           </View>
           {breakdownNote && (

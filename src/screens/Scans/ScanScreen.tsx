@@ -19,10 +19,10 @@ const SCAN_COLORS: Record<ScanType, string> = {
   gambit: colors.neonRed,
 };
 
-const SCAN_LABELS: Record<ScanType, { name: string; flavor: string }> = {
-  scout: { name: 'SCOUT', flavor: 'Safe' },
-  seeker: { name: 'SEEKER', flavor: 'Balanced' },
-  gambit: { name: 'GAMBIT', flavor: 'High risk' },
+const SCAN_LABELS: Record<ScanType, { name: string; flavor: string; desc: string }> = {
+  scout: { name: 'SCOUT', flavor: 'Safe', desc: 'Steady loot, almost no risk' },
+  seeker: { name: 'SEEKER', flavor: 'Balanced', desc: 'Better loot, some risk' },
+  gambit: { name: 'GAMBIT', flavor: 'High risk', desc: 'Best loot or nothing' },
 };
 
 const TILE_ICONS: Record<string, string> = {
@@ -34,7 +34,7 @@ const TILE_ICONS: Record<string, string> = {
 };
 
 const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: string }> = {
-  whiff: { banner: 'Signal Lost', color: colors.neonRed, icon: '📡' },
+  whiff: { banner: 'Nothing Found', color: colors.neonRed, icon: '📡' },
   common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '📦' },
   uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '✨' },
   rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '💠' },
@@ -439,7 +439,7 @@ export default function ScanScreen() {
                   {SCAN_LABELS[type].name}
                 </Text>
                 <Text style={styles.scanButtonOdds}>
-                  {SCAN_LABELS[type].flavor} — {whiffPct}% whiff
+                  {whiffPct}% miss
                 </Text>
               </TouchableOpacity>
             );
@@ -462,16 +462,19 @@ export default function ScanScreen() {
         <View style={styles.overlay}>
           <View style={styles.confirmCard}>
             <Text style={styles.confirmTitle}>
-              Use 1 {SCAN_LABELS[selectedScan].name} Scan?
+              {SCAN_LABELS[selectedScan].name} Scan
+            </Text>
+            <Text style={styles.confirmDesc}>
+              {SCAN_LABELS[selectedScan].desc}
             </Text>
             <Text style={styles.confirmTile}>
-              Target: {selectedTile?.type === 'boss' ? '💀 Boss Tile' :
-                       selectedTile?.type === 'anomaly' ? '⚠ Anomaly' :
-                       selectedTile?.type === 'resource' ? '⛏ Resource' :
-                       '? Unknown Tile'}
+              {selectedTile?.type === 'boss' ? '💀 Boss Tile' :
+               selectedTile?.type === 'anomaly' ? '⚠ Anomaly' :
+               selectedTile?.type === 'resource' ? '⛏ Resource' :
+               '? Unknown'}
             </Text>
             <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
-              {SCAN_LABELS[selectedScan].flavor} — {Math.round(whiffRates[selectedScan] * 100)}% whiff chance
+              {Math.round(whiffRates[selectedScan] * 100)}% miss chance
             </Text>
             <View style={styles.confirmButtons}>
               <NeonButton
@@ -507,7 +510,7 @@ export default function ScanScreen() {
           >
             <View style={[styles.resolvingIcon, { borderColor: SCAN_COLORS[selectedScan] }]}>
               <Text style={[styles.resolvingIconText, { color: SCAN_COLORS[selectedScan] }]}>
-                {'\u26A1'}
+                ⚡
               </Text>
             </View>
             <Text style={[styles.resolvingText, { color: SCAN_COLORS[selectedScan] }]}>
@@ -515,7 +518,7 @@ export default function ScanScreen() {
             </Text>
             <View style={styles.resolvingDots}>
               <Text style={[styles.resolvingDotsText, { color: SCAN_COLORS[selectedScan] + '80' }]}>
-                {'\u25CF  \u25CF  \u25CF'}
+                ●  ●  ●
               </Text>
             </View>
           </Animated.View>
@@ -558,7 +561,7 @@ export default function ScanScreen() {
                   {/* Upgraded badge (Gambit skill check success) */}
                   {displayOutcome && displayOutcome !== lastResult.outcome && (
                     <View style={styles.upgradedBadge}>
-                      <Text style={styles.upgradedBadgeText}>{'\u2B06'} UPGRADED</Text>
+                      <Text style={styles.upgradedBadgeText}>⬆ UPGRADED</Text>
                     </View>
                   )}
 
@@ -566,6 +569,13 @@ export default function ScanScreen() {
                   {lastResult.lootName && (
                     <Text style={[styles.resultLoot, { color: display.color }]}>
                       {effectiveOutcome.charAt(0).toUpperCase() + effectiveOutcome.slice(1)}: {lastResult.lootName}
+                    </Text>
+                  )}
+
+                  {/* Whiff guidance */}
+                  {effectiveOutcome === 'whiff' && (
+                    <Text style={styles.whiffHint}>
+                      The signal faded. Try a safer scan type or a different tile.
                     </Text>
                   )}
 
@@ -606,13 +616,13 @@ export default function ScanScreen() {
                   <View style={styles.resultActions}>
                     {sessionDone ? (
                       <NeonButton
-                        title="SESSION COMPLETE"
+                        title="Finish Today's Run"
                         onPress={handleSessionComplete}
                         size="lg"
                       />
                     ) : (
                       <NeonButton
-                        title={`NEXT SCAN (${remainingAfterLast} left)`}
+                        title={`Next Scan • ${remainingAfterLast} left`}
                         onPress={handleNextScan}
                         variant="secondary"
                         size="lg"
@@ -808,6 +818,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: spacing.sm,
   },
+  confirmDesc: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   confirmTile: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
@@ -877,6 +893,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     fontWeight: '600',
+  },
+  whiffHint: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: spacing.md,
+    lineHeight: 20,
   },
   procsContainer: {
     alignItems: 'center',
