@@ -118,3 +118,43 @@ export function getSessionSummary(
 
   return parts.join(' ');
 }
+
+/**
+ * Generates a short "unfinished business" line that gives a reason to return.
+ * Based on current state after the session ends.
+ */
+export function getReturnHook(ss: SeekerScanState): string {
+  const tilesCleared = ss.currentSector.tiles.filter(t => t.cleared).length;
+  const totalTiles = ss.currentSector.tiles.length || 25;
+  const pct = tilesCleared / totalTiles;
+  const hasComponents = ss.pathfinderComponents > 0 && !ss.pathfinderUnlocked;
+  const componentsNeeded = 4 - ss.pathfinderComponents;
+
+  // Near sector complete
+  if (pct >= 0.7 && !ss.currentSector.completed) {
+    return `${totalTiles - tilesCleared} tiles left in ${ss.currentSector.name}. Almost stripped clean.`;
+  }
+
+  // Pathfinder progress
+  if (hasComponents && componentsNeeded <= 2) {
+    return `${componentsNeeded} relic fragment${componentsNeeded > 1 ? 's' : ''} from unlocking the Pathfinder. Run Gambits tomorrow.`;
+  }
+
+  // Streak building
+  if (ss.streakDay < 3) {
+    return 'Come back tomorrow. The streak is just starting to sharpen.';
+  }
+
+  // High streak
+  if (ss.streakDay >= 5) {
+    return `Day ${ss.streakDay} streak. Miss tomorrow and the rig cools off.`;
+  }
+
+  // Mid-sector
+  if (pct >= 0.3 && pct < 0.7) {
+    return `${ss.currentSector.name} is ${Math.round(pct * 100)}% mapped. Deeper signals are waiting.`;
+  }
+
+  // Default
+  return 'Signal resets at dawn. The sector isn\'t going anywhere.';
+}

@@ -11,7 +11,7 @@ import SkillCheck from '../../components/trail/SkillCheck';
 import { ScanType, ScanResult, ScanOutcome, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
 import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
-import { getDailyObjective, getSessionSummary } from '../../systems/dailyObjective';
+import { getDailyObjective, getSessionSummary, getReturnHook } from '../../systems/dailyObjective';
 import CoachMark, { COACH, hasBeenShown } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
 
@@ -790,6 +790,9 @@ export default function ScanScreen() {
                 <Text style={styles.sessionEndStatLabel}>rare+</Text>
               </View>
             </View>
+            <Text style={styles.sessionEndHook}>
+              {getReturnHook(ss)}
+            </Text>
             <NeonButton
               title="Return to waystation"
               onPress={handleDismissSessionEnd}
@@ -1220,5 +1223,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  sessionEndHook: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 20,
   },
 });
