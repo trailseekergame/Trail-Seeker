@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,19 +10,32 @@ import {
   Easing,
 } from 'react-native';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
-import { GameEvent, EventChoice, EventOutcome, OutcomeQuality } from '../../types';
+import { GameEvent, EventChoice, EventOutcome, OutcomeQuality, ChoiceRisk } from '../../types';
 import NeonButton from '../common/NeonButton';
+import TypewriterText from '../common/TypewriterText';
+import SkillCheck from './SkillCheck';
 
-// ─── Roll Animation Phrases ───
-const ROLL_PHRASES = [
-  'Reading the Trail...',
-  'Dust settles...',
-  'Scanning ahead...',
-  'The rover hums...',
-  'Fate turns...',
-  'Checking the wind...',
-  'Signal flickers...',
+// ─── Roll Animation Phrases (cycled sequentially during roll) ───
+const ROLL_PHRASE_SETS: string[][] = [
+  ['Reading the Trail...', 'Signal detected...', 'Dust settles...'],
+  ['Scanning ahead...', 'The rover hums...', 'Fate turns...'],
+  ['Checking the wind...', 'Signal flickers...', 'Resolving...'],
 ];
+
+// ─── Roll durations by risk level ───
+const ROLL_DURATION: Record<ChoiceRisk, number> = {
+  safe: 1200,
+  moderate: 1800,
+  risky: 2500,
+  reckless: 3000,
+};
+
+const RISK_BAR_COLOR: Record<ChoiceRisk, string> = {
+  safe: '#4A9EFF',
+  moderate: colors.neonCyan,
+  risky: colors.neonAmber,
+  reckless: colors.neonRed,
+};
 
 interface Props {
   event: GameEvent | null;
@@ -32,43 +45,65 @@ interface Props {
   onDismiss: () => void;
 }
 
-type Phase = 'narrative' | 'rolling' | 'outcome';
+type Phase = 'narrative' | 'rolling' | 'skill_check' | 'outcome';
 
 export default function EventModal({ event, visible, onChoose, availableChoices, onDismiss }: Props) {
   const [phase, setPhase] = useState<Phase>('narrative');
   const [chosenText, setChosenText] = useState('');
+  const [chosenRisk, setChosenRisk] = useState<ChoiceRisk>('moderate');
   const [outcomeQuality, setOutcomeQuality] = useState<OutcomeQuality>('NEUTRAL');
   const [resolvedOutcome, setResolvedOutcome] = useState<EventOutcome | null>(null);
+  const [narrationComplete, setNarrationComplete] = useState(false);
 
   // Rolling animation
   const rollOpacity = useRef(new Animated.Value(0)).current;
   const rollScale = useRef(new Animated.Value(0.8)).current;
+  const rollBarProgress = useRef(new Animated.Value(0)).current;
   const resultOpacity = useRef(new Animated.Value(0)).current;
   const resultSlide = useRef(new Animated.Value(30)).current;
-  const [rollPhrase, setRollPhrase] = useState('');
+  const [rollPhraseIndex, setRollPhraseIndex] = useState(0);
+  const [rollPhrases, setRollPhrases] = useState<string[]>([]);
+  const phraseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset when modal opens with a new event
   useEffect(() => {
     if (visible && event) {
       setPhase('narrative');
       setChosenText('');
+      setChosenRisk('moderate');
       setOutcomeQuality('NEUTRAL');
       setResolvedOutcome(null);
+      setNarrationComplete(false);
+      setRollPhraseIndex(0);
     }
   }, [visible, event?.id]);
+
+  // Cleanup phrase timer
+  useEffect(() => {
+    return () => {
+      if (phraseTimerRef.current) clearTimeout(phraseTimerRef.current);
+    };
+  }, []);
 
   if (!event) return null;
 
   const handleChoice = (choice: EventChoice) => {
     setChosenText(choice.text);
+    const risk = choice.riskLevel || 'moderate';
+    setChosenRisk(risk);
+
+    // Pick a random phrase set and start cycling
+    const phrases = ROLL_PHRASE_SETS[Math.floor(Math.random() * ROLL_PHRASE_SETS.length)];
+    setRollPhrases(phrases);
+    setRollPhraseIndex(0);
 
     // Start rolling phase
     setPhase('rolling');
-    setRollPhrase(ROLL_PHRASES[Math.floor(Math.random() * ROLL_PHRASES.length)]);
 
     // Animate roll overlay in
     rollOpacity.setValue(0);
     rollScale.setValue(0.8);
+    rollBarProgress.setValue(0);
     resultOpacity.setValue(0);
     resultSlide.setValue(30);
 
@@ -77,24 +112,62 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
       Animated.spring(rollScale, { toValue: 1, friction: 6, useNativeDriver: true }),
     ]).start();
 
-    // After brief pause, perform the hidden roll and show outcome
+    const duration = ROLL_DURATION[risk];
+
+    // Animate progress bar (non-native for width interpolation)
+    Animated.timing(rollBarProgress, {
+      toValue: 1,
+      duration,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+
+    // Cycle through phrases
+    const phraseInterval = Math.floor(duration / phrases.length);
+    for (let i = 1; i < phrases.length; i++) {
+      const timer = setTimeout(() => setRollPhraseIndex(i), phraseInterval * i);
+      // Store only last for cleanup (simple approach)
+      if (i === phrases.length - 1) phraseTimerRef.current = timer;
+    }
+
+    // After roll duration, resolve and decide next phase
     setTimeout(() => {
       const { quality, outcome } = onChoose(event.id, choice);
       setOutcomeQuality(quality);
       setResolvedOutcome(outcome);
-      setPhase('outcome');
 
-      // Animate outcome appearance
-      Animated.parallel([
-        Animated.timing(resultOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(resultSlide, {
-          toValue: 0,
-          duration: 300,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, 900);
+      // Skill check only for risky/reckless
+      if (risk === 'risky' || risk === 'reckless') {
+        setPhase('skill_check');
+      } else {
+        transitionToOutcome();
+      }
+    }, duration);
+  };
+
+  const transitionToOutcome = useCallback(() => {
+    setPhase('outcome');
+    Animated.parallel([
+      Animated.timing(resultOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(resultSlide, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [resultOpacity, resultSlide]);
+
+  const handleSkillCheckResult = (success: boolean) => {
+    if (success) {
+      // Upgrade quality: BAD→NEUTRAL, NEUTRAL→GOOD, GOOD stays GOOD
+      setOutcomeQuality(prev => {
+        if (prev === 'BAD') return 'NEUTRAL';
+        if (prev === 'NEUTRAL') return 'GOOD';
+        return prev;
+      });
+    }
+    transitionToOutcome();
   };
 
   const handleDismiss = () => {
@@ -106,13 +179,13 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
-      case 'encounter': return '⚔️';
-      case 'discovery': return '🔍';
-      case 'trade': return '🤝';
-      case 'hazard': return '⚠️';
-      case 'lore': return '📖';
-      case 'faction': return '🏴';
-      default: return '❓';
+      case 'encounter': return '\u2694\uFE0F';
+      case 'discovery': return '\uD83D\uDD0D';
+      case 'trade': return '\uD83E\uDD1D';
+      case 'hazard': return '\u26A0\uFE0F';
+      case 'lore': return '\uD83D\uDCD6';
+      case 'faction': return '\uD83C\uDFF4';
+      default: return '\u2753';
     }
   };
 
@@ -138,9 +211,9 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const getQualityIcon = (quality: OutcomeQuality) => {
     switch (quality) {
-      case 'GOOD': return '✦';
-      case 'NEUTRAL': return '—';
-      case 'BAD': return '⚠';
+      case 'GOOD': return '\u2726';
+      case 'NEUTRAL': return '\u2014';
+      case 'BAD': return '\u26A0';
     }
   };
 
@@ -148,18 +221,18 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
     const changes: string[] = [];
     if (outcome.resourceChanges?.scrap) {
       const v = outcome.resourceChanges.scrap;
-      changes.push(v > 0 ? `+${v} 🔩 Scrap` : `${v} 🔩 Scrap`);
+      changes.push(v > 0 ? `+${v} \uD83D\uDD29 Scrap` : `${v} \uD83D\uDD29 Scrap`);
     }
     if (outcome.resourceChanges?.supplies) {
       const v = outcome.resourceChanges.supplies;
-      changes.push(v > 0 ? `+${v} 📦 Supplies` : `${v} 📦 Supplies`);
+      changes.push(v > 0 ? `+${v} \uD83D\uDCE6 Supplies` : `${v} \uD83D\uDCE6 Supplies`);
     }
-    if (outcome.damage) changes.push(`-${outcome.damage} ❤️ Health`);
-    if (outcome.heal) changes.push(`+${outcome.heal} ❤️ Health`);
+    if (outcome.damage) changes.push(`-${outcome.damage} \u2764\uFE0F Health`);
+    if (outcome.heal) changes.push(`+${outcome.heal} \u2764\uFE0F Health`);
     if (outcome.addItem) changes.push(`+ ${outcome.addItem}`);
-    if (outcome.unlockCodex?.length) changes.push('📖 New codex entry');
-    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push('➡️ Pushed forward');
-    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push('⬅️ Pushed back');
+    if (outcome.unlockCodex?.length) changes.push('\uD83D\uDCD6 New codex entry');
+    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push('\u27A1\uFE0F Pushed forward');
+    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push('\u2B05\uFE0F Pushed back');
     return changes;
   };
 
@@ -174,6 +247,8 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
     if (choice.requiresEquipped) return 'Requires gear';
     return null;
   };
+
+  const barColor = RISK_BAR_COLOR[chosenRisk];
 
   return (
     <Modal
@@ -196,60 +271,97 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
           </View>
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            {/* ─── NARRATIVE PHASE: show narration + choices ─── */}
+            {/* ─── NARRATIVE PHASE: typewriter narration + choices ─── */}
             {phase === 'narrative' && (
               <>
-                <Text style={styles.narration}>{event.narration}</Text>
+                <TypewriterText
+                  text={event.narration}
+                  speed={30}
+                  onComplete={() => setNarrationComplete(true)}
+                  style={styles.narration}
+                />
 
-                <View style={styles.choices}>
-                  {event.choices.map((choice) => {
-                    const locked = isChoiceLocked(choice);
-                    const lockedReason = locked ? getLockedReason(choice) : null;
-                    return (
-                      <TouchableOpacity
-                        key={choice.id}
-                        style={[styles.choiceButton, locked && styles.choiceButtonLocked]}
-                        onPress={() => !locked && handleChoice(choice)}
-                        activeOpacity={locked ? 1 : 0.7}
-                        disabled={locked}
-                      >
-                        <View style={styles.choiceContent}>
-                          <View style={styles.choiceTopRow}>
-                            <Text style={[styles.choiceText, locked && styles.choiceTextLocked]}>
-                              {choice.text}
-                            </Text>
-                            {!locked && choice.riskLevel && choice.riskLevel !== 'moderate' && (
-                              <View style={[styles.riskBadge, {
-                                backgroundColor: choice.riskLevel === 'safe' ? '#4A9EFF20' : choice.riskLevel === 'risky' ? '#FFB80020' : '#FF3B5C20',
-                                borderColor: choice.riskLevel === 'safe' ? '#4A9EFF' : choice.riskLevel === 'risky' ? '#FFB800' : '#FF3B5C',
-                              }]}>
-                                <Text style={[styles.riskBadgeText, {
-                                  color: choice.riskLevel === 'safe' ? '#4A9EFF' : choice.riskLevel === 'risky' ? '#FFB800' : '#FF3B5C',
+                {narrationComplete && (
+                  <View style={styles.choices}>
+                    {event.choices.map((choice) => {
+                      const locked = isChoiceLocked(choice);
+                      const lockedReason = locked ? getLockedReason(choice) : null;
+                      return (
+                        <TouchableOpacity
+                          key={choice.id}
+                          style={[styles.choiceButton, locked && styles.choiceButtonLocked]}
+                          onPress={() => !locked && handleChoice(choice)}
+                          activeOpacity={locked ? 1 : 0.7}
+                          disabled={locked}
+                        >
+                          <View style={styles.choiceContent}>
+                            <View style={styles.choiceTopRow}>
+                              <Text style={[styles.choiceText, locked && styles.choiceTextLocked]}>
+                                {choice.text}
+                              </Text>
+                              {!locked && choice.riskLevel && choice.riskLevel !== 'moderate' && (
+                                <View style={[styles.riskBadge, {
+                                  backgroundColor: choice.riskLevel === 'safe' ? '#4A9EFF20' : choice.riskLevel === 'risky' ? '#FFB80020' : '#FF3B5C20',
+                                  borderColor: choice.riskLevel === 'safe' ? '#4A9EFF' : choice.riskLevel === 'risky' ? '#FFB800' : '#FF3B5C',
                                 }]}>
-                                  {choice.riskLevel === 'safe' ? 'SAFE' : choice.riskLevel === 'risky' ? 'RISKY' : 'RECKLESS'}
-                                </Text>
-                              </View>
+                                  <Text style={[styles.riskBadgeText, {
+                                    color: choice.riskLevel === 'safe' ? '#4A9EFF' : choice.riskLevel === 'risky' ? '#FFB800' : '#FF3B5C',
+                                  }]}>
+                                    {choice.riskLevel === 'safe' ? 'SAFE' : choice.riskLevel === 'risky' ? 'RISKY' : 'RECKLESS'}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            {locked && lockedReason && (
+                              <Text style={styles.lockedReason}>{'\uD83D\uDD12'} {lockedReason}</Text>
                             )}
                           </View>
-                          {locked && lockedReason && (
-                            <Text style={styles.lockedReason}>🔒 {lockedReason}</Text>
-                          )}
-                        </View>
-                        {!locked && <Text style={styles.choiceArrow}>›</Text>}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                          {!locked && <Text style={styles.choiceArrow}>{'\u203A'}</Text>}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
               </>
             )}
 
-            {/* ─── ROLLING PHASE: animated dice roll ─── */}
+            {/* ─── ROLLING PHASE: animated tension build ─── */}
             {phase === 'rolling' && (
               <Animated.View style={[styles.rollContainer, { opacity: rollOpacity, transform: [{ scale: rollScale }] }]}>
-                <Text style={styles.rollDice}>🎲</Text>
-                <Text style={styles.rollPhrase}>{rollPhrase}</Text>
+                <Text style={styles.rollDice}>{'\uD83C\uDFB2'}</Text>
+                <Text style={styles.rollPhrase}>
+                  {rollPhrases[rollPhraseIndex] || 'Resolving...'}
+                </Text>
+
+                {/* Progress bar */}
+                <View style={styles.rollBarTrack}>
+                  <Animated.View
+                    style={[
+                      styles.rollBarFill,
+                      {
+                        backgroundColor: barColor,
+                        width: rollBarProgress.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0%', '100%'],
+                        }),
+                      },
+                    ]}
+                  />
+                </View>
+
                 <RollingDots />
               </Animated.View>
+            )}
+
+            {/* ─── SKILL CHECK PHASE (risky/reckless only) ─── */}
+            {phase === 'skill_check' && (
+              <View style={styles.skillCheckContainer}>
+                <Text style={styles.skillCheckTitle}>SKILL CHECK</Text>
+                <SkillCheck
+                  speed={chosenRisk === 'reckless' ? 'fast' : 'moderate'}
+                  onResult={handleSkillCheckResult}
+                />
+              </View>
             )}
 
             {/* ─── OUTCOME PHASE: show result ─── */}
@@ -340,9 +452,9 @@ function RollingDots() {
 
   return (
     <View style={styles.dotsRow}>
-      <Animated.Text style={[styles.dot, { opacity: dot1 }]}>●</Animated.Text>
-      <Animated.Text style={[styles.dot, { opacity: dot2 }]}>●</Animated.Text>
-      <Animated.Text style={[styles.dot, { opacity: dot3 }]}>●</Animated.Text>
+      <Animated.Text style={[styles.dot, { opacity: dot1 }]}>{'\u25CF'}</Animated.Text>
+      <Animated.Text style={[styles.dot, { opacity: dot2 }]}>{'\u25CF'}</Animated.Text>
+      <Animated.Text style={[styles.dot, { opacity: dot3 }]}>{'\u25CF'}</Animated.Text>
     </View>
   );
 }
@@ -466,6 +578,18 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
   },
+  rollBarTrack: {
+    width: 200,
+    height: 6,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+    marginTop: spacing.md,
+  },
+  rollBarFill: {
+    height: '100%',
+    borderRadius: borderRadius.full,
+  },
   dotsRow: {
     flexDirection: 'row',
     gap: 8,
@@ -475,6 +599,18 @@ const styles = StyleSheet.create({
   dot: {
     fontSize: 18,
     color: colors.neonCyan,
+  },
+  // ─── Skill Check ───
+  skillCheckContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  skillCheckTitle: {
+    fontSize: fontSize.xs,
+    color: colors.neonCyan,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: spacing.sm,
   },
   // ─── Outcome ───
   chosenBadge: {

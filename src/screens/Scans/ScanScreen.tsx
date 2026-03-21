@@ -1,12 +1,13 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
 import { resolveScan, getEffectiveWhiffRate } from '../../systems/scanEngine';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
-import { ScanType, ScanResult, SectorTile } from '../../types';
+import SkillCheck from '../../components/trail/SkillCheck';
+import { ScanType, ScanResult, ScanOutcome, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
 import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
 
@@ -41,6 +42,26 @@ const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: str
   component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '\uD83D\uDD2E' },
 };
 
+// ─── Resolving animation durations ───
+const RESOLVE_DURATION: Record<ScanType, number> = {
+  scout: 1500,
+  seeker: 1800,
+  gambit: 2500,
+};
+
+const RESOLVE_PHRASES: Record<ScanType, string[]> = {
+  scout: ['Pinging sector...', 'Signal acquired'],
+  seeker: ['Scanning deeper...', 'Locking frequency...', 'Processing'],
+  gambit: ['Rolling the dice...', 'Surge detected...', 'Signal volatile!'],
+};
+
+// ─── Loot tier upgrade map for Gambit skill check success ───
+const TIER_UPGRADE: Partial<Record<ScanOutcome, ScanOutcome>> = {
+  common: 'uncommon',
+  uncommon: 'rare',
+  rare: 'legendary',
+};
+
 export default function ScanScreen() {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
@@ -49,10 +70,29 @@ export default function ScanScreen() {
   const [selectedScan, setSelectedScan] = useState<ScanType>('seeker');
   const [selectedTile, setSelectedTile] = useState<SectorTile | null>(null);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
+  const [displayOutcome, setDisplayOutcome] = useState<ScanOutcome | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [resolvePhrase, setResolvePhrase] = useState('');
+  const [showSkillCheck, setShowSkillCheck] = useState(false);
   const sessionStartRef = useRef(ss.sessionStartTime);
+
+  // Resolving animation values
+  const resolvePulse = useRef(new Animated.Value(1)).current;
+  const resolveOpacity = useRef(new Animated.Value(0)).current;
+  const gambitShake = useRef(new Animated.Value(0)).current;
+  const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phraseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup timers
+  useEffect(() => {
+    return () => {
+      if (resolveTimerRef.current) clearTimeout(resolveTimerRef.current);
+      if (phraseTimerRef.current) clearInterval(phraseTimerRef.current);
+    };
+  }, []);
 
   const tilesCleared = ss.currentSector.tiles.filter(t => t.cleared).length;
   const totalTiles = ss.currentSector.tiles.length;
@@ -107,7 +147,67 @@ export default function ScanScreen() {
     setShowConfirm(true);
   };
 
-  // ─── Confirm scan → resolve ───
+  // ─── Start resolving animation ───
+  const startResolvingAnimation = (scanType: ScanType) => {
+    setIsResolving(true);
+    resolveOpacity.setValue(0);
+    resolvePulse.setValue(1);
+    gambitShake.setValue(0);
+
+    // Fade in overlay
+    Animated.timing(resolveOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    // Pulsing glow effect
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(resolvePulse, { toValue: 1.15, duration: 500, useNativeDriver: true }),
+        Animated.timing(resolvePulse, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ])
+    ).start();
+
+    // Gambit shake effect
+    if (scanType === 'gambit') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(gambitShake, { toValue: 4, duration: 50, useNativeDriver: true }),
+          Animated.timing(gambitShake, { toValue: -4, duration: 50, useNativeDriver: true }),
+          Animated.timing(gambitShake, { toValue: 3, duration: 50, useNativeDriver: true }),
+          Animated.timing(gambitShake, { toValue: -3, duration: 50, useNativeDriver: true }),
+          Animated.timing(gambitShake, { toValue: 0, duration: 50, useNativeDriver: true }),
+          Animated.delay(200),
+        ])
+      ).start();
+    }
+
+    // Cycle phrases
+    const phrases = RESOLVE_PHRASES[scanType];
+    setResolvePhrase(phrases[0]);
+    let idx = 0;
+    const phraseInterval = Math.floor(RESOLVE_DURATION[scanType] / phrases.length);
+    phraseTimerRef.current = setInterval(() => {
+      idx++;
+      if (idx < phrases.length) {
+        setResolvePhrase(phrases[idx]);
+      }
+    }, phraseInterval);
+  };
+
+  const stopResolvingAnimation = () => {
+    setIsResolving(false);
+    resolvePulse.stopAnimation();
+    gambitShake.stopAnimation();
+    resolveOpacity.setValue(0);
+    if (phraseTimerRef.current) {
+      clearInterval(phraseTimerRef.current);
+      phraseTimerRef.current = null;
+    }
+  };
+
+  // ─── Confirm scan → resolve with animation ───
   const handleConfirmScan = () => {
     if (!selectedTile) return;
     setShowConfirm(false);
@@ -134,7 +234,7 @@ export default function ScanScreen() {
     logGambitResult(result, ss.streakDay, ss.activeGearSlots);
 
     setLastResult(result);
-    setShowResult(true);
+    setDisplayOutcome(result.outcome);
 
     // Check session end
     const remaining = result.droneProc ? ss.scansRemaining : ss.scansRemaining - 1;
@@ -142,13 +242,40 @@ export default function ScanScreen() {
       setSessionDone(true);
     }
 
-    setSelectedTile(null);
+    // Start resolving animation
+    startResolvingAnimation(selectedScan);
+
+    resolveTimerRef.current = setTimeout(() => {
+      stopResolvingAnimation();
+
+      // Gambit non-whiff → skill check before showing result
+      if (selectedScan === 'gambit' && result.outcome !== 'whiff') {
+        setShowSkillCheck(true);
+      } else {
+        setShowResult(true);
+      }
+
+      setSelectedTile(null);
+    }, RESOLVE_DURATION[selectedScan]);
+  };
+
+  // ─── Gambit skill check result handler ───
+  const handleGambitSkillCheck = (success: boolean) => {
+    setShowSkillCheck(false);
+    if (success && lastResult) {
+      const upgraded = TIER_UPGRADE[lastResult.outcome];
+      if (upgraded) {
+        setDisplayOutcome(upgraded);
+      }
+    }
+    setShowResult(true);
   };
 
   // ─── Dismiss result ───
   const handleNextScan = () => {
     setShowResult(false);
     setLastResult(null);
+    setDisplayOutcome(null);
   };
 
   // ─── Session complete ───
@@ -315,12 +442,55 @@ export default function ScanScreen() {
         </View>
       </Modal>
 
+      {/* ─── RESOLVING OVERLAY ─── */}
+      {isResolving && (
+        <Animated.View style={[styles.resolvingOverlay, { opacity: resolveOpacity }]}>
+          <Animated.View
+            style={[
+              styles.resolvingContent,
+              {
+                transform: [
+                  { scale: resolvePulse },
+                  { translateX: selectedScan === 'gambit' ? gambitShake : 0 },
+                ],
+              },
+            ]}
+          >
+            <View style={[styles.resolvingIcon, { borderColor: SCAN_COLORS[selectedScan] }]}>
+              <Text style={[styles.resolvingIconText, { color: SCAN_COLORS[selectedScan] }]}>
+                {'\u26A1'}
+              </Text>
+            </View>
+            <Text style={[styles.resolvingText, { color: SCAN_COLORS[selectedScan] }]}>
+              {resolvePhrase}
+            </Text>
+            <View style={styles.resolvingDots}>
+              <Text style={[styles.resolvingDotsText, { color: SCAN_COLORS[selectedScan] + '80' }]}>
+                {'\u25CF  \u25CF  \u25CF'}
+              </Text>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      )}
+
+      {/* ─── GAMBIT SKILL CHECK ─── */}
+      <Modal visible={showSkillCheck} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.skillCheckCard}>
+            <Text style={styles.skillCheckTitle}>GAMBIT BONUS</Text>
+            <Text style={styles.skillCheckDesc}>Lock the signal to upgrade your loot!</Text>
+            <SkillCheck speed="fast" onResult={handleGambitSkillCheck} />
+          </View>
+        </View>
+      </Modal>
+
       {/* ─── RESULT POPUP ─── */}
       <Modal visible={showResult} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.resultCard}>
             {lastResult && (() => {
-              const display = OUTCOME_DISPLAY[lastResult.outcome];
+              const effectiveOutcome = displayOutcome || lastResult.outcome;
+              const display = OUTCOME_DISPLAY[effectiveOutcome];
               return (
                 <>
                   {/* Scan type badge */}
@@ -336,15 +506,22 @@ export default function ScanScreen() {
                     {display.banner}
                   </Text>
 
+                  {/* Upgraded badge (Gambit skill check success) */}
+                  {displayOutcome && displayOutcome !== lastResult.outcome && (
+                    <View style={styles.upgradedBadge}>
+                      <Text style={styles.upgradedBadgeText}>{'\u2B06'} UPGRADED</Text>
+                    </View>
+                  )}
+
                   {/* Loot with rarity label */}
                   {lastResult.lootName && (
                     <Text style={[styles.resultLoot, { color: display.color }]}>
-                      {lastResult.outcome.charAt(0).toUpperCase() + lastResult.outcome.slice(1)}: {lastResult.lootName}
+                      {effectiveOutcome.charAt(0).toUpperCase() + effectiveOutcome.slice(1)}: {lastResult.lootName}
                     </Text>
                   )}
 
                   {/* Sector progress */}
-                  {lastResult.outcome !== 'whiff' && lastResult.sectorProgress > 0 && (
+                  {effectiveOutcome !== 'whiff' && lastResult.sectorProgress > 0 && (
                     <View style={styles.resultProgressRow}>
                       <Text style={styles.resultProgress}>
                         +{lastResult.sectorProgress} tile{lastResult.sectorProgress > 1 ? 's' : ''} cleared
@@ -662,5 +839,84 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     width: '100%',
     alignItems: 'center',
+  },
+  upgradedBadge: {
+    backgroundColor: colors.neonGreen + '20',
+    borderWidth: 1,
+    borderColor: colors.neonGreen,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    marginBottom: spacing.sm,
+    alignSelf: 'center',
+  },
+  upgradedBadgeText: {
+    fontSize: fontSize.xs,
+    color: colors.neonGreen,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+
+  // ─── Resolving Overlay ───
+  resolvingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  resolvingContent: {
+    alignItems: 'center',
+  },
+  resolvingIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    marginBottom: spacing.md,
+  },
+  resolvingIconText: {
+    fontSize: 28,
+  },
+  resolvingText: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  resolvingDots: {
+    marginTop: spacing.sm,
+  },
+  resolvingDotsText: {
+    fontSize: fontSize.md,
+    letterSpacing: 4,
+  },
+
+  // ─── Gambit Skill Check ───
+  skillCheckCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.neonRed + '60',
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  skillCheckTitle: {
+    fontSize: fontSize.xs,
+    color: colors.neonRed,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+  },
+  skillCheckDesc: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
 });
