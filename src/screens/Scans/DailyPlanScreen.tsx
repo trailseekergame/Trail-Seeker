@@ -1,21 +1,76 @@
-import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { computeDailyScans, getStreakRareBoost } from '../../systems/scanEngine';
+import { computeDailyScans, getStreakRareBoost, getEffectiveWhiffRate } from '../../systems/scanEngine';
 import { ALL_GEAR_ITEMS, DEFAULT_ACTIVE_GEAR } from '../../data/gearItems';
 import { generateTestSector } from '../../data/testSector';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
-import Card from '../../components/common/Card';
 import { GearSlotId, GearItem } from '../../types';
 import gameBalance from '../../config/gameBalance.json';
+
+// ─── Gear effect descriptions (human-readable) ───
+const GEAR_EFFECTS: Record<GearSlotId, { short: string; detail: (q: string) => string }> = {
+  optics_rig: {
+    short: 'Better finds (rare chance up)',
+    detail: (q) => {
+      const stats = (gameBalance.gear_stats.optics_rig as any)[q];
+      return `+${Math.round((stats?.rare_boost || 0) * 100)}% rare drop chance on all Scans`;
+    },
+  },
+  exo_vest: {
+    short: 'More Scans per day',
+    detail: (q) => {
+      const stats = (gameBalance.gear_stats.exo_vest as any)[q];
+      return `+${stats?.bonus_scans || 0} Seeker Scans per day${stats?.loot_quality_boost ? ` + ${Math.round(stats.loot_quality_boost * 100)}% loot quality` : ''}`;
+    },
+  },
+  grip_gauntlets: {
+    short: 'Safer Scans (whiff chance down)',
+    detail: (q) => {
+      const stats = (gameBalance.gear_stats.grip_gauntlets as any)[q];
+      return `${Math.round((stats?.whiff_reduction || 0) * 100)}% less whiff chance on Seeker & Gambit`;
+    },
+  },
+  nav_boots: {
+    short: 'Faster travel (sector progress up)',
+    detail: (q) => {
+      const stats = (gameBalance.gear_stats.nav_boots as any)[q];
+      const bonus = stats?.sector_bonus || 0;
+      const extra = stats?.double_progress_chance ? ` + ${Math.round(stats.double_progress_chance * 100)}% double progress` : '';
+      return `+${bonus} sector progress per successful Scan${extra}`;
+    },
+  },
+  cortex_link: {
+    short: 'Bigger Gambits (Legendary chance up)',
+    detail: (q) => {
+      const stats = (gameBalance.gear_stats.cortex_link as any)[q];
+      return `+${Math.round((stats?.gambit_legendary_boost || 0) * 100)}% Legendary chance on Gambit Scans${stats?.component_boost ? ` + ${Math.round(stats.component_boost * 100)}% Component chance` : ''}`;
+    },
+  },
+  salvage_drone: {
+    short: 'Backup sweep (whiff recovery)',
+    detail: (q) => {
+      const stats = (gameBalance.gear_stats.salvage_drone as any)[q];
+      return `${Math.round((stats?.refund_chance || 0) * 100)}% chance to refund a whiffed Scan`;
+    },
+  },
+};
+
+const QUALITY_LABELS: Record<string, { label: string; color: string }> = {
+  standard: { label: 'Standard', color: colors.textSecondary },
+  enhanced: { label: 'Enhanced', color: colors.neonCyan },
+  perfected: { label: 'Perfected', color: colors.neonGreen },
+};
 
 export default function DailyPlanScreen() {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
+
+  const [gearPopup, setGearPopup] = useState<GearItem | null>(null);
 
   // Initialize gear & sector if empty
   useEffect(() => {
@@ -36,7 +91,7 @@ export default function DailyPlanScreen() {
   useEffect(() => {
     if (ss.gearInventory.length === 0) return;
     const total = computeDailyScans(ss.streakDay, ss.activeGearSlots, ss.gearInventory);
-    if (total !== ss.scansTotal || ss.scansRemaining !== total) {
+    if (total !== ss.scansTotal) {
       dispatch({ type: 'REFRESH_DAILY_SCANS', payload: total });
     }
   }, [ss.streakDay, ss.activeGearSlots, ss.gearInventory]);
@@ -69,12 +124,25 @@ export default function DailyPlanScreen() {
 
   const activeGearItems = ss.gearInventory.filter(g => ss.activeGearSlots.includes(g.slotId));
 
+  // Build the scan breakdown note
+  const breakdownParts: string[] = [];
+  if (gearBonus > 0) breakdownParts.push(`+${gearBonus} from Exo-Vest`);
+  if (streakBonus > 0) breakdownParts.push(`+${streakBonus} from streak`);
+  const breakdownNote = breakdownParts.length > 0 ? breakdownParts.join(' \u00b7 ') : null;
+
   return (
     <ScreenWrapper>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Streak Banner */}
-        <View style={styles.streakBanner}>
-          <Text style={styles.streakLabel}>STREAK</Text>
+        {/* ─── 1. HEADER: Day + Streak ─── */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>
+            Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> on the Trail
+          </Text>
+          <Text style={styles.headerSubtext}>
+            Streak: {ss.streakDay} {ss.streakDay === 1 ? 'day' : 'days'}
+            {rareBoost > 0 ? ` \u2014 Rare +${Math.round(rareBoost * 100)}%` : ''}
+          </Text>
+          {/* Streak progress dots */}
           <View style={styles.streakDots}>
             {Array.from({ length: 7 }, (_, i) => (
               <View
@@ -90,80 +158,147 @@ export default function DailyPlanScreen() {
               </View>
             ))}
           </View>
-          <Text style={styles.streakDay}>
-            Day <Text style={styles.streakDayNum}>{ss.streakDay}</Text>
-          </Text>
-          {rareBoost > 0 && (
-            <Text style={styles.rareBoostText}>+{Math.round(rareBoost * 100)}% Rare Find Chance</Text>
+        </View>
+
+        {/* ─── 2. SCANS & MODIFIERS ─── */}
+        <View style={styles.scanCard}>
+          <View style={styles.scanCardTop}>
+            <Text style={styles.scanNumber}>{ss.scansRemaining}</Text>
+            <View style={styles.scanLabelCol}>
+              <Text style={styles.scanLabel}>Seeker Scans</Text>
+              <Text style={styles.scanLabelSub}>Today</Text>
+            </View>
+          </View>
+          {breakdownNote && (
+            <Text style={styles.scanNote}>{breakdownNote}</Text>
           )}
         </View>
 
-        {/* Scan Budget */}
-        <Card title="Daily Scans" icon="📡">
-          <View style={styles.scanBudgetRow}>
-            <Text style={styles.scanBudgetTotal}>{ss.scansTotal}</Text>
-            <View style={styles.scanBudgetBreakdown}>
-              <Text style={styles.breakdownText}>Base: {baseScans}</Text>
-              {streakBonus > 0 && <Text style={styles.breakdownText}>Streak: +{streakBonus}</Text>}
-              {gearBonus > 0 && <Text style={styles.breakdownText}>Vest: +{gearBonus}</Text>}
-            </View>
+        {/* ─── 3. ACTIVE GEAR STRIP ─── */}
+        <View style={styles.gearSection}>
+          <View style={styles.gearSectionHeader}>
+            <Text style={styles.sectionTitle}>ACTIVE GEAR</Text>
+            {ss.gearLockedToday ? (
+              <Text style={styles.lockedBadge}>LOCKED</Text>
+            ) : (
+              <Text style={styles.tapHint}>tap to change</Text>
+            )}
           </View>
-        </Card>
 
-        {/* Active Gear */}
-        <Text style={styles.sectionTitle}>
-          ACTIVE GEAR ({ss.activeGearSlots.length}/3)
-          {ss.gearLockedToday && <Text style={styles.lockedBadge}> LOCKED</Text>}
-        </Text>
-        <View style={styles.gearGrid}>
-          {ss.gearInventory.map((gear) => {
-            const isActive = ss.activeGearSlots.includes(gear.slotId);
-            return (
-              <TouchableOpacity
-                key={gear.slotId}
-                style={[
-                  styles.gearCard,
-                  isActive && styles.gearCardActive,
-                  ss.gearLockedToday && styles.gearCardLocked,
-                ]}
-                onPress={() => toggleGear(gear.slotId)}
-                disabled={ss.gearLockedToday}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.gearIcon}>{gear.icon}</Text>
-                <Text style={[styles.gearName, isActive && styles.gearNameActive]}>{gear.name}</Text>
-                <Text style={styles.gearDesc}>{gear.shortDesc}</Text>
-              </TouchableOpacity>
-            );
-          })}
+          {/* Active gear — prominent strip */}
+          {activeGearItems.length > 0 && (
+            <View style={styles.activeStrip}>
+              {activeGearItems.map((gear) => (
+                <TouchableOpacity
+                  key={gear.slotId}
+                  style={styles.activeGearCard}
+                  onPress={() => setGearPopup(gear)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.activeGearIcon}>{gear.icon}</Text>
+                  <Text style={styles.activeGearName}>{gear.name}</Text>
+                  <Text style={styles.activeGearEffect}>
+                    {GEAR_EFFECTS[gear.slotId].short}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Full gear grid (for selection when not locked) */}
+          {!ss.gearLockedToday && (
+            <View style={styles.gearGrid}>
+              {ss.gearInventory.map((gear) => {
+                const isActive = ss.activeGearSlots.includes(gear.slotId);
+                return (
+                  <TouchableOpacity
+                    key={gear.slotId}
+                    style={[
+                      styles.gearChip,
+                      isActive && styles.gearChipActive,
+                    ]}
+                    onPress={() => toggleGear(gear.slotId)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.gearChipIcon}>{gear.icon}</Text>
+                    <Text style={[styles.gearChipName, isActive && styles.gearChipNameActive]}>
+                      {gear.name}
+                    </Text>
+                    {isActive && <Text style={styles.gearChipCheck}>on</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+              <Text style={styles.gearCount}>
+                {ss.activeGearSlots.length}/3 selected
+              </Text>
+            </View>
+          )}
         </View>
 
-        {/* Sector Preview */}
-        <Card title={`Sector ${ss.sectorsCompleted + 1}: ${ss.currentSector.name}`} icon="🗺️">
-          <Text style={styles.sectorProgress}>
-            {tilesCleared}/{totalTiles} tiles cleared
+        {/* ─── 4. SECTOR PREVIEW ─── */}
+        <View style={styles.sectorCard}>
+          <Text style={styles.sectorName}>
+            Sector {ss.sectorsCompleted + 1}: {ss.currentSector.name}
           </Text>
           <View style={styles.sectorBar}>
             <View style={[styles.sectorBarFill, { width: `${(tilesCleared / totalTiles) * 100}%` }]} />
           </View>
-        </Card>
+          <Text style={styles.sectorProgress}>
+            {tilesCleared}/{totalTiles} tiles cleared
+          </Text>
+        </View>
 
-        {/* Begin Button */}
-        <View style={styles.beginContainer}>
+        {/* ─── 5. PRIMARY CTA ─── */}
+        <View style={styles.ctaContainer}>
           <NeonButton
-            title="BEGIN SCANS"
+            title="Start Today's Run"
             onPress={() => nav.navigate('ScanMain')}
             size="lg"
             disabled={ss.scansRemaining <= 0 || ss.activeGearSlots.length === 0}
           />
-          {ss.scansRemaining <= 0 && (
-            <Text style={styles.noScansText}>No scans remaining today</Text>
-          )}
+          <Text style={styles.ctaSubtext}>
+            {ss.scansRemaining > 0
+              ? `Spend your Scans in ${ss.currentSector.name}`
+              : 'No scans remaining today'}
+          </Text>
           {ss.activeGearSlots.length === 0 && (
-            <Text style={styles.noScansText}>Select at least 1 gear slot</Text>
+            <Text style={styles.warningText}>Select at least 1 gear slot above</Text>
           )}
         </View>
       </ScrollView>
+
+      {/* ─── GEAR DETAIL POPUP ─── */}
+      <Modal visible={gearPopup !== null} transparent animationType="fade" onRequestClose={() => setGearPopup(null)}>
+        <TouchableOpacity
+          style={styles.popupOverlay}
+          activeOpacity={1}
+          onPress={() => setGearPopup(null)}
+        >
+          {gearPopup && (
+            <View style={styles.popupCard}>
+              <Text style={styles.popupIcon}>{gearPopup.icon}</Text>
+              <Text style={styles.popupName}>{gearPopup.name}</Text>
+              <Text style={[styles.popupQuality, { color: QUALITY_LABELS[gearPopup.quality]?.color || colors.textSecondary }]}>
+                {QUALITY_LABELS[gearPopup.quality]?.label || gearPopup.quality}
+              </Text>
+              <View style={styles.popupDivider} />
+              <Text style={styles.popupSlot}>
+                {gearPopup.slotId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+              </Text>
+              <Text style={styles.popupEffect}>
+                {GEAR_EFFECTS[gearPopup.slotId].detail(gearPopup.quality)}
+              </Text>
+              <NeonButton
+                title="Close"
+                onPress={() => setGearPopup(null)}
+                variant="ghost"
+                size="sm"
+                style={styles.popupClose}
+              />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -172,26 +307,35 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: spacing.xxl },
 
-  // Streak
-  streakBanner: {
+  // ─── 1. Header ───
+  header: {
     alignItems: 'center',
-    paddingVertical: spacing.lg,
-    marginBottom: spacing.sm,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  streakLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    letterSpacing: 2,
-    marginBottom: spacing.sm,
+  headerTitle: {
+    fontSize: fontSize.xl,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  headerDayNum: {
+    fontSize: fontSize.xxl,
+    color: colors.neonGreen,
+    fontWeight: '700',
+  },
+  headerSubtext: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   streakDots: {
     flexDirection: 'row',
     gap: spacing.xs,
-    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   streakDot: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
@@ -200,107 +344,176 @@ const styles = StyleSheet.create({
   },
   streakDotActive: {
     borderColor: colors.neonGreen,
-    backgroundColor: colors.surfaceHighlight,
+    backgroundColor: colors.neonGreen + '15',
   },
   streakDotText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     color: colors.textMuted,
     fontWeight: '600',
   },
   streakDotTextActive: {
     color: colors.neonGreen,
   },
-  streakDay: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-  },
-  streakDayNum: {
-    fontSize: fontSize.xl,
-    color: colors.neonGreen,
-    fontWeight: '700',
-  },
-  rareBoostText: {
-    fontSize: fontSize.sm,
-    color: colors.neonCyan,
-    marginTop: spacing.xs,
-  },
 
-  // Scan Budget
-  scanBudgetRow: {
+  // ─── 2. Scans ───
+  scanCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.lg,
+    marginTop: spacing.md,
+    marginHorizontal: spacing.md,
+  },
+  scanCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  scanBudgetTotal: {
-    fontSize: fontSize.hero,
+  scanNumber: {
+    fontSize: 52,
     color: colors.neonGreen,
     fontWeight: '700',
     marginRight: spacing.md,
+    lineHeight: 56,
   },
-  scanBudgetBreakdown: {
+  scanLabelCol: {
     flex: 1,
   },
-  breakdownText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+  scanLabel: {
+    fontSize: fontSize.lg,
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
-
-  // Gear
-  sectionTitle: {
+  scanLabelSub: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
-    letterSpacing: 1,
+  },
+  scanNote: {
+    fontSize: fontSize.sm,
+    color: colors.neonCyan,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    paddingTop: spacing.sm,
+  },
+
+  // ─── 3. Gear ───
+  gearSection: {
     marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  gearSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.sm,
   },
+  sectionTitle: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    fontWeight: '600',
+  },
   lockedBadge: {
+    fontSize: fontSize.xs,
     color: colors.neonRed,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  tapHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  activeStrip: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  activeGearCard: {
+    flex: 1,
+    backgroundColor: colors.surfaceHighlight,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+    padding: spacing.sm,
+    alignItems: 'center',
+  },
+  activeGearIcon: {
+    fontSize: 28,
+    marginBottom: spacing.xs,
+  },
+  activeGearName: {
+    fontSize: fontSize.xs,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  activeGearEffect: {
+    fontSize: 10,
+    color: colors.neonGreen,
+    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 14,
   },
   gearGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.md,
   },
-  gearCard: {
-    width: '30%' as any,
+  gearChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
-    padding: spacing.sm,
-    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    gap: spacing.xs,
   },
-  gearCardActive: {
+  gearChipActive: {
     borderColor: colors.neonGreen,
     backgroundColor: colors.surfaceHighlight,
   },
-  gearCardLocked: {
-    opacity: 0.7,
+  gearChipIcon: {
+    fontSize: 16,
   },
-  gearIcon: {
-    fontSize: 24,
-    marginBottom: spacing.xs,
-  },
-  gearName: {
+  gearChipName: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: '500',
   },
-  gearNameActive: {
-    color: colors.textPrimary,
+  gearChipNameActive: {
+    color: colors.neonGreen,
   },
-  gearDesc: {
+  gearChipCheck: {
+    fontSize: fontSize.xs,
+    color: colors.neonGreen,
+    fontWeight: '700',
+  },
+  gearCount: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    width: '100%',
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
 
-  // Sector
-  sectorProgress: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  // ─── 4. Sector ───
+  sectorCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.md,
+    marginTop: spacing.lg,
+    marginHorizontal: spacing.md,
+  },
+  sectorName: {
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
   },
   sectorBar: {
     height: 6,
@@ -313,15 +526,82 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonGreen,
     borderRadius: borderRadius.full,
   },
+  sectorProgress: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
 
-  // Begin
-  beginContainer: {
+  // ─── 5. CTA ───
+  ctaContainer: {
     marginTop: spacing.xl,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
   },
-  noScansText: {
+  ctaSubtext: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  warningText: {
     fontSize: fontSize.sm,
     color: colors.neonRed,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
+  },
+
+  // ─── Gear Detail Popup ───
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  popupCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 300,
+    alignItems: 'center',
+  },
+  popupIcon: {
+    fontSize: 40,
+    marginBottom: spacing.sm,
+  },
+  popupName: {
+    fontSize: fontSize.xl,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  popupQuality: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: spacing.xs,
+  },
+  popupDivider: {
+    height: 1,
+    backgroundColor: colors.surfaceLight,
+    width: '80%',
+    marginVertical: spacing.md,
+  },
+  popupSlot: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  popupEffect: {
+    fontSize: fontSize.md,
+    color: colors.neonCyan,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  popupClose: {
+    marginTop: spacing.lg,
+    width: 120,
   },
 });
