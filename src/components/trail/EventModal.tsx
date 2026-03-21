@@ -179,12 +179,12 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
-      case 'encounter': return '✕';
-      case 'discovery': return '◎';
-      case 'trade': return '⇄';
-      case 'hazard': return '△';
-      case 'lore': return '≡';
-      case 'faction': return '⬡';
+      case 'encounter': return '⚔️';
+      case 'discovery': return '🔍';
+      case 'trade': return '🤝';
+      case 'hazard': return '⚠️';
+      case 'lore': return '📖';
+      case 'faction': return '🏴';
       default: return '?';
     }
   };

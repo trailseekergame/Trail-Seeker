@@ -157,7 +157,7 @@ function MainTabs() {
         component={TrailStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="≡" label="Trail" focused={focused} />
+            <TabIcon icon="🛤️" label="Trail" focused={focused} />
           ),
         }}
       />
@@ -166,7 +166,7 @@ function MainTabs() {
         component={SettlementStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="△" label="Camp" focused={focused} />
+            <TabIcon icon="🏘️" label="Camp" focused={focused} />
           ),
         }}
       />
@@ -175,7 +175,7 @@ function MainTabs() {
         component={CodexStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="◇" label="Codex" focused={focused} />
+            <TabIcon icon="📖" label="Codex" focused={focused} />
           ),
         }}
       />
@@ -184,7 +184,7 @@ function MainTabs() {
         component={ArcadeStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="▣" label="Arcade" focused={focused} />
+            <TabIcon icon="🕹️" label="Arcade" focused={focused} />
           ),
         }}
       />

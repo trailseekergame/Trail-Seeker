@@ -110,17 +110,17 @@ export default function SettlementScreen({ navigation }: any) {
         </Text>
 
         {/* Resources Overview */}
-        <Card title="Resources" icon="◫">
+        <Card title="Resources" icon="🎒">
           <View style={styles.resourceGrid}>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>▫</Text>
+              <Text style={styles.resourceIcon}>🔩</Text>
               <Text style={[styles.resourceValue, { color: colors.scrap }]}>
                 {state.resources.scrap}
               </Text>
               <Text style={styles.resourceLabel}>Scrap</Text>
             </View>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>▪</Text>
+              <Text style={styles.resourceIcon}>📦</Text>
               <Text style={[styles.resourceValue, { color: colors.supplies }]}>
                 {state.resources.supplies}
               </Text>
@@ -147,7 +147,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Health Status */}
-        <Card title="Status" icon="♥">
+        <Card title="Status" icon="❤️">
           <HealthBar value={state.playerHealth} max={100} label="Player Health" />
           <HealthBar
             value={state.roverHealth}
@@ -158,7 +158,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Trade */}
-        <Card title="Trade Post" icon="⇄">
+        <Card title="Trade Post" icon="🤝">
           <Text style={styles.tradeDesc}>
             Exchange resources at fixed rates. Not the best deal, but it beats starving.
           </Text>
@@ -175,7 +175,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Repair */}
-        <Card title="Repair Bay" icon="⚙">
+        <Card title="Repair Bay" icon="🔧">
           <Text style={styles.tradeDesc}>
             Spend {REPAIR_COST} scrap to repair your rover (+15 condition).
           </Text>
@@ -189,7 +189,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Notifications */}
-        <Card title="Notifications" icon="◉">
+        <Card title="Notifications" icon="🔔">
           <Text style={styles.tradeDesc}>
             Daily reminders to claim your Seeker Scans and protect your streak.
           </Text>
@@ -223,7 +223,7 @@ export default function SettlementScreen({ navigation }: any) {
 
         {/* Dev Analytics (only in development) */}
         {__DEV__ && (
-          <Card title="Dev Analytics" icon="▦">
+          <Card title="Dev Analytics" icon="📊">
             <Text style={styles.tradeDesc}>
               Player behavior telemetry. Weekly report sent to trailseekergame@gmail.com.
             </Text>
@@ -257,7 +257,7 @@ export default function SettlementScreen({ navigation }: any) {
         {/* Equipment */}
         <Card
           title="Equipment"
-          icon="⬡"
+          icon="⚙️"
           onPress={() => navigation.navigate('Wardrobe')}
           accentColor={colors.neonCyan}
         >
