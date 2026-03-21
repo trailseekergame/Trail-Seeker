@@ -27,19 +27,19 @@ const SCAN_LABELS: Record<ScanType, { name: string; flavor: string }> = {
 
 const TILE_ICONS: Record<string, string> = {
   unknown: '?',
-  resource: '\u26CF',
-  anomaly: '\u26A0',
-  boss: '\uD83D\uDC80',
-  cleared: '\u2713',
+  resource: '⛏',
+  anomaly: '⚠',
+  boss: '💀',
+  cleared: '✓',
 };
 
 const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: string }> = {
-  whiff: { banner: 'Signal Lost', color: colors.neonRed, icon: '\uD83D\uDCE1' },
-  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '\uD83D\uDCE6' },
-  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '\u2728' },
-  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '\uD83D\uDCA0' },
-  legendary: { banner: 'Jackpot', color: '#FFD700', icon: '\uD83C\uDFC6' },
-  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '\uD83D\uDD2E' },
+  whiff: { banner: 'Signal Lost', color: colors.neonRed, icon: '📡' },
+  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '📦' },
+  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '✨' },
+  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '💠' },
+  legendary: { banner: 'Jackpot', color: '#FFD700', icon: '🏆' },
+  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '🔮' },
 };
 
 // ─── Resolving animation durations ───
@@ -123,19 +123,19 @@ export default function ScanScreen() {
   const getGearHints = (scanType: ScanType): string[] => {
     const hints: string[] = [];
     if (ss.activeGearSlots.includes('grip_gauntlets') && scanType !== 'scout') {
-      hints.push('\uD83E\uDDE4 Gauntlets: Safer');
+      hints.push('🧤 Gauntlets: Safer');
     }
     if (ss.activeGearSlots.includes('optics_rig')) {
-      hints.push('\uD83D\uDD0D Optics: Better Loot');
+      hints.push('🔍 Optics: Better Loot');
     }
     if (scanType === 'gambit' && ss.activeGearSlots.includes('cortex_link')) {
-      hints.push('\uD83E\uDDE0 Cortex: Boosted');
+      hints.push('🧠 Cortex: Boosted');
     }
     if (ss.activeGearSlots.includes('salvage_drone')) {
-      hints.push('\uD83D\uDD04 Drone: Backup');
+      hints.push('🔄 Drone: Backup');
     }
     if (ss.activeGearSlots.includes('nav_boots')) {
-      hints.push('\uD83E\uDD7E Boots: +Progress');
+      hints.push('🥾 Boots: +Progress');
     }
     return hints;
   };
@@ -316,47 +316,97 @@ export default function ScanScreen() {
         </View>
       </View>
 
-      {/* ─── 5x5 SECTOR GRID ─── */}
+      {/* ─── 5x5 SECTOR GRID with path connectors ─── */}
       <View style={styles.gridContainer}>
-        {Array.from({ length: gridSize }, (_, row) => (
-          <View key={row} style={styles.gridRow}>
-            {Array.from({ length: gridSize }, (_, col) => {
-              const tile = ss.currentSector.tiles.find(t => t.row === row && t.col === col);
-              if (!tile) return <View key={col} style={styles.tileEmpty} />;
+        <View style={styles.gridInner}>
+          {/* Path connectors (rendered behind tiles) */}
+          {ss.currentSector.tiles.map(tile => {
+            if (!tile.cleared) return null;
+            return tile.adjacentTo.map(adjId => {
+              const adj = ss.currentSector.tiles.find(t => t.id === adjId);
+              if (!adj) return null;
+              // Only draw right and down connectors to avoid duplicates
+              if (adj.row < tile.row || adj.col < tile.col) return null;
+              const isAdjActive = adj.cleared || isTileScannable(adj);
+              if (!isAdjActive) return null;
 
-              const scannable = isTileScannable(tile);
-              const isCleared = tile.cleared;
-              const isSelected = selectedTile?.id === tile.id;
+              const TILE_SIZE = 54;
+              const GAP = 4; // margin * 2
+              const isHorizontal = adj.row === tile.row;
 
-              return (
-                <TouchableOpacity
-                  key={col}
-                  style={[
-                    styles.tile,
-                    isCleared && styles.tileCleared,
-                    scannable && styles.tileScannable,
-                    !scannable && !isCleared && styles.tileFog,
-                    isSelected && styles.tileSelected,
-                  ]}
-                  onPress={() => handleTileSelect(tile)}
-                  disabled={!scannable || ss.scansRemaining <= 0}
-                  activeOpacity={0.6}
-                >
-                  <Text style={[
-                    styles.tileIcon,
-                    isCleared && styles.tileClearedIcon,
-                    scannable && { color: colors.neonGreen },
-                    tile.type === 'boss' && scannable && { color: colors.neonRed },
-                    tile.type === 'anomaly' && scannable && { color: colors.neonAmber },
-                    tile.type === 'resource' && scannable && { color: colors.neonCyan },
-                  ]}>
-                    {isCleared ? TILE_ICONS.cleared : scannable ? TILE_ICONS[tile.type] : ''}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+              if (isHorizontal) {
+                return (
+                  <View
+                    key={`conn-${tile.id}-${adjId}`}
+                    style={{
+                      position: 'absolute',
+                      left: tile.col * (TILE_SIZE + GAP) + TILE_SIZE,
+                      top: tile.row * (TILE_SIZE + GAP) + TILE_SIZE / 2 - 1,
+                      width: GAP,
+                      height: 2,
+                      backgroundColor: adj.cleared ? colors.neonGreen + '40' : colors.neonGreen + '25',
+                    }}
+                  />
+                );
+              } else {
+                return (
+                  <View
+                    key={`conn-${tile.id}-${adjId}`}
+                    style={{
+                      position: 'absolute',
+                      left: tile.col * (TILE_SIZE + GAP) + TILE_SIZE / 2 - 1,
+                      top: tile.row * (TILE_SIZE + GAP) + TILE_SIZE,
+                      width: 2,
+                      height: GAP,
+                      backgroundColor: adj.cleared ? colors.neonGreen + '40' : colors.neonGreen + '25',
+                    }}
+                  />
+                );
+              }
+            });
+          })}
+
+          {/* Tiles */}
+          {Array.from({ length: gridSize }, (_, row) => (
+            <View key={row} style={styles.gridRow}>
+              {Array.from({ length: gridSize }, (_, col) => {
+                const tile = ss.currentSector.tiles.find(t => t.row === row && t.col === col);
+                if (!tile) return <View key={col} style={styles.tileEmpty} />;
+
+                const scannable = isTileScannable(tile);
+                const isCleared = tile.cleared;
+                const isSelected = selectedTile?.id === tile.id;
+
+                return (
+                  <TouchableOpacity
+                    key={col}
+                    style={[
+                      styles.tile,
+                      isCleared && styles.tileCleared,
+                      scannable && styles.tileScannable,
+                      !scannable && !isCleared && styles.tileFog,
+                      isSelected && styles.tileSelected,
+                    ]}
+                    onPress={() => handleTileSelect(tile)}
+                    disabled={!scannable || ss.scansRemaining <= 0}
+                    activeOpacity={0.6}
+                  >
+                    <Text style={[
+                      styles.tileIcon,
+                      isCleared && styles.tileClearedIcon,
+                      scannable && { color: colors.neonGreen },
+                      tile.type === 'boss' && scannable && { color: colors.neonRed },
+                      tile.type === 'anomaly' && scannable && { color: colors.neonAmber },
+                      tile.type === 'resource' && scannable && { color: colors.neonCyan },
+                    ]}>
+                      {isCleared ? TILE_ICONS.cleared : scannable ? TILE_ICONS[tile.type] : ''}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </View>
       </View>
 
       {/* ─── SCAN TYPE BUTTONS (bottom) ─── */}
@@ -389,7 +439,7 @@ export default function ScanScreen() {
                   {SCAN_LABELS[type].name}
                 </Text>
                 <Text style={styles.scanButtonOdds}>
-                  {SCAN_LABELS[type].flavor} {'\u2014'} {whiffPct}% whiff
+                  {SCAN_LABELS[type].flavor} — {whiffPct}% whiff
                 </Text>
               </TouchableOpacity>
             );
@@ -400,8 +450,7 @@ export default function ScanScreen() {
         {ss.sessionResults.length > 0 && (
           <View style={styles.sessionBar}>
             <Text style={styles.sessionBarText}>
-              {ss.sessionResults.length} scans \u00b7{' '}
-              {ss.sessionResults.filter(r => r.outcome === 'whiff').length} whiffs \u00b7{' '}
+              {ss.sessionResults.length} scans · {ss.sessionResults.filter(r => r.outcome === 'whiff').length} whiffs · 
               {ss.sessionResults.filter(r => ['rare', 'legendary', 'component'].includes(r.outcome)).length} rare+
             </Text>
           </View>
@@ -416,13 +465,13 @@ export default function ScanScreen() {
               Use 1 {SCAN_LABELS[selectedScan].name} Scan?
             </Text>
             <Text style={styles.confirmTile}>
-              Target: {selectedTile?.type === 'boss' ? '\uD83D\uDC80 Boss Tile' :
-                       selectedTile?.type === 'anomaly' ? '\u26A0 Anomaly' :
-                       selectedTile?.type === 'resource' ? '\u26CF Resource' :
+              Target: {selectedTile?.type === 'boss' ? '💀 Boss Tile' :
+                       selectedTile?.type === 'anomaly' ? '⚠ Anomaly' :
+                       selectedTile?.type === 'resource' ? '⛏ Resource' :
                        '? Unknown Tile'}
             </Text>
             <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
-              {SCAN_LABELS[selectedScan].flavor} \u2014 {Math.round(whiffRates[selectedScan] * 100)}% whiff chance
+              {SCAN_LABELS[selectedScan].flavor} — {Math.round(whiffRates[selectedScan] * 100)}% whiff chance
             </Text>
             <View style={styles.confirmButtons}>
               <NeonButton
@@ -533,22 +582,22 @@ export default function ScanScreen() {
                   <View style={styles.procsContainer}>
                     {lastResult.droneProc && (
                       <Text style={[styles.procText, { color: colors.neonAmber }]}>
-                        \uD83D\uDD04 Salvage Drone recovered your Scan!
+                        🔄 Salvage Drone recovered your Scan!
                       </Text>
                     )}
                     {lastResult.bootsProc && (
                       <Text style={[styles.procText, { color: colors.neonCyan }]}>
-                        \uD83E\uDD7E Nav Boots found a shortcut!
+                        🥾 Nav Boots found a shortcut!
                       </Text>
                     )}
                     {lastResult.cortexProc && (
                       <Text style={[styles.procText, { color: colors.neonPurple }]}>
-                        \uD83E\uDDE0 Cortex Link amplified the Gambit!
+                        🧠 Cortex Link amplified the Gambit!
                       </Text>
                     )}
                     {lastResult.opticsProc && (
                       <Text style={[styles.procText, { color: colors.neonGreen }]}>
-                        \uD83D\uDD0D Optics Rig locked a rare signal!
+                        🔍 Optics Rig locked a rare signal!
                       </Text>
                     )}
                   </View>
@@ -630,6 +679,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.md,
+  },
+  gridInner: {
+    position: 'relative',
   },
   gridRow: {
     flexDirection: 'row',

@@ -9,12 +9,14 @@ interface Props {
 }
 
 const BAR_WIDTH = 260;
-const TARGET_WIDTH_PCT = 0.25; // 25% of bar
-const TARGET_WIDTH = BAR_WIDTH * TARGET_WIDTH_PCT;
+// Target zone width varies by speed: moderate = 15%, fast = 12%
 const MARKER_WIDTH = 6;
 const AUTO_TIMEOUT = 4000;
 
 export default function SkillCheck({ speed, onResult }: Props) {
+  const TARGET_WIDTH_PCT = speed === 'fast' ? 0.12 : 0.15;
+  const TARGET_WIDTH = BAR_WIDTH * TARGET_WIDTH_PCT;
+
   const [resolved, setResolved] = useState(false);
   const [hitResult, setHitResult] = useState<boolean | null>(null);
   const [flashText, setFlashText] = useState('');

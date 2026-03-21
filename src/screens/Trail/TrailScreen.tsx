@@ -17,7 +17,7 @@ import { colors, spacing, fontSize } from '../../theme';
  * Seeker Scan system from the navigation's initial route.
  */
 export default function TrailScreen() {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
 
@@ -116,8 +116,7 @@ export default function TrailScreen() {
               <NeonButton
                 title="Reset Scans"
                 onPress={() => {
-                  const { dispatch } = useGame();
-                  // Will be handled by daily refresh
+                  dispatch({ type: 'REFRESH_DAILY_SCANS', payload: 7 });
                 }}
                 variant="ghost"
                 size="sm"
@@ -125,6 +124,20 @@ export default function TrailScreen() {
               <NeonButton
                 title="Go to Plan"
                 onPress={() => nav.navigate('DailyPlan')}
+                variant="ghost"
+                size="sm"
+              />
+            </View>
+            <View style={styles.devRow}>
+              <NeonButton
+                title="+5 Scrap"
+                onPress={() => dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: 5 } })}
+                variant="ghost"
+                size="sm"
+              />
+              <NeonButton
+                title="Reset State"
+                onPress={() => dispatch({ type: 'RESET_STATE' })}
                 variant="ghost"
                 size="sm"
               />
