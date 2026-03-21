@@ -17,6 +17,9 @@ import {
   ScanResult,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
+import { ALL_GEAR_ITEMS } from '../data/gearItems';
+import { generateTestSector } from '../data/testSector';
+import { computeDailyScans } from '../systems/scanEngine';
 
 // ─── Actions ───
 type GameAction =
@@ -373,11 +376,29 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const loaded = await loadGameState();
       dispatch({ type: 'LOAD_STATE', payload: loaded });
 
-      // Check move refresh
+      // Check move refresh (legacy)
       const elapsed = Date.now() - loaded.lastMoveRefresh;
       if (elapsed >= MOVE_REFRESH_MS) {
         dispatch({ type: 'REFRESH_MOVES' });
       }
+
+      // Initialize Seeker Scan system if not yet set up
+      if (!loaded.seekerScans || loaded.seekerScans.gearInventory.length === 0) {
+        dispatch({
+          type: 'INIT_SEEKER_SCANS',
+          payload: { gearInventory: ALL_GEAR_ITEMS, sector: generateTestSector() },
+        });
+      }
+
+      // Advance streak and refresh scans
+      dispatch({ type: 'ADVANCE_STREAK' });
+      const scansState = loaded.seekerScans || INITIAL_GAME_STATE.seekerScans;
+      const totalScans = computeDailyScans(
+        scansState.streakDay,
+        scansState.activeGearSlots,
+        scansState.gearInventory.length > 0 ? scansState.gearInventory : ALL_GEAR_ITEMS
+      );
+      dispatch({ type: 'REFRESH_DAILY_SCANS', payload: totalScans });
 
       setIsLoading(false);
     })();
