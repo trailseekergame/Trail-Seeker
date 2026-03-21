@@ -21,9 +21,9 @@ const SCAN_COLORS: Record<ScanType, string> = {
 };
 
 const SCAN_LABELS: Record<ScanType, { name: string; flavor: string; desc: string }> = {
-  scout: { name: 'SCOUT', flavor: 'Safe', desc: 'Steady loot, almost no risk' },
-  seeker: { name: 'SEEKER', flavor: 'Balanced', desc: 'Better loot, some risk' },
-  gambit: { name: 'GAMBIT', flavor: 'High risk', desc: 'Best loot or nothing' },
+  scout: { name: 'SCOUT', flavor: 'Probe', desc: 'Surface sweep. Low yield, low risk.' },
+  seeker: { name: 'SEEKER', flavor: 'Push', desc: 'Dig deeper. Better signal, real exposure.' },
+  gambit: { name: 'GAMBIT', flavor: 'All in', desc: 'Burn the scan for the best signal or nothing.' },
 };
 
 const TILE_ICONS: Record<string, string> = {
@@ -35,12 +35,12 @@ const TILE_ICONS: Record<string, string> = {
 };
 
 const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: string }> = {
-  whiff: { banner: 'Nothing Found', color: colors.neonRed, icon: 'signal-off' },
-  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: 'cube-outline' },
-  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: 'diamond-stone' },
-  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: 'star-four-points' },
-  legendary: { banner: 'Jackpot', color: '#FFD700', icon: 'trophy' },
-  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: 'hexagon-outline' },
+  whiff: { banner: 'Dead Signal', color: colors.neonRed, icon: 'signal-off' },
+  common: { banner: 'Salvage', color: colors.textSecondary, icon: 'cube-outline' },
+  uncommon: { banner: 'Clean Pull', color: colors.neonCyan, icon: 'diamond-stone' },
+  rare: { banner: 'Buried Cache', color: colors.neonGreen, icon: 'star-four-points' },
+  legendary: { banner: 'Pre-Collapse Tech', color: '#FFD700', icon: 'trophy' },
+  component: { banner: 'Relic Fragment', color: colors.neonPurple, icon: 'hexagon-outline' },
 };
 
 // ─── Resolving animation durations ───
@@ -124,19 +124,19 @@ export default function ScanScreen() {
   const getGearHints = (scanType: ScanType): { icon: string; text: string }[] => {
     const hints: { icon: string; text: string }[] = [];
     if (ss.activeGearSlots.includes('grip_gauntlets') && scanType !== 'scout') {
-      hints.push({ icon: 'hand-back-fist', text: 'Gauntlets: Safer' });
+      hints.push({ icon: 'hand-back-fist', text: 'Grips: Steadier signal' });
     }
     if (ss.activeGearSlots.includes('optics_rig')) {
-      hints.push({ icon: 'binoculars', text: 'Optics: Better Loot' });
+      hints.push({ icon: 'binoculars', text: 'Optics: Sharper reads' });
     }
     if (scanType === 'gambit' && ss.activeGearSlots.includes('cortex_link')) {
-      hints.push({ icon: 'brain', text: 'Cortex: Boosted' });
+      hints.push({ icon: 'brain', text: 'Cortex: Deep-field boost' });
     }
     if (ss.activeGearSlots.includes('salvage_drone')) {
-      hints.push({ icon: 'drone', text: 'Drone: Backup' });
+      hints.push({ icon: 'drone', text: 'Drone: Recovery sweep' });
     }
     if (ss.activeGearSlots.includes('nav_boots')) {
-      hints.push({ icon: 'shoe-print', text: 'Boots: +Progress' });
+      hints.push({ icon: 'shoe-print', text: 'Boots: Ground covered' });
     }
     return hints;
   };
@@ -549,8 +549,8 @@ export default function ScanScreen() {
       <Modal visible={showSkillCheck} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.skillCheckCard}>
-            <Text style={styles.skillCheckTitle}>GAMBIT BONUS</Text>
-            <Text style={styles.skillCheckDesc}>Lock the signal to upgrade your loot!</Text>
+            <Text style={styles.skillCheckTitle}>SIGNAL LOCK</Text>
+            <Text style={styles.skillCheckDesc}>The signal is unstable. Lock it in to pull a better read.</Text>
             <SkillCheck speed="fast" onResult={handleGambitSkillCheck} />
           </View>
         </View>
@@ -598,7 +598,7 @@ export default function ScanScreen() {
                   {/* Whiff guidance */}
                   {effectiveOutcome === 'whiff' && (
                     <Text style={styles.whiffHint}>
-                      The signal faded. Try a safer scan type or a different tile.
+                      Dead air. The signal was there and then it wasn't. Choose a different approach or move on.
                     </Text>
                   )}
 
@@ -617,7 +617,7 @@ export default function ScanScreen() {
                       <View style={styles.procRow}>
                         <MaterialCommunityIcons name="drone" size={14} color={colors.neonAmber} />
                         <Text style={[styles.procText, { color: colors.neonAmber }]}>
-                          Drone recovered your Scan!
+                          Drone caught a second pass. Scan refunded.
                         </Text>
                       </View>
                     )}
@@ -625,7 +625,7 @@ export default function ScanScreen() {
                       <View style={styles.procRow}>
                         <MaterialCommunityIcons name="shoe-print" size={14} color={colors.neonCyan} />
                         <Text style={[styles.procText, { color: colors.neonCyan }]}>
-                          Boots found a shortcut!
+                          Boots mapped a faster route. Extra ground covered.
                         </Text>
                       </View>
                     )}
@@ -633,7 +633,7 @@ export default function ScanScreen() {
                       <View style={styles.procRow}>
                         <MaterialCommunityIcons name="brain" size={14} color={colors.neonPurple} />
                         <Text style={[styles.procText, { color: colors.neonPurple }]}>
-                          Cortex amplified the Gambit!
+                          Cortex pushed the signal deeper. Better read.
                         </Text>
                       </View>
                     )}
@@ -641,7 +641,7 @@ export default function ScanScreen() {
                       <View style={styles.procRow}>
                         <MaterialCommunityIcons name="binoculars" size={14} color={colors.neonGreen} />
                         <Text style={[styles.procText, { color: colors.neonGreen }]}>
-                          Optics locked a rare signal!
+                          Optics filtered the noise. Cleaner signal.
                         </Text>
                       </View>
                     )}
@@ -651,13 +651,13 @@ export default function ScanScreen() {
                   <View style={styles.resultActions}>
                     {sessionDone ? (
                       <NeonButton
-                        title="Finish Today's Run"
+                        title="End Run"
                         onPress={handleSessionComplete}
                         size="lg"
                       />
                     ) : (
                       <NeonButton
-                        title={`Next Scan • ${remainingAfterLast} left`}
+                        title={`Continue • ${remainingAfterLast} scans left`}
                         onPress={handleNextScan}
                         variant="secondary"
                         size="lg"

@@ -146,7 +146,7 @@ export default function WardrobeScreen() {
           )}
         </View>
         <Text style={styles.sectionDesc}>
-          Select 3 gear pieces before your first scan. Each piece changes how your scans perform.
+          Field-salvaged tech. Each piece shapes how your rover reads the wreckage. Pick 3.
         </Text>
 
         {/* Gear cards */}
@@ -229,7 +229,7 @@ export default function WardrobeScreen() {
           <Text style={styles.sectionHint}>visual only</Text>
         </View>
         <Text style={styles.sectionDesc}>
-          Customize your look. These don't affect stats — just style.
+          Salvaged gear. No field advantage — just how you carry yourself on the Trail.
         </Text>
 
         {/* Cosmetic slot tabs */}

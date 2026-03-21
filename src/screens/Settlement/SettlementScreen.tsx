@@ -107,7 +107,7 @@ export default function SettlementScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>Settlement</Text>
         <Text style={styles.subtitle}>
-          A makeshift hub. Trade, repair, and gear up before hitting the Trail.
+          Waystation stop. Patch up, trade what you've got, check your gear.
         </Text>
 
         {/* Resources Overview */}
@@ -162,7 +162,7 @@ export default function SettlementScreen({ navigation }: any) {
         {/* Trade */}
         <Card title="Trade Post" icon="swap-horizontal">
           <Text style={styles.tradeDesc}>
-            Exchange resources at fixed rates. Not the best deal, but it beats starving.
+            Fixed rates. Not generous, but better than nothing.
           </Text>
           {TRADE_OPTIONS.map((trade) => (
             <NeonButton
@@ -264,7 +264,7 @@ export default function SettlementScreen({ navigation }: any) {
           accentColor={colors.neonCyan}
         >
           <Text style={styles.tradeDesc}>
-            Manage your gear loadout and cosmetics. Gear affects scan performance — cosmetics are visual only.
+            Your loadout determines how your scans perform out there.
           </Text>
           <View style={styles.equippedPreview}>
             {state.seekerScans.activeGearSlots.map((slotId) => {

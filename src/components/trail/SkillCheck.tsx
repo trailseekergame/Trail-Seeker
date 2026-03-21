@@ -106,7 +106,7 @@ export default function SkillCheck({ speed, onResult }: Props) {
       activeOpacity={1}
       disabled={resolved}
     >
-      <Text style={styles.instruction}>TAP TO LOCK SIGNAL</Text>
+      <Text style={styles.instruction}>TAP WHEN ALIGNED</Text>
 
       {/* Bar */}
       <View style={styles.bar}>
@@ -161,7 +161,7 @@ export default function SkillCheck({ speed, onResult }: Props) {
 
       {!resolved && (
         <Text style={styles.hint}>
-          {speed === 'fast' ? 'Signal unstable — act fast!' : 'Time your tap carefully'}
+          {speed === 'fast' ? 'Signal degrading fast.' : 'Hold... wait for it.'}
         </Text>
       )}
     </TouchableOpacity>

@@ -85,7 +85,7 @@ export default function DailyPlanScreen() {
             Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> on the Trail
           </Text>
           <Text style={styles.headerSubtext}>
-            {rareBoost > 0 ? `Rare loot +${Math.round(rareBoost * 100)}%` : 'Keep your streak going for better odds'}
+            {rareBoost > 0 ? `Signal clarity +${Math.round(rareBoost * 100)}%` : 'Come back tomorrow. The streak sharpens your reads.'}
           </Text>
           {/* Streak progress dots */}
           <View style={styles.streakDots}>
@@ -110,8 +110,8 @@ export default function DailyPlanScreen() {
           <View style={styles.scanCardTop}>
             <Text style={styles.scanNumber}>{ss.scansRemaining}</Text>
             <View style={styles.scanLabelCol}>
-              <Text style={styles.scanLabel}>Scans Available</Text>
-              <Text style={styles.scanLabelSub}>Use them before reset</Text>
+              <Text style={styles.scanLabel}>Scans</Text>
+              <Text style={styles.scanLabelSub}>Before the signal resets</Text>
             </View>
           </View>
           {breakdownNote && (
@@ -152,7 +152,7 @@ export default function DailyPlanScreen() {
               onPress={() => nav.getParent()?.navigate('SettlementTab', { screen: 'Wardrobe' })}
               activeOpacity={0.7}
             >
-              <Text style={styles.manageGearText}>Manage Gear & Cosmetics →</Text>
+              <Text style={styles.manageGearText}>Equipment →</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -210,15 +210,15 @@ export default function DailyPlanScreen() {
         {/* ─── 5. PRIMARY CTA ─── */}
         <View style={styles.ctaContainer}>
           <NeonButton
-            title="Start Today's Run"
+            title="Begin Scan Run"
             onPress={() => nav.navigate('ScanMain')}
             size="lg"
             disabled={ss.scansRemaining <= 0 || ss.activeGearSlots.length === 0}
           />
           <Text style={styles.ctaSubtext}>
             {ss.scansRemaining > 0
-              ? `Spend your Scans in ${ss.currentSector.name}`
-              : 'No scans remaining today'}
+              ? `Scanning ${ss.currentSector.name}`
+              : 'All scans used. Signal resets tomorrow.'}
           </Text>
           {ss.activeGearSlots.length === 0 && (
             <Text style={styles.warningText}>Select at least 1 gear slot above</Text>

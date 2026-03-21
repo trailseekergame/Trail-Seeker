@@ -28,7 +28,7 @@ export function generateTestSector(): Sector {
 
   return {
     id: 'sector-01',
-    name: 'Rustbelt Outskirts',
+    name: 'Rustbelt Verge — Sector 7G',
     tiles,
     gridSize,
     completed: false,

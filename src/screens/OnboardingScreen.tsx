@@ -158,21 +158,21 @@ export default function OnboardingScreen() {
             <View style={[styles.tierDot, { backgroundColor: '#4A9EFF' }]} />
             <View style={styles.tierInfo}>
               <Text style={[styles.tierName, { color: '#4A9EFF' }]}>Scout</Text>
-              <Text style={styles.tierDesc}>Safe. Steady. You'll always find something.</Text>
+              <Text style={styles.tierDesc}>Surface sweep. Low yield, low risk.</Text>
             </View>
           </View>
           <View style={styles.tierRow}>
             <View style={[styles.tierDot, { backgroundColor: colors.neonGreen }]} />
             <View style={styles.tierInfo}>
               <Text style={[styles.tierName, { color: colors.neonGreen }]}>Seeker</Text>
-              <Text style={styles.tierDesc}>Better odds. Real risk. The default for a reason.</Text>
+              <Text style={styles.tierDesc}>Dig deeper. Better signal, real exposure.</Text>
             </View>
           </View>
           <View style={styles.tierRow}>
             <View style={[styles.tierDot, { backgroundColor: colors.neonRed }]} />
             <View style={styles.tierInfo}>
               <Text style={[styles.tierName, { color: colors.neonRed }]}>Gambit</Text>
-              <Text style={styles.tierDesc}>Everything or nothing. The best loot lives here.</Text>
+              <Text style={styles.tierDesc}>Burn the scan for the best signal or nothing.</Text>
             </View>
           </View>
         </View>
