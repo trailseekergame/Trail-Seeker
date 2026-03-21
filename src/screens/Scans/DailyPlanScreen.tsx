@@ -11,6 +11,7 @@ import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
 import gameBalance from '../../config/gameBalance.json';
+import { getDailyObjective } from '../../systems/dailyObjective';
 
 // ─── Short gear effect labels for the summary strip ───
 const GEAR_SHORT: Record<GearSlotId, string> = {
@@ -68,6 +69,8 @@ export default function DailyPlanScreen() {
   const tilesCleared = ss.currentSector.tiles.filter(t => t.cleared).length;
   const totalTiles = ss.currentSector.tiles.length || 25;
 
+  const objective = getDailyObjective(ss);
+
   const activeGearItems = ss.gearInventory.filter(g => ss.activeGearSlots.includes(g.slotId));
 
   // Build the scan breakdown note
@@ -103,6 +106,12 @@ export default function DailyPlanScreen() {
               </View>
             ))}
           </View>
+        </View>
+
+        {/* ─── 1b. DAILY OBJECTIVE ─── */}
+        <View style={styles.objectiveCard}>
+          <Text style={styles.objectiveBrief}>{objective.brief}</Text>
+          <Text style={styles.objectiveContext}>{objective.context}</Text>
         </View>
 
         {/* ─── 2. SCANS & MODIFIERS ─── */}
@@ -282,6 +291,30 @@ const styles = StyleSheet.create({
   },
 
   // ─── 2. Scans ───
+  // ─── 1b. Objective ───
+  objectiveCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.neonAmber + '30',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.neonAmber,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    marginHorizontal: spacing.md,
+  },
+  objectiveBrief: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  objectiveContext: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 4,
+    lineHeight: 20,
+  },
+
   scanCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,

@@ -11,6 +11,7 @@ import SkillCheck from '../../components/trail/SkillCheck';
 import { ScanType, ScanResult, ScanOutcome, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
 import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
+import { getDailyObjective, getSessionSummary } from '../../systems/dailyObjective';
 
 // ─── Constants ───
 
@@ -75,6 +76,7 @@ export default function ScanScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
+  const [showSessionEnd, setShowSessionEnd] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [resolvePhrase, setResolvePhrase] = useState('');
   const [showSkillCheck, setShowSkillCheck] = useState(false);
@@ -290,6 +292,11 @@ export default function ScanScreen() {
     logSessionSummary(ss);
 
     setShowResult(false);
+    setShowSessionEnd(true);
+  };
+
+  const handleDismissSessionEnd = () => {
+    setShowSessionEnd(false);
     nav.goBack();
   };
 
@@ -670,6 +677,49 @@ export default function ScanScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ─── SESSION END SUMMARY ─── */}
+      <Modal visible={showSessionEnd} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.sessionEndCard}>
+            <Text style={styles.sessionEndLabel}>RUN COMPLETE</Text>
+            <View style={styles.sessionEndDivider} />
+            <Text style={styles.sessionEndSummary}>
+              {getSessionSummary(
+                [...ss.sessionResults, ...(lastResult ? [lastResult] : [])],
+                ss.currentSector.name,
+                getDailyObjective(ss),
+              )}
+            </Text>
+            <View style={styles.sessionEndStats}>
+              <View style={styles.sessionEndStat}>
+                <Text style={styles.sessionEndStatValue}>
+                  {(ss.sessionResults.length + (lastResult ? 1 : 0))}
+                </Text>
+                <Text style={styles.sessionEndStatLabel}>scans</Text>
+              </View>
+              <View style={styles.sessionEndStat}>
+                <Text style={styles.sessionEndStatValue}>
+                  {[...ss.sessionResults, ...(lastResult ? [lastResult] : [])].reduce((s, r) => s + r.sectorProgress, 0)}
+                </Text>
+                <Text style={styles.sessionEndStatLabel}>tiles</Text>
+              </View>
+              <View style={styles.sessionEndStat}>
+                <Text style={[styles.sessionEndStatValue, { color: colors.neonGreen }]}>
+                  {[...ss.sessionResults, ...(lastResult ? [lastResult] : [])].filter(r => ['rare', 'legendary', 'component'].includes(r.outcome)).length}
+                </Text>
+                <Text style={styles.sessionEndStatLabel}>rare+</Text>
+              </View>
+            </View>
+            <NeonButton
+              title="Back to base"
+              onPress={handleDismissSessionEnd}
+              variant="primary"
+              size="lg"
+            />
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -1037,5 +1087,59 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.md,
     textAlign: 'center',
+  },
+
+  // ─── Session End ───
+  sessionEndCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  sessionEndLabel: {
+    fontSize: fontSize.xs,
+    color: colors.neonAmber,
+    fontWeight: '700',
+    letterSpacing: 3,
+  },
+  sessionEndDivider: {
+    height: 1,
+    backgroundColor: colors.surfaceLight,
+    width: '80%',
+    marginVertical: spacing.md,
+  },
+  sessionEndSummary: {
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: spacing.lg,
+  },
+  sessionEndStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.surfaceLight,
+  },
+  sessionEndStat: {
+    alignItems: 'center',
+  },
+  sessionEndStatValue: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  sessionEndStatLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
   },
 });
