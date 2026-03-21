@@ -214,9 +214,23 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
                         disabled={locked}
                       >
                         <View style={styles.choiceContent}>
-                          <Text style={[styles.choiceText, locked && styles.choiceTextLocked]}>
-                            {choice.text}
-                          </Text>
+                          <View style={styles.choiceTopRow}>
+                            <Text style={[styles.choiceText, locked && styles.choiceTextLocked]}>
+                              {choice.text}
+                            </Text>
+                            {!locked && choice.riskLevel && choice.riskLevel !== 'moderate' && (
+                              <View style={[styles.riskBadge, {
+                                backgroundColor: choice.riskLevel === 'safe' ? '#4A9EFF20' : choice.riskLevel === 'risky' ? '#FFB80020' : '#FF3B5C20',
+                                borderColor: choice.riskLevel === 'safe' ? '#4A9EFF' : choice.riskLevel === 'risky' ? '#FFB800' : '#FF3B5C',
+                              }]}>
+                                <Text style={[styles.riskBadgeText, {
+                                  color: choice.riskLevel === 'safe' ? '#4A9EFF' : choice.riskLevel === 'risky' ? '#FFB800' : '#FF3B5C',
+                                }]}>
+                                  {choice.riskLevel === 'safe' ? 'SAFE' : choice.riskLevel === 'risky' ? 'RISKY' : 'RECKLESS'}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                           {locked && lockedReason && (
                             <Text style={styles.lockedReason}>🔒 {lockedReason}</Text>
                           )}
@@ -401,6 +415,23 @@ const styles = StyleSheet.create({
   },
   choiceContent: {
     flex: 1,
+  },
+  choiceTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  riskBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  riskBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   choiceText: {
     fontSize: fontSize.md,
