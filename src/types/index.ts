@@ -224,6 +224,9 @@ export interface GameState {
   // Economy
   totalScrapEarned: number;
   totalSuppliesUsed: number;
+
+  // Seeker Scan System
+  seekerScans: SeekerScanState;
 }
 
 export const INITIAL_GAME_STATE: GameState = {
@@ -263,7 +266,81 @@ export const INITIAL_GAME_STATE: GameState = {
   highScore: 0,
   totalScrapEarned: 0,
   totalSuppliesUsed: 0,
+  seekerScans: {
+    streakDay: 1,
+    lastLoginDate: new Date().toISOString().split('T')[0],
+    scansRemaining: 4,
+    scansTotal: 4,
+    scansUsedToday: { scout: 0, seeker: 0, gambit: 0 },
+    gearInventory: [],
+    activeGearSlots: ['optics_rig', 'exo_vest', 'grip_gauntlets'],
+    gearLockedToday: false,
+    currentSector: { id: 'sector-01', name: 'Rustbelt Outskirts', tiles: [], gridSize: 5, completed: false },
+    sectorsCompleted: 0,
+    sessionResults: [],
+    sessionStartTime: Date.now(),
+  },
 };
+
+// ─── Seeker Scan System ───
+export type ScanType = 'scout' | 'seeker' | 'gambit';
+export type ScanOutcome = 'whiff' | 'common' | 'uncommon' | 'rare' | 'legendary' | 'component';
+export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boots' | 'cortex_link' | 'salvage_drone';
+export type GearQuality = 'standard' | 'enhanced' | 'perfected';
+export type TileType = 'unknown' | 'resource' | 'anomaly' | 'boss' | 'cleared';
+
+export interface GearItem {
+  slotId: GearSlotId;
+  quality: GearQuality;
+  name: string;
+  shortDesc: string;
+  icon: string;
+}
+
+export interface SectorTile {
+  id: string;
+  row: number;
+  col: number;
+  type: TileType;
+  cleared: boolean;
+  adjacentTo: string[];
+}
+
+export interface Sector {
+  id: string;
+  name: string;
+  tiles: SectorTile[];
+  gridSize: number;
+  completed: boolean;
+}
+
+export interface ScanResult {
+  scanType: ScanType;
+  outcome: ScanOutcome;
+  tileId: string;
+  sectorProgress: number;
+  lootName?: string;
+  lootRarity?: string;
+  droneProc: boolean;
+  bootsProc: boolean;
+  cortexProc: boolean;
+  opticsProc: boolean;
+}
+
+export interface SeekerScanState {
+  streakDay: number;
+  lastLoginDate: string;
+  scansRemaining: number;
+  scansTotal: number;
+  scansUsedToday: { scout: number; seeker: number; gambit: number };
+  gearInventory: GearItem[];
+  activeGearSlots: GearSlotId[];
+  gearLockedToday: boolean;
+  currentSector: Sector;
+  sectorsCompleted: number;
+  sessionResults: ScanResult[];
+  sessionStartTime: number;
+}
 
 export const MAX_FREE_MOVES = 3;
 export const MOVE_REFRESH_MS = 24 * 60 * 60 * 1000; // 24 hours

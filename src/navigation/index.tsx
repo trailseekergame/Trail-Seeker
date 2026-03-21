@@ -16,6 +16,8 @@ import CodexEntryScreen from '../screens/Codex/CodexEntryScreen';
 import ArcadeScreen from '../screens/Arcade/ArcadeScreen';
 import MiniGameScreen from '../screens/Arcade/MiniGameScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import DailyPlanScreen from '../screens/Scans/DailyPlanScreen';
+import ScanScreen from '../screens/Scans/ScanScreen';
 
 const Tab = createBottomTabNavigator();
 const TrailStack = createNativeStackNavigator();
@@ -61,6 +63,16 @@ const tabIconStyles = StyleSheet.create({
 function TrailStackNavigator() {
   return (
     <TrailStack.Navigator screenOptions={screenOptions}>
+      <TrailStack.Screen
+        name="DailyPlan"
+        component={DailyPlanScreen}
+        options={{ title: 'Seeker Scan' }}
+      />
+      <TrailStack.Screen
+        name="ScanMain"
+        component={ScanScreen}
+        options={{ title: 'Scanning' }}
+      />
       <TrailStack.Screen
         name="TrailMain"
         component={TrailScreen}

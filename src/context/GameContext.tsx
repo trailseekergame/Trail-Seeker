@@ -11,6 +11,10 @@ import {
   FactionAlignment,
   AlignmentFlag,
   TrailOverReason,
+  GearItem,
+  GearSlotId,
+  Sector,
+  ScanResult,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 
@@ -42,7 +46,16 @@ type GameAction =
   | { type: 'ADJUST_ALIGNMENT'; payload: Partial<FactionAlignment> }
   | { type: 'SET_ALIGNMENT_FLAG'; payload: AlignmentFlag }
   | { type: 'SET_TRAIL_OVER'; payload: TrailOverReason }
-  | { type: 'REVIVE_PLAYER' };
+  | { type: 'REVIVE_PLAYER' }
+  | { type: 'INIT_SEEKER_SCANS'; payload: { gearInventory: GearItem[]; sector: Sector } }
+  | { type: 'USE_SCAN'; payload: ScanResult }
+  | { type: 'SET_ACTIVE_GEAR'; payload: GearSlotId[] }
+  | { type: 'LOCK_GEAR_TODAY' }
+  | { type: 'ADVANCE_STREAK' }
+  | { type: 'REFRESH_DAILY_SCANS'; payload: number }
+  | { type: 'CLEAR_TILE'; payload: string }
+  | { type: 'COMPLETE_SECTOR' }
+  | { type: 'RESET_SESSION' };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -202,6 +215,138 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         trailOver: false,
         trailOverReason: undefined,
       };
+
+    // ─── Seeker Scan Actions ───
+
+    case 'INIT_SEEKER_SCANS': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          gearInventory: action.payload.gearInventory,
+          currentSector: action.payload.sector,
+        },
+      };
+    }
+
+    case 'USE_SCAN': {
+      const result = action.payload;
+      const ss = state.seekerScans;
+      const scansRemaining = result.droneProc ? ss.scansRemaining : ss.scansRemaining - 1;
+      const usedToday = { ...ss.scansUsedToday };
+      if (!result.droneProc) {
+        usedToday[result.scanType] = (usedToday[result.scanType] || 0) + 1;
+      }
+      return {
+        ...state,
+        seekerScans: {
+          ...ss,
+          scansRemaining: Math.max(0, scansRemaining),
+          scansUsedToday: usedToday,
+          sessionResults: [...ss.sessionResults, result],
+          gearLockedToday: true,
+        },
+      };
+    }
+
+    case 'SET_ACTIVE_GEAR': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          activeGearSlots: action.payload.slice(0, state.seekerScans.gearLockedToday ? state.seekerScans.activeGearSlots.length : 3),
+        },
+      };
+    }
+
+    case 'LOCK_GEAR_TODAY': {
+      return {
+        ...state,
+        seekerScans: { ...state.seekerScans, gearLockedToday: true },
+      };
+    }
+
+    case 'ADVANCE_STREAK': {
+      const today = new Date().toISOString().split('T')[0];
+      const lastLogin = state.seekerScans.lastLoginDate;
+      if (lastLogin === today) return state;
+
+      const lastDate = new Date(lastLogin);
+      const todayDate = new Date(today);
+      const daysDiff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (24 * 60 * 60 * 1000));
+
+      let newStreak = state.seekerScans.streakDay;
+      if (daysDiff === 1) {
+        newStreak = Math.min(newStreak + 1, 7);
+      } else if (daysDiff > 1) {
+        newStreak = Math.max(1, newStreak - (daysDiff - 1));
+      }
+
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          streakDay: newStreak,
+          lastLoginDate: today,
+        },
+      };
+    }
+
+    case 'REFRESH_DAILY_SCANS': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          scansRemaining: action.payload,
+          scansTotal: action.payload,
+          scansUsedToday: { scout: 0, seeker: 0, gambit: 0 },
+          gearLockedToday: false,
+          sessionResults: [],
+          sessionStartTime: Date.now(),
+        },
+      };
+    }
+
+    case 'CLEAR_TILE': {
+      const tiles = state.seekerScans.currentSector.tiles.map(t =>
+        t.id === action.payload ? { ...t, cleared: true, type: 'cleared' as const } : t
+      );
+      const allCleared = tiles.every(t => t.cleared);
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: {
+            ...state.seekerScans.currentSector,
+            tiles,
+            completed: allCleared,
+          },
+          sectorsCompleted: allCleared ? state.seekerScans.sectorsCompleted + 1 : state.seekerScans.sectorsCompleted,
+        },
+      };
+    }
+
+    case 'COMPLETE_SECTOR': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: { ...state.seekerScans.currentSector, completed: true },
+          sectorsCompleted: state.seekerScans.sectorsCompleted + 1,
+        },
+      };
+    }
+
+    case 'RESET_SESSION': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          sessionResults: [],
+          sessionStartTime: Date.now(),
+        },
+      };
+    }
 
     default:
       return state;
