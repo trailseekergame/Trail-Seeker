@@ -280,7 +280,7 @@ export default function WardrobeScreen() {
                 {item.description}
               </Text>
               {!unlocked && item.unlockCondition && (
-                <Text style={styles.unlockCondition}>🔒 {item.unlockCondition}</Text>
+                <Text style={styles.unlockCondition}>◉ {item.unlockCondition}</Text>
               )}
               <View style={styles.cosmeticActions}>
                 {unlocked && !equipped && (

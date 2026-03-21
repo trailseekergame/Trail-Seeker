@@ -179,13 +179,13 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
-      case 'encounter': return '\u2694\uFE0F';
-      case 'discovery': return '\uD83D\uDD0D';
-      case 'trade': return '\uD83E\uDD1D';
-      case 'hazard': return '\u26A0\uFE0F';
-      case 'lore': return '\uD83D\uDCD6';
-      case 'faction': return '\uD83C\uDFF4';
-      default: return '\u2753';
+      case 'encounter': return '✕';
+      case 'discovery': return '◎';
+      case 'trade': return '⇄';
+      case 'hazard': return '△';
+      case 'lore': return '≡';
+      case 'faction': return '⬡';
+      default: return '?';
     }
   };
 
@@ -213,7 +213,7 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
     switch (quality) {
       case 'GOOD': return '\u2726';
       case 'NEUTRAL': return '\u2014';
-      case 'BAD': return '\u26A0';
+      case 'BAD': return '▼';
     }
   };
 
@@ -221,18 +221,18 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
     const changes: string[] = [];
     if (outcome.resourceChanges?.scrap) {
       const v = outcome.resourceChanges.scrap;
-      changes.push(v > 0 ? `+${v} \uD83D\uDD29 Scrap` : `${v} \uD83D\uDD29 Scrap`);
+      changes.push(v > 0 ? `+${v} ▫ Scrap` : `${v} ▫ Scrap`);
     }
     if (outcome.resourceChanges?.supplies) {
       const v = outcome.resourceChanges.supplies;
-      changes.push(v > 0 ? `+${v} \uD83D\uDCE6 Supplies` : `${v} \uD83D\uDCE6 Supplies`);
+      changes.push(v > 0 ? `+${v} ▪ Supplies` : `${v} ▪ Supplies`);
     }
-    if (outcome.damage) changes.push(`-${outcome.damage} \u2764\uFE0F Health`);
-    if (outcome.heal) changes.push(`+${outcome.heal} \u2764\uFE0F Health`);
+    if (outcome.damage) changes.push(`-${outcome.damage} ♥ Health`);
+    if (outcome.heal) changes.push(`+${outcome.heal} ♥ Health`);
     if (outcome.addItem) changes.push(`+ ${outcome.addItem}`);
-    if (outcome.unlockCodex?.length) changes.push('\uD83D\uDCD6 New codex entry');
-    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push('\u27A1\uFE0F Pushed forward');
-    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push('\u2B05\uFE0F Pushed back');
+    if (outcome.unlockCodex?.length) changes.push('◇ New codex entry');
+    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push('▸ Pushed forward');
+    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push('◂ Pushed back');
     return changes;
   };
 
@@ -313,7 +313,7 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
                               )}
                             </View>
                             {locked && lockedReason && (
-                              <Text style={styles.lockedReason}>{'\uD83D\uDD12'} {lockedReason}</Text>
+                              <Text style={styles.lockedReason}>{'◉'} {lockedReason}</Text>
                             )}
                           </View>
                           {!locked && <Text style={styles.choiceArrow}>{'\u203A'}</Text>}
@@ -328,7 +328,7 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
             {/* ─── ROLLING PHASE: animated tension build ─── */}
             {phase === 'rolling' && (
               <Animated.View style={[styles.rollContainer, { opacity: rollOpacity, transform: [{ scale: rollScale }] }]}>
-                <Text style={styles.rollDice}>{'\uD83C\uDFB2'}</Text>
+                <Text style={styles.rollDice}>{'⟐'}</Text>
                 <Text style={styles.rollPhrase}>
                   {rollPhrases[rollPhraseIndex] || 'Resolving...'}
                 </Text>
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.surfaceLight,
   },
   categoryIcon: {
-    fontSize: 32,
+    fontSize: 28,
     marginRight: spacing.md,
   },
   headerText: {

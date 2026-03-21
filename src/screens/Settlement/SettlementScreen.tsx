@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking } from 'react-native';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import Card from '../../components/common/Card';
 import NeonButton from '../../components/common/NeonButton';
@@ -110,17 +110,17 @@ export default function SettlementScreen({ navigation }: any) {
         </Text>
 
         {/* Resources Overview */}
-        <Card title="Resources" icon="🎒">
+        <Card title="Resources" icon="◫">
           <View style={styles.resourceGrid}>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>🔩</Text>
+              <Text style={styles.resourceIcon}>▫</Text>
               <Text style={[styles.resourceValue, { color: colors.scrap }]}>
                 {state.resources.scrap}
               </Text>
               <Text style={styles.resourceLabel}>Scrap</Text>
             </View>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>📦</Text>
+              <Text style={styles.resourceIcon}>▪</Text>
               <Text style={[styles.resourceValue, { color: colors.supplies }]}>
                 {state.resources.supplies}
               </Text>
@@ -147,7 +147,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Health Status */}
-        <Card title="Status" icon="❤️">
+        <Card title="Status" icon="♥">
           <HealthBar value={state.playerHealth} max={100} label="Player Health" />
           <HealthBar
             value={state.roverHealth}
@@ -158,7 +158,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Trade */}
-        <Card title="Trade Post" icon="🤝">
+        <Card title="Trade Post" icon="⇄">
           <Text style={styles.tradeDesc}>
             Exchange resources at fixed rates. Not the best deal, but it beats starving.
           </Text>
@@ -175,7 +175,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Repair */}
-        <Card title="Repair Bay" icon="🔧">
+        <Card title="Repair Bay" icon="⚙">
           <Text style={styles.tradeDesc}>
             Spend {REPAIR_COST} scrap to repair your rover (+15 condition).
           </Text>
@@ -189,7 +189,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Notifications */}
-        <Card title="Notifications" icon="🔔">
+        <Card title="Notifications" icon="◉">
           <Text style={styles.tradeDesc}>
             Daily reminders to claim your Seeker Scans and protect your streak.
           </Text>
@@ -223,7 +223,7 @@ export default function SettlementScreen({ navigation }: any) {
 
         {/* Dev Analytics (only in development) */}
         {__DEV__ && (
-          <Card title="Dev Analytics" icon="📊">
+          <Card title="Dev Analytics" icon="▦">
             <Text style={styles.tradeDesc}>
               Player behavior telemetry. Weekly report sent to trailseekergame@gmail.com.
             </Text>
@@ -257,7 +257,7 @@ export default function SettlementScreen({ navigation }: any) {
         {/* Equipment */}
         <Card
           title="Equipment"
-          icon="⚙️"
+          icon="⬡"
           onPress={() => navigation.navigate('Wardrobe')}
           accentColor={colors.neonCyan}
         >
@@ -278,6 +278,18 @@ export default function SettlementScreen({ navigation }: any) {
             title="Open Equipment →"
             onPress={() => navigation.navigate('Wardrobe')}
             variant="ghost"
+            size="sm"
+          />
+        </Card>
+        {/* Feedback */}
+        <Card title="Feedback" icon="✉">
+          <Text style={styles.tradeDesc}>
+            Found a bug or have an idea? Let us know.
+          </Text>
+          <NeonButton
+            title="Send Feedback"
+            onPress={() => Linking.openURL('mailto:trailseekergame@gmail.com?subject=Trail%20Seeker%20Feedback')}
+            variant="secondary"
             size="sm"
           />
         </Card>
@@ -307,7 +319,7 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   resourceIcon: {
-    fontSize: 28,
+    fontSize: 32,
     marginBottom: 4,
   },
   resourceValue: {

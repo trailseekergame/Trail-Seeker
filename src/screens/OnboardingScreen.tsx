@@ -172,7 +172,7 @@ export default function OnboardingScreen() {
           onPress={handleComplete}
           variant="primary"
           size="lg"
-          icon="🛤️"
+          icon="▸"
           style={styles.beginBtn}
         />
       </View>

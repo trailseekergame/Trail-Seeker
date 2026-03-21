@@ -19,25 +19,25 @@ export default function ResourceBar() {
     <View style={styles.container}>
       <View style={styles.row}>
         <ResourceItem
-          icon="📡"
+          icon="◈"
           value={ss.scansRemaining}
           label="Scans"
           color={ss.scansRemaining > 0 ? colors.neonGreen : colors.neonRed}
         />
         <ResourceItem
-          icon="🔥"
+          icon="▲"
           value={ss.streakDay}
           label="Streak"
           color={colors.neonAmber}
         />
         <ResourceItem
-          icon="💎"
+          icon="◇"
           value={rareBoost > 0 ? `+${Math.round(rareBoost * 100)}%` : '—'}
           label="Rare"
           color={colors.neonCyan}
         />
         <ResourceItem
-          icon="🗺️"
+          icon="▣"
           value={`${tilesCleared}/${totalTiles}`}
           label="Sector"
           color={colors.neonPurple}
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   icon: {
-    fontSize: 18,
+    fontSize: 20,
     marginBottom: 2,
   },
   value: {

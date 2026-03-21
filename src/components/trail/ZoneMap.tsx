@@ -38,15 +38,15 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
   const getNodeIcon = (node: ZoneNode) => {
     switch (node.type) {
       case 'hub':
-        return '🏠';
+        return '△';
       case 'settlement':
-        return '🏪';
+        return '▣';
       case 'encounter':
-        return '⚔️';
+        return '✕';
       case 'waypoint':
-        return '📍';
+        return '◆';
       case 'boss':
-        return '💀';
+        return '☠';
       default:
         return '●';
     }

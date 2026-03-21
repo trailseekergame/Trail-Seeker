@@ -8,12 +8,12 @@ import codexEntries from '../../data/codex';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 const CATEGORIES: { key: CodexCategory; label: string; icon: string }[] = [
-  { key: 'world', label: 'World', icon: '🌍' },
-  { key: 'zones', label: 'Zones', icon: '🗺️' },
-  { key: 'factions', label: 'Factions', icon: '🏴' },
-  { key: 'enemies', label: 'Enemies', icon: '⚔️' },
+  { key: 'world', label: 'World', icon: '◉' },
+  { key: 'zones', label: 'Zones', icon: '▣' },
+  { key: 'factions', label: 'Factions', icon: '⬡' },
+  { key: 'enemies', label: 'Enemies', icon: '✕' },
   { key: 'loot', label: 'Loot', icon: '✦' },
-  { key: 'personal', label: 'Personal', icon: '📝' },
+  { key: 'personal', label: 'Personal', icon: '≡' },
 ];
 
 export default function CodexScreen({ navigation }: any) {
@@ -49,7 +49,7 @@ export default function CodexScreen({ navigation }: any) {
 
     return (
       <>
-        <Card title="Identity" icon="🪪">
+        <Card title="Identity" icon="◫">
           <Text style={styles.personalLabel}>Name</Text>
           <Text style={styles.personalValue}>{state.playerName}</Text>
 
@@ -67,7 +67,7 @@ export default function CodexScreen({ navigation }: any) {
           )}
         </Card>
 
-        <Card title="Trail Stats" icon="📊">
+        <Card title="Trail Stats" icon="▦">
           <View style={styles.statRow}>
             <Text style={styles.statLabel}>Days on the Trail</Text>
             <Text style={styles.statValue}>{state.dayNumber}</Text>
@@ -168,7 +168,7 @@ export default function CodexScreen({ navigation }: any) {
             {lockedCount > 0 && (
               <View style={styles.lockedInfo}>
                 <Text style={styles.lockedText}>
-                  🔒 {lockedCount} more {lockedCount === 1 ? 'entry' : 'entries'} to discover
+                  ◉ {lockedCount} more {lockedCount === 1 ? 'entry' : 'entries'} to discover
                 </Text>
               </View>
             )}

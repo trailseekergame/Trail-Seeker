@@ -27,19 +27,19 @@ const SCAN_LABELS: Record<ScanType, { name: string; flavor: string; desc: string
 
 const TILE_ICONS: Record<string, string> = {
   unknown: '?',
-  resource: '⛏',
-  anomaly: '⚠',
-  boss: '💀',
+  resource: '◆',
+  anomaly: '△',
+  boss: '☠',
   cleared: '✓',
 };
 
 const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: string }> = {
-  whiff: { banner: 'Nothing Found', color: colors.neonRed, icon: '📡' },
-  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '📦' },
-  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '✨' },
-  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '💠' },
-  legendary: { banner: 'Jackpot', color: '#FFD700', icon: '🏆' },
-  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '🔮' },
+  whiff: { banner: 'Nothing Found', color: colors.neonRed, icon: '✕' },
+  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '▪' },
+  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '◈' },
+  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '◇' },
+  legendary: { banner: 'Jackpot', color: '#FFD700', icon: '★' },
+  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '⬡' },
 };
 
 // ─── Resolving animation durations ───
@@ -123,19 +123,19 @@ export default function ScanScreen() {
   const getGearHints = (scanType: ScanType): string[] => {
     const hints: string[] = [];
     if (ss.activeGearSlots.includes('grip_gauntlets') && scanType !== 'scout') {
-      hints.push('🧤 Gauntlets: Safer');
+      hints.push('▽ Gauntlets: Safer');
     }
     if (ss.activeGearSlots.includes('optics_rig')) {
-      hints.push('🔍 Optics: Better Loot');
+      hints.push('◎ Optics: Better Loot');
     }
     if (scanType === 'gambit' && ss.activeGearSlots.includes('cortex_link')) {
-      hints.push('🧠 Cortex: Boosted');
+      hints.push('⟁ Cortex: Boosted');
     }
     if (ss.activeGearSlots.includes('salvage_drone')) {
-      hints.push('🔄 Drone: Backup');
+      hints.push('↻ Drone: Backup');
     }
     if (ss.activeGearSlots.includes('nav_boots')) {
-      hints.push('🥾 Boots: +Progress');
+      hints.push('⇥ Boots: +Progress');
     }
     return hints;
   };
@@ -468,9 +468,9 @@ export default function ScanScreen() {
               {SCAN_LABELS[selectedScan].desc}
             </Text>
             <Text style={styles.confirmTile}>
-              {selectedTile?.type === 'boss' ? '💀 Boss Tile' :
-               selectedTile?.type === 'anomaly' ? '⚠ Anomaly' :
-               selectedTile?.type === 'resource' ? '⛏ Resource' :
+              {selectedTile?.type === 'boss' ? '☠ Boss Tile' :
+               selectedTile?.type === 'anomaly' ? '△ Anomaly' :
+               selectedTile?.type === 'resource' ? '◆ Resource' :
                '? Unknown'}
             </Text>
             <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
@@ -510,7 +510,7 @@ export default function ScanScreen() {
           >
             <View style={[styles.resolvingIcon, { borderColor: SCAN_COLORS[selectedScan] }]}>
               <Text style={[styles.resolvingIconText, { color: SCAN_COLORS[selectedScan] }]}>
-                ⚡
+                ⟐
               </Text>
             </View>
             <Text style={[styles.resolvingText, { color: SCAN_COLORS[selectedScan] }]}>
@@ -592,22 +592,22 @@ export default function ScanScreen() {
                   <View style={styles.procsContainer}>
                     {lastResult.droneProc && (
                       <Text style={[styles.procText, { color: colors.neonAmber }]}>
-                        🔄 Salvage Drone recovered your Scan!
+                        ↻ Drone recovered your Scan!
                       </Text>
                     )}
                     {lastResult.bootsProc && (
                       <Text style={[styles.procText, { color: colors.neonCyan }]}>
-                        🥾 Nav Boots found a shortcut!
+                        ⇥ Boots found a shortcut!
                       </Text>
                     )}
                     {lastResult.cortexProc && (
                       <Text style={[styles.procText, { color: colors.neonPurple }]}>
-                        🧠 Cortex Link amplified the Gambit!
+                        ⟁ Cortex amplified the Gambit!
                       </Text>
                     )}
                     {lastResult.opticsProc && (
                       <Text style={[styles.procText, { color: colors.neonGreen }]}>
-                        🔍 Optics Rig locked a rare signal!
+                        ◎ Optics locked a rare signal!
                       </Text>
                     )}
                   </View>
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   resultIcon: {
-    fontSize: 40,
+    fontSize: 44,
     marginBottom: spacing.sm,
   },
   resultBanner: {
