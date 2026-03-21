@@ -1,11 +1,12 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../context/GameContext';
 import { useNotifications } from '../hooks/useNotifications';
+import AudioManager from '../services/audioManager';
 import { colors, fontSize } from '../theme';
 
 // Screens
@@ -19,6 +20,7 @@ import MiniGameScreen from '../screens/Arcade/MiniGameScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import DailyPlanScreen from '../screens/Scans/DailyPlanScreen';
 import ScanScreen from '../screens/Scans/ScanScreen';
+import SettingsScreen from '../screens/Settings/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 const TrailStack = createNativeStackNavigator();
@@ -27,12 +29,22 @@ const CodexStack = createNativeStackNavigator();
 const ArcadeStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
 
+function SettingsButton() {
+  const nav = useNavigation<any>();
+  return (
+    <TouchableOpacity onPress={() => nav.navigate('Settings')} style={{ marginRight: 12 }}>
+      <MaterialCommunityIcons name="cog-outline" size={22} color={colors.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
 const screenOptions = {
   headerStyle: { backgroundColor: colors.surface },
   headerTintColor: colors.textPrimary,
   headerTitleStyle: { fontWeight: '600' as const },
   headerShadowVisible: false,
   contentStyle: { backgroundColor: colors.background },
+  headerRight: () => <SettingsButton />,
 };
 
 function TabIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
@@ -203,6 +215,11 @@ export default function AppNavigator() {
   const { state, isLoading } = useGame();
   useNotifications();
 
+  useEffect(() => {
+    AudioManager.init();
+    return () => { AudioManager.cleanup(); };
+  }, []);
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
@@ -217,7 +234,21 @@ export default function AppNavigator() {
         {!state.onboardingComplete ? (
           <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : (
-          <RootStack.Screen name="Main" component={MainTabs} />
+          <>
+            <RootStack.Screen name="Main" component={MainTabs} />
+            <RootStack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                presentation: 'modal',
+                headerShown: true,
+                headerStyle: { backgroundColor: colors.surface },
+                headerTintColor: colors.textPrimary,
+                headerShadowVisible: false,
+                title: '',
+              }}
+            />
+          </>
         )}
       </RootStack.Navigator>
     </NavigationContainer>

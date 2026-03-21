@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import AudioManager from '../../services/audioManager';
 
 interface Props {
   /** 'moderate' speed for risky, 'fast' for reckless */
@@ -75,6 +76,14 @@ export default function SkillCheck({ speed, onResult }: Props) {
     // Stop animation
     animRef.current?.stop();
     if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+
+    // SFX + haptics
+    if (success) {
+      AudioManager.playSfx('skill_check_hit');
+      AudioManager.vibrate('light');
+    } else {
+      AudioManager.playSfx('skill_check_miss');
+    }
 
     // Flash text
     setFlashText(success ? 'LOCKED IN' : 'MISSED');

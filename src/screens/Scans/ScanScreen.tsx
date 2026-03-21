@@ -12,6 +12,7 @@ import { ScanType, ScanResult, ScanOutcome, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
 import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
 import { getDailyObjective, getSessionSummary } from '../../systems/dailyObjective';
+import AudioManager from '../../services/audioManager';
 
 // ─── Constants ───
 
@@ -89,8 +90,9 @@ export default function ScanScreen() {
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phraseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Cleanup timers
+  // Set scan ambient music + cleanup timers
   useEffect(() => {
+    AudioManager.setMusic('ambient_scan');
     return () => {
       if (resolveTimerRef.current) clearTimeout(resolveTimerRef.current);
       if (phraseTimerRef.current) clearInterval(phraseTimerRef.current);
@@ -215,6 +217,9 @@ export default function ScanScreen() {
     if (!selectedTile) return;
     setShowConfirm(false);
 
+    AudioManager.playSfx('scan_press');
+    AudioManager.vibrate('light');
+
     const result = resolveScan(selectedScan, selectedTile.id, ss);
     dispatch({ type: 'USE_SCAN', payload: result });
 
@@ -251,6 +256,38 @@ export default function ScanScreen() {
     resolveTimerRef.current = setTimeout(() => {
       stopResolvingAnimation();
 
+      // Play outcome SFX
+      if (selectedScan === 'gambit') {
+        if (result.outcome === 'whiff') {
+          AudioManager.playSfx('gambit_whiff');
+          AudioManager.vibrate('medium');
+        }
+        // Non-whiff gambit: sound plays after skill check
+      } else {
+        switch (result.outcome) {
+          case 'whiff':
+            AudioManager.playSfx('scan_loss');
+            AudioManager.vibrate('medium');
+            break;
+          case 'common':
+          case 'uncommon':
+            AudioManager.playSfx('scan_win');
+            break;
+          case 'rare':
+            AudioManager.playSfx('scan_rare');
+            AudioManager.vibrate('light');
+            break;
+          case 'legendary':
+            AudioManager.playSfx('scan_legendary');
+            AudioManager.vibrate('heavy');
+            break;
+          case 'component':
+            AudioManager.playSfx('scan_component');
+            AudioManager.vibrate('medium');
+            break;
+        }
+      }
+
       // Gambit non-whiff → skill check before showing result
       if (selectedScan === 'gambit' && result.outcome !== 'whiff') {
         setShowSkillCheck(true);
@@ -265,6 +302,9 @@ export default function ScanScreen() {
   // ─── Gambit skill check result handler ───
   const handleGambitSkillCheck = (success: boolean) => {
     setShowSkillCheck(false);
+    // Gambit always plays gambit_win for non-whiff outcomes
+    AudioManager.playSfx('gambit_win');
+    AudioManager.vibrate(success ? 'heavy' : 'light');
     if (success && lastResult) {
       const upgraded = TIER_UPGRADE[lastResult.outcome];
       if (upgraded) {

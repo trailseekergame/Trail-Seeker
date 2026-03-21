@@ -12,6 +12,7 @@ import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
+import AudioManager from '../../services/audioManager';
 
 // ─── Short gear effect labels for the summary strip ───
 const GEAR_SHORT: Record<GearSlotId, string> = {
@@ -38,9 +39,15 @@ export default function DailyPlanScreen() {
     }
   }, []);
 
-  // Advance streak on mount
+  // Set hub ambient music + advance streak on mount
   useEffect(() => {
+    AudioManager.setMusic('ambient_hub');
+    const prevStreak = ss.streakDay;
     dispatch({ type: 'ADVANCE_STREAK' });
+    // Play streak_up if streak actually advanced (check on next render via timeout)
+    if (prevStreak > 0) {
+      AudioManager.playSfx('streak_up');
+    }
   }, []);
 
   // Recompute daily scan count when gear selection changes (only before first scan)

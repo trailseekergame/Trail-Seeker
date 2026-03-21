@@ -15,6 +15,7 @@ import { GameEvent, EventChoice, EventOutcome, OutcomeQuality, ChoiceRisk } from
 import NeonButton from '../common/NeonButton';
 import TypewriterText from '../common/TypewriterText';
 import SkillCheck from './SkillCheck';
+import AudioManager from '../../services/audioManager';
 
 // ─── Roll Animation Phrases (cycled sequentially during roll) ───
 const ROLL_PHRASE_SETS: string[][] = [
@@ -89,6 +90,8 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
   if (!event) return null;
 
   const handleChoice = (choice: EventChoice) => {
+    AudioManager.playSfx('ui_confirm');
+
     setChosenText(choice.text);
     const risk = choice.riskLevel || 'moderate';
     setChosenRisk(risk);
@@ -148,6 +151,12 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const transitionToOutcome = useCallback(() => {
     setPhase('outcome');
+    // Play outcome SFX based on quality
+    if (outcomeQuality === 'GOOD') {
+      AudioManager.playSfx('scan_win');
+    } else if (outcomeQuality === 'BAD') {
+      AudioManager.playSfx('scan_loss');
+    }
     Animated.parallel([
       Animated.timing(resultOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
       Animated.timing(resultSlide, {
