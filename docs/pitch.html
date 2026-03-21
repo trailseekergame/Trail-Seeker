@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trail Seeker — Solana Mobile Builder Grant</title>
+<meta name="description" content="A daily survival RPG for Solana Seeker. Five minutes a day. Real strategy. $SKR-powered progression.">
+<meta property="og:title" content="Trail Seeker — Grant Pitch Deck">
+<meta property="og:description" content="A daily survival RPG for Solana Seeker powered by $SKR.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0E13;--bg-card:#111820;--bg-table:#0F1520;--bg-alt:#141C28;
+  --white:#FFFFFF;--w80:#CCCCCC;--w60:#999999;--w40:#666666;
+  --green:#39FF14;--cyan:#00E5FF;--amber:#FFB800;--red:#FF3B5C;--purple:#B44AFF;
+  --line:#1E2A38;--gray:#8899AA;
+  --font:Inter,system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;background:var(--bg);color:var(--white);font-family:var(--font)}
+body{background:var(--bg);line-height:1.6}
+
+/* Slide container */
+.slide{min-height:100vh;max-width:1100px;margin:0 auto;padding:60px 40px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.slide::after{content:'';position:absolute;bottom:0;left:40px;right:40px;height:1px;background:var(--line)}
+.slide:last-child::after{display:none}
+
+/* Typography */
+h1{font-family:var(--mono);font-size:clamp(2.5rem,6vw,4rem);color:var(--green);font-weight:700;letter-spacing:-0.02em;line-height:1.1}
+h2{font-family:var(--mono);font-size:clamp(1.5rem,4vw,2.2rem);color:var(--green);font-weight:700;margin-bottom:24px;line-height:1.2}
+h3{font-size:1.1rem;color:var(--cyan);font-weight:600;margin-bottom:8px}
+p{color:var(--w80);font-size:0.95rem;margin-bottom:12px}
+.subtitle{font-size:1.25rem;color:var(--white);font-weight:500;margin:12px 0}
+.tagline{color:var(--w60);font-size:0.95rem}
+.tagline span{color:var(--cyan)}
+.label{font-family:var(--mono);font-size:0.7rem;color:var(--w40);letter-spacing:2px;text-transform:uppercase}
+.footer-text{font-size:0.75rem;color:var(--w40);margin-top:40px}
+
+/* Cards */
+.card-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:24px 0}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:24px}
+.card h3{border-top:3px solid var(--green);padding-top:8px;margin-bottom:12px}
+.card.cyan h3{border-color:var(--cyan)}
+.card.amber h3{border-color:var(--amber)}
+
+/* Table */
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:0.9rem}
+th{text-align:left;color:var(--cyan);font-family:var(--mono);font-size:0.8rem;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;color:var(--w80);border-bottom:1px solid var(--line)}
+tr:nth-child(even) td{background:var(--bg-alt)}
+.cost{color:var(--amber);font-weight:600}
+
+/* Bullets */
+ul{list-style:none;padding:0;margin:12px 0}
+ul li{position:relative;padding-left:20px;margin-bottom:10px;color:var(--w80);font-size:0.9rem}
+ul li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+/* Gear grid */
+.gear-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.gear-slot{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}
+.gear-slot .name{color:var(--green);font-weight:600;font-size:0.9rem}
+.gear-slot .body{color:var(--w60);font-size:0.75rem}
+.gear-slot .effect{color:var(--w80);font-size:0.8rem;margin-top:4px}
+
+/* Builds */
+.build{background:var(--bg-card);border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:14px 18px;margin:10px 0}
+.build.cyan{border-color:var(--cyan)}
+.build.amber{border-color:var(--amber)}
+.build strong{color:var(--green);font-size:0.85rem}
+.build.cyan strong{color:var(--cyan)}
+.build.amber strong{color:var(--amber)}
+.build p{margin:4px 0;font-size:0.85rem;color:var(--w60)}
+
+/* Flow */
+.flow{display:flex;align-items:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+.flow-step{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:14px 20px;text-align:center;flex:1;min-width:140px}
+.flow-step.active{border-color:var(--green)}
+.flow-step .step-title{color:var(--white);font-weight:600;font-size:0.9rem}
+.flow-step .step-time{color:var(--green);font-size:0.8rem}
+.flow-arrow{color:var(--green);font-size:1.2rem}
+
+/* Timeline */
+.timeline{position:relative;margin:24px 0;padding-left:24px;border-left:2px solid var(--line)}
+.timeline-item{position:relative;margin-bottom:24px;padding-left:16px}
+.timeline-item::before{content:'';position:absolute;left:-30px;top:6px;width:12px;height:12px;border-radius:50%}
+.timeline-item.green::before{background:var(--green)}
+.timeline-item.cyan::before{background:var(--cyan)}
+.timeline-item.amber::before{background:var(--amber)}
+.timeline-item h3{margin-bottom:4px}
+.timeline-item p{font-size:0.85rem;color:var(--w60);margin:0}
+
+/* Callout */
+.callout{background:var(--bg-card);border:1px solid var(--cyan);border-radius:10px;padding:18px 22px;margin:20px 0}
+.callout p{color:var(--w80);margin:0;font-size:0.9rem}
+.callout.green{border-color:var(--green)}
+
+/* Numbered cards */
+.num-card{display:flex;gap:16px;align-items:flex-start;margin:16px 0}
+.num-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0}
+.num-circle.g{background:var(--green);color:var(--bg)}
+.num-circle.c{background:var(--cyan);color:var(--bg)}
+.num-circle.a{background:var(--amber);color:var(--bg)}
+.num-card-body h3{color:var(--cyan);margin-bottom:4px}
+.num-card-body p{color:var(--w60);font-size:0.85rem;margin:0}
+
+/* Metrics row */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin:20px 0}
+.metric{text-align:center}
+.metric .val{font-size:1.3rem;font-weight:700;display:block}
+.metric .val.g{color:var(--green)}
+.metric .val.c{color:var(--cyan)}
+.metric .val.a{color:var(--amber)}
+.metric .desc{color:var(--w60);font-size:0.75rem}
+
+/* Progress bars */
+.progress-item{margin:16px 0}
+.progress-item h3{color:var(--green);font-size:0.95rem}
+.progress-bar{height:6px;background:var(--line);border-radius:3px;margin:6px 0 4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px}
+
+/* Contact */
+.contact{margin-top:24px;border-top:1px solid var(--line);padding-top:16px;font-size:0.85rem;color:var(--w60)}
+.contact a{color:var(--cyan);text-decoration:none}
+.contact a:hover{text-decoration:underline}
+
+/* Closing */
+.closing{text-align:center;padding:80px 40px}
+.closing h1{margin-bottom:16px}
+.closing p{font-size:1.1rem}
+.closing .bold{color:var(--white);font-weight:600;font-size:1.15rem;margin-top:8px}
+
+@media(max-width:640px){
+  .slide{padding:40px 20px}
+  .card-row,.gear-grid{grid-template-columns:1fr}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Nav dots */
+.nav-dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:8px}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--w40);border:none;cursor:pointer;padding:0;transition:all 0.2s}
+.nav-dot:hover,.nav-dot.active{background:var(--green);transform:scale(1.4)}
+@media(max-width:640px){.nav-dots{display:none}}
+</style>
+</head>
+<body>
+
+<!-- Nav dots -->
+<nav class="nav-dots" id="navDots"></nav>
+
+<!-- SLIDE 1: COVER -->
+<section class="slide" id="s1">
+  <div>
+    <div style="margin-bottom:40px">
+      <span style="display:inline-block;width:60px;height:3px;background:var(--green);margin-right:10px;vertical-align:middle"></span>
+      <span style="display:inline-block;width:40px;height:3px;background:var(--cyan);vertical-align:middle"></span>
+    </div>
+    <h1>TRAIL SEEKER</h1>
+    <p class="subtitle">A daily survival RPG for Solana Seeker</p>
+    <p class="tagline">Five minutes a day. Real strategy. <span>$SKR-powered progression.</span></p>
+    <p class="footer-text" style="margin-top:80px">Solana Mobile Builder Grant Application &mdash; 2026</p>
+  </div>
+</section>
+
+<!-- SLIDE 2: OPPORTUNITY -->
+<section class="slide" id="s2">
+  <h2>Mobile gaming needs what crypto does best</h2>
+  <div class="card-row">
+    <div class="card"><h3>Daily habit games dominate mobile</h3><p>Wordle, Duolingo, and daily card games proved that 5-minute sessions drive massive retention. Trail Seeker brings this to Seeker.</p></div>
+    <div class="card cyan"><h3>Seeker has 20K+ users waiting</h3><p>The Seeker user base is growing and looking for native apps worth opening daily. Trail Seeker is built to be that app.</p></div>
+    <div class="card amber"><h3>$SKR has no game sink yet</h3><p>$SKR exists as a token but lacks a sticky utility. Trail Seeker creates the first real daily $SKR economy inside a game.</p></div>
+  </div>
+</section>
+
+<!-- SLIDE 3: WHAT IS TRAIL SEEKER -->
+<section class="slide" id="s3">
+  <h2>A once-a-day survival RPG with real strategy</h2>
+  <ul>
+    <li>Players get 4&ndash;10 Seeker Scans per day (based on streak + gear)</li>
+    <li>Each Scan is a risk/reward decision: Scout (safe), Seeker (balanced), or Gambit (high risk)</li>
+    <li>Gear builds change how you play &mdash; not just your stats</li>
+    <li>A 7-day streak ladder rewards consistency without punishing misses</li>
+    <li>One 5-minute session. Real choices. Come back tomorrow for better odds.</li>
+  </ul>
+  <div class="flow">
+    <div class="flow-step"><div class="step-title">Daily Plan</div><div class="step-time">10 sec</div></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step active"><div class="step-title">Spend Scans</div><div class="step-time">3&ndash;5 min</div></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step"><div class="step-title">Summary + Tomorrow</div><div class="step-time">30 sec</div></div>
+  </div>
+</section>
+
+<!-- SLIDE 4: $SKR ECONOMY -->
+<section class="slide" id="s4">
+  <h2>SKR is the game&rsquo;s economy &mdash; not a bolt-on</h2>
+  <table>
+    <tr><th>$SKR Use</th><th>Cost</th><th>What it does</th></tr>
+    <tr><td>Streak Shield</td><td class="cost">5 $SKR</td><td>Protects your streak when you miss a day</td></tr>
+    <tr><td>Whiff Protection</td><td class="cost">10 $SKR</td><td>Refunds a failed Scan</td></tr>
+    <tr><td>Rare Boost</td><td class="cost">15 $SKR</td><td>+10% rare loot chance today</td></tr>
+    <tr><td>Gear Reroll</td><td class="cost">20 $SKR</td><td>Reroll a gear drop&rsquo;s quality</td></tr>
+    <tr><td>Scan Recharge</td><td class="cost">25 $SKR</td><td>+1 bonus Scan today</td></tr>
+  </table>
+  <p>Every $SKR spent is split 50/50: half burned (deflationary), half deposited into a Season Reward Pool that pays out to top players at season end.</p>
+  <div class="callout green"><p><strong style="color:var(--green)">$SKR spending is optional.</strong> F2P players progress fine on free Scans. Paying players get convenience &mdash; not a separate power tier.</p></div>
+</section>
+
+<!-- SLIDE 5: GEAR SYSTEM -->
+<section class="slide" id="s5">
+  <h2>6 body slots. 3 active. Real builds.</h2>
+  <div class="gear-grid">
+    <div class="gear-slot"><div class="name">Optics Rig</div><div class="body">(Head)</div><div class="effect">&mdash; Better finds</div></div>
+    <div class="gear-slot"><div class="name">Exo-Vest</div><div class="body">(Chest)</div><div class="effect">&mdash; More Scans</div></div>
+    <div class="gear-slot"><div class="name">Grip Gauntlets</div><div class="body">(Hands)</div><div class="effect">&mdash; Safer risks</div></div>
+    <div class="gear-slot"><div class="name">Nav Boots</div><div class="body">(Feet)</div><div class="effect">&mdash; Faster travel</div></div>
+    <div class="gear-slot"><div class="name">Cortex Link</div><div class="body">(Back)</div><div class="effect">&mdash; Bigger Gambits</div></div>
+    <div class="gear-slot"><div class="name">Salvage Drone</div><div class="body">(Shoulder)</div><div class="effect">&mdash; Whiff recovery</div></div>
+  </div>
+  <p>Players pick 3 of 6 to activate each day. This creates 3 distinct playstyles:</p>
+  <div class="build"><strong>Gambit Build:</strong><p>Gauntlets + Cortex + Drone = High-risk hunter</p></div>
+  <div class="build cyan"><strong>Grinder Build:</strong><p>Optics + Vest + Boots = Volume &amp; consistency</p></div>
+  <div class="build amber"><strong>Survivor Build:</strong><p>Vest + Gauntlets + Drone = Balanced safety</p></div>
+  <p style="color:var(--w60);font-size:0.85rem;margin-top:8px">Gear is the main long-term progression. 20+ items across 3 quality tiers.</p>
+</section>
+
+<!-- SLIDE 6: RETENTION -->
+<section class="slide" id="s6">
+  <h2>Built for Day 1, Day 7, and Day 30 retention</h2>
+  <div class="timeline">
+    <div class="timeline-item green"><h3 style="color:var(--green)">Day 1</h3><p>4 Scans, instant loot, immediate progress. The game feels complete from the first session.</p></div>
+    <div class="timeline-item cyan"><h3 style="color:var(--cyan)">Day 7</h3><p>Streak bonus maxes out &mdash; 7 Scans + 15% rare chance. This is the day players feel invested.</p></div>
+    <div class="timeline-item amber"><h3 style="color:var(--amber)">Day 30</h3><p>Pathfinder Module assembly (4 rare components) unlocks a 4th gear slot. The season-long chase.</p></div>
+  </div>
+  <p style="color:var(--w60);font-size:0.85rem">Push notifications remind players their Scans are ready. Quiet hours respected. Streak warnings are gentle, not aggressive.</p>
+</section>
+
+<!-- SLIDE 7: SMS INTEGRATION -->
+<section class="slide" id="s7">
+  <h2>Built native on SMS, not ported</h2>
+  <div class="num-card"><div class="num-circle g">1</div><div class="num-card-body"><h3>Mobile Wallet Adapter</h3><p>Seamless wallet connection for $SKR transactions. Background biometric signing for micro-purchases (5&ndash;25 $SKR). No friction.</p></div></div>
+  <div class="num-card"><div class="num-circle c">2</div><div class="num-card-body"><h3>Seed Vault</h3><p>Secure key management for the Season Reward Pool and on-chain cosmetic ownership.</p></div></div>
+  <div class="num-card"><div class="num-circle a">3</div><div class="num-card-body"><h3>Seeker-Native UX</h3><p>Designed for one-handed, 5-minute sessions. No desktop assumptions. Touch-first interactions.</p></div></div>
+  <div class="num-card"><div class="num-circle g">4</div><div class="num-card-body"><h3>$SKR SPL Token Integration</h3><p>All $SKR burns and pool deposits use native SPL Token instructions bundled in atomic transactions.</p></div></div>
+</section>
+
+<!-- SLIDE 8: SEASON ECONOMY -->
+<section class="slide" id="s8">
+  <h2>A self-sustaining token loop</h2>
+  <div class="flow">
+    <div class="flow-step"><div class="step-title">Players spend $SKR</div><div class="step-time">on boosts</div></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step"><div class="step-title">50% burned</div><div class="step-time">supply shrinks</div></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step"><div class="step-title">50% Season Pool</div><div class="step-time">rewards vault</div></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step"><div class="step-title">Top players earn</div><div class="step-time">$SKR payout</div></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step"><div class="step-title">Re-enter</div><div class="step-time">next season</div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><span class="val g">~$10/mo</span><span class="desc">target spending for engaged players</span></div>
+    <div class="metric"><span class="val c">$0 casual</span><span class="desc">progress fine on free Scans</span></div>
+    <div class="metric"><span class="val a">60 days</span><span class="desc">season length</span></div>
+    <div class="metric"><span class="val g">Top players</span><span class="desc">pool distribution by score</span></div>
+  </div>
+  <div class="callout"><p>The burn creates deflationary pressure. The pool creates competitive incentive. Together they give $SKR real, recurring utility.</p></div>
+</section>
+
+<!-- SLIDE 9: TRACTION -->
+<section class="slide" id="s9">
+  <h2>Built, not just designed</h2>
+  <div style="display:inline-block;background:var(--green);color:var(--bg);font-family:var(--mono);font-size:0.75rem;font-weight:700;padding:4px 12px;border-radius:4px;margin-bottom:20px">STATUS: FUNCTIONAL PROTOTYPE</div>
+  <ul>
+    <li>Working React Native + Expo codebase (TypeScript, SDK 55)</li>
+    <li>GitHub repo: github.com/trailseekergame/Trail-Seeker</li>
+    <li>Core systems: Seeker Scan engine, 6-slot gear, streak ladder, 5x5 sector grid, scan resolution</li>
+    <li>Live config system (gameBalance.json) for real-time balance tuning without app updates</li>
+    <li>Push notification system for daily retention</li>
+    <li>Dev analytics tracking player behavior for weekly reports</li>
+  </ul>
+  <div class="callout green"><p style="color:var(--green)">Trail Seeker is not a concept &mdash; it&rsquo;s a functional prototype ready for polish and launch.</p></div>
+</section>
+
+<!-- SLIDE 10: ROADMAP -->
+<section class="slide" id="s10">
+  <h2>From prototype to Seeker launch in 12 weeks</h2>
+  <table>
+    <tr><th>Phase</th><th>Timeline</th><th>Deliverables</th></tr>
+    <tr><td><strong style="color:var(--green)">Phase 1: Core Loop</strong></td><td>Weeks 1&ndash;4</td><td>Seeker Scan system, gear builds, streak, sector grid. Playable v1 for internal testing.</td></tr>
+    <tr><td><strong style="color:var(--cyan)">Phase 2: $SKR Integration</strong></td><td>Weeks 5&ndash;8</td><td>Mobile Wallet Adapter, $SKR purchases, burn/pool split, Season Reward Pool smart contract.</td></tr>
+    <tr><td><strong style="color:var(--amber)">Phase 3: Content & Polish</strong></td><td>Weeks 9&ndash;10</td><td>20 sectors, full loot table, minigames, UI polish, sound.</td></tr>
+    <tr><td><strong style="color:var(--green)">Phase 4: Launch</strong></td><td>Weeks 11&ndash;12</td><td>Seeker app store submission, Season 1 start, community launch.</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 11: GRANT USE -->
+<section class="slide" id="s11">
+  <h2>How grant funding accelerates Trail Seeker</h2>
+  <div class="progress-item"><h3>Development (60%)</h3><div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--green)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Complete $SKR on-chain integration, Season Reward Pool smart contract, full sector content pipeline.</p></div>
+  <div class="progress-item"><h3 style="color:var(--cyan)">Design & Art (20%)</h3><div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--cyan)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Replace placeholder UI with production art direction, gear icons, sector visuals, scan animations.</p></div>
+  <div class="progress-item"><h3 style="color:var(--amber)">Testing & QA (10%)</h3><div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--amber)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Multi-device Seeker testing, balance playtesting, security audit for $SKR transactions.</p></div>
+  <div class="progress-item"><h3 style="color:var(--white)">Launch & Community (10%)</h3><div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--white)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Seeker app store listing, community onboarding, Season 1 marketing.</p></div>
+  <div class="callout green"><p>Grant funding bridges Trail Seeker from working prototype to Seeker launch. The core systems exist &mdash; funding accelerates content, polish, and $SKR integration.</p></div>
+</section>
+
+<!-- SLIDE 12: TEAM -->
+<section class="slide" id="s12">
+  <h2>Builder, not just designer</h2>
+  <h3 style="color:var(--white);font-size:1.4rem;margin-bottom:2px">Daniel Michaud</h3>
+  <p style="color:var(--green);font-weight:600;margin-bottom:0">Founder & Solo Builder</p>
+  <div style="width:180px;height:2px;background:var(--green);margin:8px 0 20px"></div>
+  <ul>
+    <li>Bachelor&rsquo;s degree in Finance with professional experience in portfolio management</li>
+    <li>Background in lore writing and world-building for interactive narratives</li>
+    <li>Experienced project manager &mdash; coordinating design, development, and tokenomics simultaneously</li>
+    <li>Passionate about NFTs and crypto &mdash; believes no one has truly combined NFTs with gameplay in a simple, elegant way</li>
+    <li>Building Trail Seeker to prove that on-chain assets can enhance a game without complicating it</li>
+    <li>Active in the Solana Mobile ecosystem from day one of Seeker</li>
+  </ul>
+  <div class="callout"><p>Trail Seeker is built by someone who sees the gap between crypto and real gameplay &mdash; and is building the simplest, most compelling bridge between NFTs, tokens, and daily mobile gaming.</p></div>
+</section>
+
+<!-- SLIDE 13: THE ASK -->
+<section class="slide" id="s13">
+  <h2>Fund the bridge from prototype to Seeker launch</h2>
+  <div style="max-width:600px;margin:40px auto;text-align:center">
+    <p style="color:var(--white);font-size:1rem;margin-bottom:24px">Trail Seeker is seeking a Solana Mobile Builder Grant to:</p>
+    <ul style="text-align:left;max-width:500px;margin:0 auto">
+      <li>Ship the first $SKR-powered daily game on Seeker</li>
+      <li>Create a sustainable token sink that gives $SKR real utility</li>
+      <li>Activate Seeker users with a sticky, habit-forming experience</li>
+      <li>Launch Season 1 within 12 weeks of funding</li>
+    </ul>
+  </div>
+  <div class="contact" style="text-align:center">
+    <p><strong>Email:</strong> <a href="mailto:trailseekergame@gmail.com">trailseekergame@gmail.com</a></p>
+    <p><strong>GitHub:</strong> <a href="https://github.com/trailseekergame/Trail-Seeker" target="_blank">github.com/trailseekergame/Trail-Seeker</a></p>
+    <p><strong>Builder:</strong> Daniel Michaud</p>
+  </div>
+</section>
+
+<!-- SLIDE 14: CLOSING -->
+<section class="slide closing" id="s14">
+  <div>
+    <div style="margin-bottom:16px">
+      <span style="display:inline-block;width:40px;height:3px;background:var(--cyan);margin-right:4px;vertical-align:middle"></span>
+      <span style="display:inline-block;width:40px;height:3px;background:var(--green);vertical-align:middle"></span>
+    </div>
+    <h1>TRAIL SEEKER</h1>
+    <p>Five minutes a day. Real strategy. <span style="color:var(--cyan)">$SKR-powered.</span></p>
+    <p class="bold">Built for Seeker. Ready to ship.</p>
+    <div style="margin-top:16px">
+      <span style="display:inline-block;width:40px;height:3px;background:var(--green);margin-right:4px;vertical-align:middle"></span>
+      <span style="display:inline-block;width:40px;height:3px;background:var(--cyan);vertical-align:middle"></span>
+    </div>
+  </div>
+</section>
+
+<footer style="text-align:center;padding:20px;border-top:1px solid var(--line)">
+  <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer" style="color:var(--w40);font-size:0.7rem;text-decoration:none">Created with Perplexity Computer</a>
+</footer>
+
+<script>
+// Navigation dots
+const slides=document.querySelectorAll('.slide');
+const nav=document.getElementById('navDots');
+slides.forEach((_,i)=>{const d=document.createElement('button');d.className='nav-dot';d.onclick=()=>slides[i].scrollIntoView({behavior:'smooth'});nav.appendChild(d)});
+const dots=nav.querySelectorAll('.nav-dot');
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){const i=[...slides].indexOf(e.target);dots.forEach((d,j)=>d.classList.toggle('active',j===i))}})},{threshold:0.5});
+slides.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
