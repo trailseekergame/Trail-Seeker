@@ -254,27 +254,28 @@ export default function SettlementScreen({ navigation }: any) {
           </Card>
         )}
 
-        {/* Wardrobe */}
+        {/* Equipment */}
         <Card
-          title="Wardrobe"
-          icon="👔"
+          title="Equipment"
+          icon="⚙️"
           onPress={() => navigation.navigate('Wardrobe')}
-          accentColor={colors.neonPurple}
+          accentColor={colors.neonCyan}
         >
           <Text style={styles.tradeDesc}>
-            Customize your look. Purely cosmetic — no stat effects.
+            Manage your gear loadout and cosmetics. Gear affects scan performance — cosmetics are visual only.
           </Text>
           <View style={styles.equippedPreview}>
-            {Object.entries(state.equipped).map(([slot, itemId]) =>
-              itemId ? (
-                <View key={slot} style={styles.equippedItem}>
-                  <Text style={styles.equippedSlot}>{slot}</Text>
+            {state.seekerScans.activeGearSlots.map((slotId) => {
+              const gear = state.seekerScans.gearInventory.find(g => g.slotId === slotId);
+              return gear ? (
+                <View key={slotId} style={styles.equippedItem}>
+                  <Text style={styles.equippedSlot}>{gear.icon} {gear.name}</Text>
                 </View>
-              ) : null
-            )}
+              ) : null;
+            })}
           </View>
           <NeonButton
-            title="Open Wardrobe →"
+            title="Open Equipment →"
             onPress={() => navigation.navigate('Wardrobe')}
             variant="ghost"
             size="sm"

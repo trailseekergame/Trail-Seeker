@@ -93,7 +93,7 @@ function SettlementStackNavigator() {
       <SettlementStack.Screen
         name="Wardrobe"
         component={WardrobeScreen}
-        options={{ title: 'Wardrobe' }}
+        options={{ title: 'Equipment' }}
       />
     </SettlementStack.Navigator>
   );

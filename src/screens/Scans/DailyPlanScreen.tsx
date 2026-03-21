@@ -1,76 +1,30 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { computeDailyScans, getStreakRareBoost, getEffectiveWhiffRate } from '../../systems/scanEngine';
+import { computeDailyScans, getStreakRareBoost } from '../../systems/scanEngine';
 import { ALL_GEAR_ITEMS, DEFAULT_ACTIVE_GEAR } from '../../data/gearItems';
 import { generateTestSector } from '../../data/testSector';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
-import { GearSlotId, GearItem } from '../../types';
+import { GearSlotId } from '../../types';
 import gameBalance from '../../config/gameBalance.json';
 
-// ─── Gear effect descriptions (human-readable) ───
-const GEAR_EFFECTS: Record<GearSlotId, { short: string; detail: (q: string) => string }> = {
-  optics_rig: {
-    short: 'Better finds (rare chance up)',
-    detail: (q) => {
-      const stats = (gameBalance.gear_stats.optics_rig as any)[q];
-      return `+${Math.round((stats?.rare_boost || 0) * 100)}% rare drop chance on all Scans`;
-    },
-  },
-  exo_vest: {
-    short: 'More Scans per day',
-    detail: (q) => {
-      const stats = (gameBalance.gear_stats.exo_vest as any)[q];
-      return `+${stats?.bonus_scans || 0} Seeker Scans per day${stats?.loot_quality_boost ? ` + ${Math.round(stats.loot_quality_boost * 100)}% loot quality` : ''}`;
-    },
-  },
-  grip_gauntlets: {
-    short: 'Safer Scans (whiff chance down)',
-    detail: (q) => {
-      const stats = (gameBalance.gear_stats.grip_gauntlets as any)[q];
-      return `${Math.round((stats?.whiff_reduction || 0) * 100)}% less whiff chance on Seeker & Gambit`;
-    },
-  },
-  nav_boots: {
-    short: 'Faster travel (sector progress up)',
-    detail: (q) => {
-      const stats = (gameBalance.gear_stats.nav_boots as any)[q];
-      const bonus = stats?.sector_bonus || 0;
-      const extra = stats?.double_progress_chance ? ` + ${Math.round(stats.double_progress_chance * 100)}% double progress` : '';
-      return `+${bonus} sector progress per successful Scan${extra}`;
-    },
-  },
-  cortex_link: {
-    short: 'Bigger Gambits (Legendary chance up)',
-    detail: (q) => {
-      const stats = (gameBalance.gear_stats.cortex_link as any)[q];
-      return `+${Math.round((stats?.gambit_legendary_boost || 0) * 100)}% Legendary chance on Gambit Scans${stats?.component_boost ? ` + ${Math.round(stats.component_boost * 100)}% Component chance` : ''}`;
-    },
-  },
-  salvage_drone: {
-    short: 'Backup sweep (whiff recovery)',
-    detail: (q) => {
-      const stats = (gameBalance.gear_stats.salvage_drone as any)[q];
-      return `${Math.round((stats?.refund_chance || 0) * 100)}% chance to refund a whiffed Scan`;
-    },
-  },
-};
-
-const QUALITY_LABELS: Record<string, { label: string; color: string }> = {
-  standard: { label: 'Standard', color: colors.textSecondary },
-  enhanced: { label: 'Enhanced', color: colors.neonCyan },
-  perfected: { label: 'Perfected', color: colors.neonGreen },
+// ─── Short gear effect labels for the summary strip ───
+const GEAR_SHORT: Record<GearSlotId, string> = {
+  optics_rig: 'Rare+',
+  exo_vest: '+Scans',
+  grip_gauntlets: '-Whiff',
+  nav_boots: '+Sector',
+  cortex_link: 'Legend+',
+  salvage_drone: 'Refund',
 };
 
 export default function DailyPlanScreen() {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
-
-  const [gearPopup, setGearPopup] = useState<GearItem | null>(null);
 
   // Initialize gear & sector if empty
   useEffect(() => {
@@ -112,16 +66,6 @@ export default function DailyPlanScreen() {
 
   const tilesCleared = ss.currentSector.tiles.filter(t => t.cleared).length;
   const totalTiles = ss.currentSector.tiles.length || 25;
-
-  const toggleGear = (slotId: GearSlotId) => {
-    if (ss.gearLockedToday) return;
-    const current = [...ss.activeGearSlots];
-    if (current.includes(slotId)) {
-      dispatch({ type: 'SET_ACTIVE_GEAR', payload: current.filter(s => s !== slotId) });
-    } else if (current.length < 3) {
-      dispatch({ type: 'SET_ACTIVE_GEAR', payload: [...current, slotId] });
-    }
-  };
 
   const activeGearItems = ss.gearInventory.filter(g => ss.activeGearSlots.includes(g.slotId));
 
@@ -182,57 +126,34 @@ export default function DailyPlanScreen() {
             {ss.gearLockedToday ? (
               <Text style={styles.lockedBadge}>LOCKED</Text>
             ) : (
-              <Text style={styles.tapHint}>tap to change</Text>
+              <Text style={styles.tapHint}>{ss.activeGearSlots.length}/3</Text>
             )}
           </View>
 
-          {/* Active gear — prominent strip */}
+          {/* Active gear — compact strip */}
           {activeGearItems.length > 0 && (
             <View style={styles.activeStrip}>
               {activeGearItems.map((gear) => (
-                <TouchableOpacity
-                  key={gear.slotId}
-                  style={styles.activeGearCard}
-                  onPress={() => setGearPopup(gear)}
-                  activeOpacity={0.7}
-                >
+                <View key={gear.slotId} style={styles.activeGearCard}>
                   <Text style={styles.activeGearIcon}>{gear.icon}</Text>
                   <Text style={styles.activeGearName}>{gear.name}</Text>
                   <Text style={styles.activeGearEffect}>
-                    {GEAR_EFFECTS[gear.slotId].short}
+                    {GEAR_SHORT[gear.slotId]}
                   </Text>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
 
-          {/* Full gear grid (for selection when not locked) */}
+          {/* Link to full Equipment screen */}
           {!ss.gearLockedToday && (
-            <View style={styles.gearGrid}>
-              {ss.gearInventory.map((gear) => {
-                const isActive = ss.activeGearSlots.includes(gear.slotId);
-                return (
-                  <TouchableOpacity
-                    key={gear.slotId}
-                    style={[
-                      styles.gearChip,
-                      isActive && styles.gearChipActive,
-                    ]}
-                    onPress={() => toggleGear(gear.slotId)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.gearChipIcon}>{gear.icon}</Text>
-                    <Text style={[styles.gearChipName, isActive && styles.gearChipNameActive]}>
-                      {gear.name}
-                    </Text>
-                    {isActive && <Text style={styles.gearChipCheck}>on</Text>}
-                  </TouchableOpacity>
-                );
-              })}
-              <Text style={styles.gearCount}>
-                {ss.activeGearSlots.length}/3 selected
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={styles.manageGearLink}
+              onPress={() => nav.getParent()?.navigate('SettlementTab', { screen: 'Wardrobe' })}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.manageGearText}>Manage Gear & Cosmetics →</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -304,39 +225,6 @@ export default function DailyPlanScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* ─── GEAR DETAIL POPUP ─── */}
-      <Modal visible={gearPopup !== null} transparent animationType="fade" onRequestClose={() => setGearPopup(null)}>
-        <TouchableOpacity
-          style={styles.popupOverlay}
-          activeOpacity={1}
-          onPress={() => setGearPopup(null)}
-        >
-          {gearPopup && (
-            <View style={styles.popupCard}>
-              <Text style={styles.popupIcon}>{gearPopup.icon}</Text>
-              <Text style={styles.popupName}>{gearPopup.name}</Text>
-              <Text style={[styles.popupQuality, { color: QUALITY_LABELS[gearPopup.quality]?.color || colors.textSecondary }]}>
-                {QUALITY_LABELS[gearPopup.quality]?.label || gearPopup.quality}
-              </Text>
-              <View style={styles.popupDivider} />
-              <Text style={styles.popupSlot}>
-                {gearPopup.slotId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-              </Text>
-              <Text style={styles.popupEffect}>
-                {GEAR_EFFECTS[gearPopup.slotId].detail(gearPopup.quality)}
-              </Text>
-              <NeonButton
-                title="Close"
-                onPress={() => setGearPopup(null)}
-                variant="ghost"
-                size="sm"
-                style={styles.popupClose}
-              />
-            </View>
-          )}
-        </TouchableOpacity>
-      </Modal>
     </ScreenWrapper>
   );
 }
@@ -492,49 +380,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 14,
   },
-  gearGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+  manageGearLink: {
     marginTop: spacing.md,
-  },
-  gearChip: {
-    flexDirection: 'row',
+    paddingVertical: spacing.sm,
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    gap: spacing.xs,
   },
-  gearChipActive: {
-    borderColor: colors.neonGreen,
-    backgroundColor: colors.surfaceHighlight,
-  },
-  gearChipIcon: {
-    fontSize: 16,
-  },
-  gearChipName: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  gearChipNameActive: {
-    color: colors.neonGreen,
-  },
-  gearChipCheck: {
-    fontSize: fontSize.xs,
-    color: colors.neonGreen,
-    fontWeight: '700',
-  },
-  gearCount: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    width: '100%',
-    textAlign: 'center',
-    marginTop: spacing.xs,
+  manageGearText: {
+    fontSize: fontSize.sm,
+    color: colors.neonCyan,
+    fontWeight: '600',
   },
 
   // ─── 4. Sector ───
@@ -652,58 +506,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // ─── Gear Detail Popup ───
-  popupOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  popupCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
-    padding: spacing.xl,
-    width: '100%',
-    maxWidth: 300,
-    alignItems: 'center',
-  },
-  popupIcon: {
-    fontSize: 40,
-    marginBottom: spacing.sm,
-  },
-  popupName: {
-    fontSize: fontSize.xl,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  popupQuality: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginTop: spacing.xs,
-  },
-  popupDivider: {
-    height: 1,
-    backgroundColor: colors.surfaceLight,
-    width: '80%',
-    marginVertical: spacing.md,
-  },
-  popupSlot: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-  },
-  popupEffect: {
-    fontSize: fontSize.md,
-    color: colors.neonCyan,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  popupClose: {
-    marginTop: spacing.lg,
-    width: 120,
-  },
+
 });

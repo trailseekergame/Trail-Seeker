@@ -1,280 +1,543 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import ScreenWrapper from '../../components/common/ScreenWrapper';
-import Card from '../../components/common/Card';
-import NeonButton from '../../components/common/NeonButton';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
 import { useGame } from '../../context/GameContext';
-import { CosmeticItem, CosmeticSlot, EquippedCosmetics } from '../../types';
+import { ALL_GEAR_ITEMS } from '../../data/gearItems';
 import cosmeticItems from '../../data/cosmetics';
 import { purchaseCosmetic } from '../../services/solana';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import ScreenWrapper from '../../components/common/ScreenWrapper';
+import NeonButton from '../../components/common/NeonButton';
+import { GearSlotId, GearItem, CosmeticItem, CosmeticSlot, EquippedCosmetics } from '../../types';
+import gameBalance from '../../config/gameBalance.json';
 
-const SLOT_LABELS: Record<CosmeticSlot, string> = {
-  headgear: 'Headgear / Goggles',
-  coat: 'Coat / Outerwear',
-  backItem: 'Back Item',
-  patch: 'Patch / Emblem',
-  roverDecal: 'Rover Decal',
-  accessory: 'Accessory',
-  weapon: 'Weapon',
-  tech: 'Tech / Gadget',
-  charm: 'Charm / Relic',
+// ─── Gear stat descriptions ───
+const GEAR_STAT_LINE: Record<GearSlotId, (q: string) => string> = {
+  optics_rig: (q) => {
+    const v = (gameBalance.gear_stats.optics_rig as any)[q]?.rare_boost || 0;
+    return `+${Math.round(v * 100)}% rare drop chance`;
+  },
+  exo_vest: (q) => {
+    const s = (gameBalance.gear_stats.exo_vest as any)[q];
+    const scans = s?.bonus_scans || 0;
+    const loot = s?.loot_quality_boost ? ` · +${Math.round(s.loot_quality_boost * 100)}% loot quality` : '';
+    return `+${scans} Scans per day${loot}`;
+  },
+  grip_gauntlets: (q) => {
+    const v = (gameBalance.gear_stats.grip_gauntlets as any)[q]?.whiff_reduction || 0;
+    return `-${Math.round(v * 100)}% whiff chance`;
+  },
+  nav_boots: (q) => {
+    const s = (gameBalance.gear_stats.nav_boots as any)[q];
+    const bonus = s?.sector_bonus || 0;
+    const dbl = s?.double_progress_chance ? ` · ${Math.round(s.double_progress_chance * 100)}% double progress` : '';
+    return `+${bonus} sector progress${dbl}`;
+  },
+  cortex_link: (q) => {
+    const s = (gameBalance.gear_stats.cortex_link as any)[q];
+    const leg = s?.gambit_legendary_boost || 0;
+    const comp = s?.component_boost ? ` · +${Math.round(s.component_boost * 100)}% component` : '';
+    return `+${Math.round(leg * 100)}% Gambit Legendary${comp}`;
+  },
+  salvage_drone: (q) => {
+    const v = (gameBalance.gear_stats.salvage_drone as any)[q]?.refund_chance || 0;
+    return `${Math.round(v * 100)}% whiff refund chance`;
+  },
 };
 
-const SLOT_ORDER: CosmeticSlot[] = [
-  'headgear',
-  'coat',
-  'backItem',
-  'weapon',
-  'tech',
-  'charm',
-  'patch',
-  'roverDecal',
-  'accessory',
+const GEAR_BODY_AREA: Record<GearSlotId, string> = {
+  optics_rig: 'HEAD',
+  exo_vest: 'CHEST',
+  grip_gauntlets: 'HANDS',
+  nav_boots: 'FEET',
+  cortex_link: 'BACK',
+  salvage_drone: 'SHOULDER',
+};
+
+const QUALITY_COLORS: Record<string, string> = {
+  standard: colors.textSecondary,
+  enhanced: colors.neonCyan,
+  perfected: colors.neonGreen,
+};
+
+// ─── Cosmetic constants ───
+const COSMETIC_SLOT_LABELS: Record<CosmeticSlot, string> = {
+  headgear: 'Headgear',
+  coat: 'Coat',
+  backItem: 'Back Item',
+  weapon: 'Weapon',
+  tech: 'Tech',
+  charm: 'Charm',
+  patch: 'Patch',
+  roverDecal: 'Rover Decal',
+  accessory: 'Accessory',
+};
+
+const COSMETIC_SLOT_ORDER: CosmeticSlot[] = [
+  'headgear', 'coat', 'backItem', 'weapon', 'tech', 'charm', 'patch', 'roverDecal', 'accessory',
 ];
+
+const getRarityColor = (rarity: string) => {
+  switch (rarity) {
+    case 'common': return colors.textSecondary;
+    case 'uncommon': return colors.neonGreen;
+    case 'rare': return colors.neonCyan;
+    case 'relic': return colors.neonPurple;
+    default: return colors.textSecondary;
+  }
+};
 
 export default function WardrobeScreen() {
   const { state, dispatch } = useGame();
-  const [selectedSlot, setSelectedSlot] = useState<CosmeticSlot>('headgear');
+  const ss = state.seekerScans;
 
+  const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
+  const [cosmeticSlot, setCosmeticSlot] = useState<CosmeticSlot>('headgear');
+
+  // ─── Gear logic ───
+  const toggleGear = (slotId: GearSlotId) => {
+    if (ss.gearLockedToday) return;
+    const current = [...ss.activeGearSlots];
+    if (current.includes(slotId)) {
+      dispatch({ type: 'SET_ACTIVE_GEAR', payload: current.filter(s => s !== slotId) });
+    } else if (current.length < 3) {
+      dispatch({ type: 'SET_ACTIVE_GEAR', payload: [...current, slotId] });
+    }
+  };
+
+  // ─── Cosmetic logic ───
   const getItemsForSlot = (slot: CosmeticSlot) =>
-    cosmeticItems.filter((item) => item.slot === slot);
+    cosmeticItems.filter((item: CosmeticItem) => item.slot === slot);
 
-  const isEquipped = (itemId: string) => {
-    return Object.values(state.equipped).includes(itemId);
-  };
+  const isEquipped = (itemId: string) => Object.values(state.equipped).includes(itemId);
+  const isUnlocked = (itemId: string) => state.unlockedCosmeticIds.includes(itemId);
 
-  const isUnlocked = (itemId: string) => {
-    return state.unlockedCosmeticIds.includes(itemId);
-  };
-
-  const handleEquip = (item: CosmeticItem) => {
+  const handleEquipCosmetic = (item: CosmeticItem) => {
     if (!isUnlocked(item.id)) {
-      Alert.alert(
-        'Locked',
-        item.unlockCondition || 'This item is not yet available.',
-        [
-          { text: 'OK' },
-          {
-            text: 'Unlock (Dev)',
-            onPress: async () => {
-              const success = await purchaseCosmetic(item.id);
-              if (success) {
-                dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id });
-              }
-            },
+      Alert.alert('Locked', item.unlockCondition || 'This item is not yet available.', [
+        { text: 'OK' },
+        {
+          text: 'Unlock (Dev)',
+          onPress: async () => {
+            const success = await purchaseCosmetic(item.id);
+            if (success) dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id });
           },
-        ]
-      );
+        },
+      ]);
       return;
     }
-
-    const update: Partial<EquippedCosmetics> = { [item.slot]: item.id };
-    dispatch({ type: 'EQUIP_COSMETIC', payload: update });
+    dispatch({ type: 'EQUIP_COSMETIC', payload: { [item.slot]: item.id } as Partial<EquippedCosmetics> });
   };
 
-  const handleUnequip = (slot: CosmeticSlot) => {
-    const update: Partial<EquippedCosmetics> = { [slot]: undefined };
-    dispatch({ type: 'EQUIP_COSMETIC', payload: update });
-  };
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'common':
-        return colors.textSecondary;
-      case 'uncommon':
-        return colors.neonGreen;
-      case 'rare':
-        return colors.neonCyan;
-      case 'relic':
-        return colors.neonPurple;
-      default:
-        return colors.textSecondary;
-    }
+  const handleUnequipCosmetic = (slot: CosmeticSlot) => {
+    dispatch({ type: 'EQUIP_COSMETIC', payload: { [slot]: undefined } as Partial<EquippedCosmetics> });
   };
 
   return (
     <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.header}>Wardrobe</Text>
-        <Text style={styles.subtitle}>
-          Customize your look. Purely cosmetic — the Trail doesn't care what you're wearing.
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* ═══════════ SECTION 1: FUNCTIONAL GEAR ═══════════ */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>GEAR LOADOUT</Text>
+          {ss.gearLockedToday ? (
+            <Text style={styles.lockedBadge}>LOCKED TODAY</Text>
+          ) : (
+            <Text style={styles.sectionHint}>{ss.activeGearSlots.length}/3 equipped</Text>
+          )}
+        </View>
+        <Text style={styles.sectionDesc}>
+          Select 3 gear pieces before your first scan. Each piece changes how your scans perform.
         </Text>
 
-        {/* Currently Equipped */}
-        <Card title="Equipped" icon="🪞">
-          {SLOT_ORDER.map((slot) => {
-            const equippedId = state.equipped[slot];
-            const item = cosmeticItems.find((c) => c.id === equippedId);
-            return (
-              <View key={slot} style={styles.equippedRow}>
-                <Text style={styles.slotLabel}>{SLOT_LABELS[slot]}</Text>
-                {item ? (
-                  <View style={styles.equippedInfo}>
-                    <Text style={styles.equippedIcon}>{item.icon}</Text>
-                    <Text style={styles.equippedName}>{item.name}</Text>
+        {/* Gear cards */}
+        {(ss.gearInventory.length > 0 ? ss.gearInventory : ALL_GEAR_ITEMS).map((gear) => {
+          const isActive = ss.activeGearSlots.includes(gear.slotId);
+          const statLine = GEAR_STAT_LINE[gear.slotId](gear.quality);
+          const bodyArea = GEAR_BODY_AREA[gear.slotId];
+          const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
+          const canToggle = !ss.gearLockedToday && (isActive || ss.activeGearSlots.length < 3);
+
+          return (
+            <TouchableOpacity
+              key={gear.slotId}
+              style={[styles.gearCard, isActive && styles.gearCardActive]}
+              onPress={() => canToggle ? toggleGear(gear.slotId) : setSelectedGear(gear)}
+              activeOpacity={canToggle ? 0.7 : 0.9}
+            >
+              <View style={styles.gearCardLeft}>
+                <Text style={styles.gearIcon}>{gear.icon}</Text>
+              </View>
+              <View style={styles.gearCardCenter}>
+                <View style={styles.gearNameRow}>
+                  <Text style={[styles.gearName, isActive && styles.gearNameActive]}>
+                    {gear.name}
+                  </Text>
+                  <Text style={[styles.gearBodyArea, { color: qualityColor }]}>
+                    {bodyArea}
+                  </Text>
+                </View>
+                <Text style={styles.gearStatLine}>{statLine}</Text>
+                <Text style={[styles.gearQuality, { color: qualityColor }]}>
+                  {gear.quality.charAt(0).toUpperCase() + gear.quality.slice(1)}
+                </Text>
+              </View>
+              <View style={styles.gearCardRight}>
+                {isActive ? (
+                  <View style={styles.equippedDot}>
+                    <Text style={styles.equippedDotText}>ON</Text>
                   </View>
                 ) : (
-                  <Text style={styles.emptySlot}>— empty —</Text>
+                  <View style={styles.unequippedDot} />
                 )}
               </View>
-            );
-          })}
-        </Card>
+            </TouchableOpacity>
+          );
+        })}
 
-        {/* Slot Selector */}
-        <View style={styles.slotTabs}>
-          {SLOT_ORDER.map((slot) => (
+        {/* Pathfinder progress */}
+        {!ss.pathfinderUnlocked && ss.pathfinderComponents > 0 && (
+          <View style={styles.pathfinderRow}>
+            <Text style={styles.pathfinderLabel}>PATHFINDER MODULE</Text>
+            <View style={styles.pathfinderDots}>
+              {Array.from({ length: gameBalance.pathfinder_module.components_required }, (_, i) => (
+                <View
+                  key={i}
+                  style={[styles.pathfinderDot, i < ss.pathfinderComponents && styles.pathfinderDotFilled]}
+                />
+              ))}
+            </View>
+            <Text style={styles.pathfinderCount}>
+              {ss.pathfinderComponents}/{gameBalance.pathfinder_module.components_required} — Unlocks 4th gear slot
+            </Text>
+          </View>
+        )}
+        {ss.pathfinderUnlocked && (
+          <View style={[styles.pathfinderRow, styles.pathfinderActive]}>
+            <Text style={styles.pathfinderActiveText}>PATHFINDER MODULE ACTIVE</Text>
+            <Text style={styles.pathfinderActiveDesc}>
+              +{Math.round(gameBalance.pathfinder_module.quality_boost_all * 100)}% all loot quality · 4th gear slot unlocked
+            </Text>
+          </View>
+        )}
+
+        {/* ═══════════ DIVIDER ═══════════ */}
+        <View style={styles.divider} />
+
+        {/* ═══════════ SECTION 2: COSMETICS ═══════════ */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>COSMETICS</Text>
+          <Text style={styles.sectionHint}>visual only</Text>
+        </View>
+        <Text style={styles.sectionDesc}>
+          Customize your look. These don't affect stats — just style.
+        </Text>
+
+        {/* Cosmetic slot tabs */}
+        <View style={styles.cosmeticTabs}>
+          {COSMETIC_SLOT_ORDER.map((slot) => (
             <TouchableOpacity
               key={slot}
-              onPress={() => setSelectedSlot(slot)}
-              style={[
-                styles.slotTab,
-                selectedSlot === slot && styles.slotTabActive,
-              ]}
+              onPress={() => setCosmeticSlot(slot)}
+              style={[styles.cosmeticTab, cosmeticSlot === slot && styles.cosmeticTabActive]}
             >
-              <Text
-                style={[
-                  styles.slotTabText,
-                  selectedSlot === slot && styles.slotTabTextActive,
-                ]}
-                numberOfLines={1}
-              >
-                {SLOT_LABELS[slot].split('/')[0].trim()}
+              <Text style={[styles.cosmeticTabText, cosmeticSlot === slot && styles.cosmeticTabTextActive]}>
+                {COSMETIC_SLOT_LABELS[slot]}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Items for Selected Slot */}
-        {getItemsForSlot(selectedSlot).map((item) => {
+        {/* Cosmetic items for selected slot */}
+        {getItemsForSlot(cosmeticSlot).map((item: CosmeticItem) => {
           const unlocked = isUnlocked(item.id);
           const equipped = isEquipped(item.id);
 
           return (
-            <Card
+            <View
               key={item.id}
-              accentColor={getRarityColor(item.rarity)}
-              style={equipped ? styles.equippedCard : undefined}
+              style={[
+                styles.cosmeticCard,
+                { borderLeftColor: getRarityColor(item.rarity) },
+                equipped && styles.cosmeticCardEquipped,
+              ]}
             >
-              <View style={styles.itemHeader}>
-                <Text style={styles.itemIcon}>{item.icon}</Text>
-                <View style={styles.itemInfo}>
-                  <Text
-                    style={[
-                      styles.itemName,
-                      !unlocked && styles.lockedText,
-                    ]}
-                  >
+              <View style={styles.cosmeticHeader}>
+                <Text style={styles.cosmeticIcon}>{item.icon}</Text>
+                <View style={styles.cosmeticInfo}>
+                  <Text style={[styles.cosmeticName, !unlocked && styles.dimmed]}>
                     {item.name}
                   </Text>
-                  <Text
-                    style={[
-                      styles.itemRarity,
-                      { color: getRarityColor(item.rarity) },
-                    ]}
-                  >
+                  <Text style={[styles.cosmeticRarity, { color: getRarityColor(item.rarity) }]}>
                     {item.rarity.toUpperCase()}
                   </Text>
                 </View>
                 {equipped && (
-                  <View style={styles.equippedBadge}>
-                    <Text style={styles.equippedBadgeText}>EQUIPPED</Text>
+                  <View style={styles.cosmeticBadge}>
+                    <Text style={styles.cosmeticBadgeText}>EQUIPPED</Text>
                   </View>
                 )}
               </View>
-              <Text style={[styles.itemDesc, !unlocked && styles.lockedText]}>
+              <Text style={[styles.cosmeticDesc, !unlocked && styles.dimmed]}>
                 {item.description}
               </Text>
               {!unlocked && item.unlockCondition && (
-                <Text style={styles.unlockCondition}>
-                  🔒 {item.unlockCondition}
-                </Text>
+                <Text style={styles.unlockCondition}>🔒 {item.unlockCondition}</Text>
               )}
-              <View style={styles.itemActions}>
+              <View style={styles.cosmeticActions}>
                 {unlocked && !equipped && (
-                  <NeonButton
-                    title="Equip"
-                    onPress={() => handleEquip(item)}
-                    variant="primary"
-                    size="sm"
-                  />
+                  <NeonButton title="Equip" onPress={() => handleEquipCosmetic(item)} variant="primary" size="sm" />
                 )}
                 {equipped && (
-                  <NeonButton
-                    title="Unequip"
-                    onPress={() => handleUnequip(item.slot)}
-                    variant="ghost"
-                    size="sm"
-                  />
+                  <NeonButton title="Unequip" onPress={() => handleUnequipCosmetic(item.slot)} variant="ghost" size="sm" />
                 )}
                 {!unlocked && (
-                  <NeonButton
-                    title="Unlock (Dev)"
-                    onPress={() => handleEquip(item)}
-                    variant="ghost"
-                    size="sm"
-                  />
+                  <NeonButton title="Unlock (Dev)" onPress={() => handleEquipCosmetic(item)} variant="ghost" size="sm" />
                 )}
               </View>
-            </Card>
+            </View>
           );
         })}
       </ScrollView>
+
+      {/* ─── GEAR DETAIL POPUP ─── */}
+      <Modal visible={selectedGear !== null} transparent animationType="fade" onRequestClose={() => setSelectedGear(null)}>
+        <TouchableOpacity
+          style={styles.popupOverlay}
+          activeOpacity={1}
+          onPress={() => setSelectedGear(null)}
+        >
+          {selectedGear && (
+            <View style={styles.popupCard}>
+              <Text style={styles.popupIcon}>{selectedGear.icon}</Text>
+              <Text style={styles.popupName}>{selectedGear.name}</Text>
+              <Text style={[styles.popupQuality, { color: QUALITY_COLORS[selectedGear.quality] }]}>
+                {selectedGear.quality.toUpperCase()}
+              </Text>
+              <View style={styles.popupDivider} />
+              <Text style={styles.popupBodyArea}>
+                {GEAR_BODY_AREA[selectedGear.slotId]}
+              </Text>
+              <Text style={styles.popupStatLine}>
+                {GEAR_STAT_LINE[selectedGear.slotId](selectedGear.quality)}
+              </Text>
+              <Text style={styles.popupShortDesc}>{selectedGear.shortDesc}</Text>
+              {ss.gearLockedToday && (
+                <Text style={styles.popupLocked}>Gear is locked after first scan today</Text>
+              )}
+              <NeonButton
+                title="Close"
+                onPress={() => setSelectedGear(null)}
+                variant="ghost"
+                size="sm"
+                style={styles.popupClose}
+              />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Modal>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    fontSize: fontSize.xxl,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.md,
-  },
-  equippedRow: {
+  content: { paddingBottom: spacing.xxl },
+
+  // ─── Section headers ───
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceLight,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
   },
-  slotLabel: {
+  sectionLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    fontWeight: '700',
+  },
+  sectionHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  sectionDesc: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
-    flex: 1,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    lineHeight: 20,
   },
-  equippedInfo: {
+  lockedBadge: {
+    fontSize: fontSize.xs,
+    color: colors.neonRed,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+
+  // ─── Gear cards ───
+  gearCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
   },
-  equippedIcon: {
-    fontSize: 18,
-    marginRight: spacing.xs,
+  gearCardActive: {
+    borderColor: colors.neonGreen + '60',
+    backgroundColor: colors.surfaceHighlight,
   },
-  equippedName: {
-    fontSize: fontSize.sm,
+  gearCardLeft: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  gearIcon: {
+    fontSize: 24,
+  },
+  gearCardCenter: {
+    flex: 1,
+  },
+  gearNameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  gearName: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
     color: colors.textPrimary,
-    fontWeight: '500',
   },
-  emptySlot: {
+  gearNameActive: {
+    color: colors.neonGreen,
+  },
+  gearBodyArea: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  gearStatLine: {
     fontSize: fontSize.sm,
-    color: colors.textMuted,
-    fontStyle: 'italic',
+    color: colors.neonCyan,
+    marginTop: 2,
   },
-  slotTabs: {
+  gearQuality: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  gearCardRight: {
+    width: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
+  equippedDot: {
+    width: 30,
+    height: 30,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.neonGreen + '20',
+    borderWidth: 2,
+    borderColor: colors.neonGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  equippedDotText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.neonGreen,
+    letterSpacing: 1,
+  },
+  unequippedDot: {
+    width: 30,
+    height: 30,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+  },
+
+  // ─── Pathfinder ───
+  pathfinderRow: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+  },
+  pathfinderActive: {
+    borderColor: colors.neonCyan + '40',
+    backgroundColor: colors.surfaceHighlight,
+  },
+  pathfinderLabel: {
+    fontSize: fontSize.xs,
+    color: colors.neonCyan,
+    letterSpacing: 2,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  pathfinderDots: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  pathfinderDot: {
+    width: 18,
+    height: 18,
+    borderRadius: borderRadius.full,
+    borderWidth: 2,
+    borderColor: colors.surfaceLight,
+  },
+  pathfinderDotFilled: {
+    borderColor: colors.neonCyan,
+    backgroundColor: colors.neonCyan + '30',
+  },
+  pathfinderCount: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  pathfinderActiveText: {
+    fontSize: fontSize.sm,
+    color: colors.neonCyan,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  pathfinderActiveDesc: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
+
+  // ─── Divider ───
+  divider: {
+    height: 1,
+    backgroundColor: colors.surfaceLight,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.lg,
+  },
+
+  // ─── Cosmetic tabs ───
+  cosmeticTabs: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
-    marginVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
-  slotTab: {
+  cosmeticTab: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
@@ -282,63 +545,75 @@ const styles = StyleSheet.create({
     borderColor: colors.surfaceLight,
     backgroundColor: colors.surface,
   },
-  slotTabActive: {
+  cosmeticTabActive: {
     borderColor: colors.neonPurple,
     backgroundColor: colors.neonPurple + '20',
   },
-  slotTabText: {
+  cosmeticTabText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
   },
-  slotTabTextActive: {
+  cosmeticTabTextActive: {
     color: colors.neonPurple,
     fontWeight: '600',
   },
-  equippedCard: {
+
+  // ─── Cosmetic cards ───
+  cosmeticCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    borderLeftWidth: 3,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+  },
+  cosmeticCardEquipped: {
     borderColor: colors.neonGreen + '30',
   },
-  itemHeader: {
+  cosmeticHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xs,
   },
-  itemIcon: {
+  cosmeticIcon: {
     fontSize: 28,
     marginRight: spacing.sm,
   },
-  itemInfo: {
+  cosmeticInfo: {
     flex: 1,
   },
-  itemName: {
+  cosmeticName: {
     fontSize: fontSize.md,
     fontWeight: '600',
     color: colors.textPrimary,
   },
-  itemRarity: {
+  cosmeticRarity: {
     fontSize: fontSize.xs,
     fontWeight: '700',
     letterSpacing: 1,
     marginTop: 2,
   },
-  equippedBadge: {
+  cosmeticBadge: {
     backgroundColor: colors.neonGreen + '20',
     borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  equippedBadgeText: {
+  cosmeticBadgeText: {
     fontSize: fontSize.xs,
     color: colors.neonGreen,
     fontWeight: '700',
     letterSpacing: 1,
   },
-  itemDesc: {
+  cosmeticDesc: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
-  lockedText: {
+  dimmed: {
     opacity: 0.5,
   },
   unlockCondition: {
@@ -346,8 +621,77 @@ const styles = StyleSheet.create({
     color: colors.neonAmber,
     marginBottom: spacing.sm,
   },
-  itemActions: {
+  cosmeticActions: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+
+  // ─── Gear detail popup ───
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  popupCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 300,
+    alignItems: 'center',
+  },
+  popupIcon: {
+    fontSize: 40,
+    marginBottom: spacing.sm,
+  },
+  popupName: {
+    fontSize: fontSize.xl,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  popupQuality: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: spacing.xs,
+  },
+  popupDivider: {
+    height: 1,
+    backgroundColor: colors.surfaceLight,
+    width: '80%',
+    marginVertical: spacing.md,
+  },
+  popupBodyArea: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    letterSpacing: 2,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+  },
+  popupStatLine: {
+    fontSize: fontSize.md,
+    color: colors.neonCyan,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.sm,
+  },
+  popupShortDesc: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  popupLocked: {
+    fontSize: fontSize.xs,
+    color: colors.neonRed,
+    marginTop: spacing.md,
+    fontWeight: '600',
+  },
+  popupClose: {
+    marginTop: spacing.lg,
+    width: 120,
   },
 });
