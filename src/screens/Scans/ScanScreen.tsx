@@ -1,13 +1,15 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { resolveScan } from '../../systems/scanEngine';
+import { resolveScan, getEffectiveWhiffRate } from '../../systems/scanEngine';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { ScanType, ScanResult, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
+
+// ─── Constants ───
 
 const SCAN_COLORS: Record<ScanType, string> = {
   scout: '#4A9EFF',
@@ -15,10 +17,10 @@ const SCAN_COLORS: Record<ScanType, string> = {
   gambit: colors.neonRed,
 };
 
-const SCAN_LABELS: Record<ScanType, string> = {
-  scout: 'SCOUT',
-  seeker: 'SEEKER',
-  gambit: 'GAMBIT',
+const SCAN_LABELS: Record<ScanType, { name: string; flavor: string }> = {
+  scout: { name: 'SCOUT', flavor: 'Safe' },
+  seeker: { name: 'SEEKER', flavor: 'Balanced' },
+  gambit: { name: 'GAMBIT', flavor: 'High risk' },
 };
 
 const TILE_ICONS: Record<string, string> = {
@@ -29,13 +31,13 @@ const TILE_ICONS: Record<string, string> = {
   cleared: '\u2713',
 };
 
-const OUTCOME_CONFIG: Record<string, { banner: string; color: string }> = {
-  whiff: { banner: 'Signal Lost', color: colors.neonRed },
-  common: { banner: 'Standard Haul', color: colors.textSecondary },
-  uncommon: { banner: 'Solid Find', color: colors.neonCyan },
-  rare: { banner: 'Rare Signal', color: colors.neonGreen },
-  legendary: { banner: 'Jackpot', color: '#FFD700' },
-  component: { banner: 'Relic Detected', color: colors.neonPurple },
+const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: string }> = {
+  whiff: { banner: 'Signal Lost', color: colors.neonRed, icon: '\uD83D\uDCE1' },
+  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '\uD83D\uDCE6' },
+  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '\u2728' },
+  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '\uD83D\uDCA0' },
+  legendary: { banner: 'Jackpot', color: '#FFD700', icon: '\uD83C\uDFC6' },
+  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '\uD83D\uDD2E' },
 };
 
 export default function ScanScreen() {
@@ -44,37 +46,83 @@ export default function ScanScreen() {
   const ss = state.seekerScans;
 
   const [selectedScan, setSelectedScan] = useState<ScanType>('seeker');
+  const [selectedTile, setSelectedTile] = useState<SectorTile | null>(null);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
   const sessionStartRef = useRef(ss.sessionStartTime);
 
   const tilesCleared = ss.currentSector.tiles.filter(t => t.cleared).length;
+  const totalTiles = ss.currentSector.tiles.length;
+  const gridSize = ss.currentSector.gridSize || 5;
 
-  // A tile is scannable if it is NOT cleared and is adjacent to at least one cleared tile
+  // ─── Effective whiff rates (live with gear + streak) ───
+  const whiffRates: Record<ScanType, number> = {
+    scout: getEffectiveWhiffRate('scout', ss.streakDay, ss.activeGearSlots, ss.gearInventory),
+    seeker: getEffectiveWhiffRate('seeker', ss.streakDay, ss.activeGearSlots, ss.gearInventory),
+    gambit: getEffectiveWhiffRate('gambit', ss.streakDay, ss.activeGearSlots, ss.gearInventory),
+  };
+
+  // ─── Tile fog-of-war ───
   const isTileScannable = useCallback((tile: SectorTile): boolean => {
     if (tile.cleared) return false;
+    // Boss tile requires all other tiles cleared
+    if (tile.type === 'boss') {
+      const nonBossTiles = ss.currentSector.tiles.filter(t => t.type !== 'boss');
+      return nonBossTiles.every(t => t.cleared);
+    }
     return tile.adjacentTo.some(adjId => {
       const adj = ss.currentSector.tiles.find(t => t.id === adjId);
       return adj?.cleared === true;
     });
   }, [ss.currentSector.tiles]);
 
-  const handleTileTap = useCallback((tile: SectorTile) => {
-    if (ss.scansRemaining <= 0 || tile.cleared || !isTileScannable(tile)) return;
+  // ─── Gear influence hints ───
+  const getGearHints = (scanType: ScanType): string[] => {
+    const hints: string[] = [];
+    if (ss.activeGearSlots.includes('grip_gauntlets') && scanType !== 'scout') {
+      hints.push('\uD83E\uDDE4 Gauntlets: Safer');
+    }
+    if (ss.activeGearSlots.includes('optics_rig')) {
+      hints.push('\uD83D\uDD0D Optics: Better Loot');
+    }
+    if (scanType === 'gambit' && ss.activeGearSlots.includes('cortex_link')) {
+      hints.push('\uD83E\uDDE0 Cortex: Boosted');
+    }
+    if (ss.activeGearSlots.includes('salvage_drone')) {
+      hints.push('\uD83D\uDD04 Drone: Backup');
+    }
+    if (ss.activeGearSlots.includes('nav_boots')) {
+      hints.push('\uD83E\uDD7E Boots: +Progress');
+    }
+    return hints;
+  };
 
-    const result = resolveScan(selectedScan, tile.id, ss);
+  // ─── Tile tap → select tile ───
+  const handleTileSelect = (tile: SectorTile) => {
+    if (ss.scansRemaining <= 0 || tile.cleared || !isTileScannable(tile)) return;
+    setSelectedTile(tile);
+    setShowConfirm(true);
+  };
+
+  // ─── Confirm scan → resolve ───
+  const handleConfirmScan = () => {
+    if (!selectedTile) return;
+    setShowConfirm(false);
+
+    const result = resolveScan(selectedScan, selectedTile.id, ss);
     dispatch({ type: 'USE_SCAN', payload: result });
 
     if (result.outcome !== 'whiff') {
-      dispatch({ type: 'CLEAR_TILE', payload: tile.id });
+      dispatch({ type: 'CLEAR_TILE', payload: selectedTile.id });
     }
 
-    // Track analytics
+    // Analytics
     trackScan(
       selectedScan,
       result.outcome,
-      tile.type === 'cleared' ? 'unknown' : tile.type as any,
+      selectedTile.type === 'cleared' ? 'unknown' : selectedTile.type as any,
       'rustbelt_outskirts',
       result.droneProc,
       result.bootsProc,
@@ -84,20 +132,24 @@ export default function ScanScreen() {
     setLastResult(result);
     setShowResult(true);
 
-    // Check if session done after this scan
+    // Check session end
     const remaining = result.droneProc ? ss.scansRemaining : ss.scansRemaining - 1;
     if (remaining <= 0) {
       setSessionDone(true);
     }
-  }, [ss, selectedScan, dispatch, isTileScannable]);
 
+    setSelectedTile(null);
+  };
+
+  // ─── Dismiss result ───
   const handleNextScan = () => {
     setShowResult(false);
     setLastResult(null);
   };
 
+  // ─── Session complete ───
   const handleSessionComplete = () => {
-    const scansUsed = ss.scansTotal - (ss.scansRemaining - (lastResult?.droneProc ? 0 : 1));
+    const scansUsed = ss.sessionResults.length + 1; // +1 for current
     const durationSec = Math.floor((Date.now() - sessionStartRef.current) / 1000);
     trackGearLoadout(ss.activeGearSlots);
     trackSession(ss.scansTotal, scansUsed, ss.streakDay, durationSec, ss.sectorsCompleted);
@@ -105,182 +157,237 @@ export default function ScanScreen() {
     nav.goBack();
   };
 
-  // Gear influence text for selected scan
-  const getGearInfluence = (scanType: ScanType): string[] => {
-    const hints: string[] = [];
-    if (ss.activeGearSlots.includes('grip_gauntlets')) hints.push('Gauntlets: Safer');
-    if (ss.activeGearSlots.includes('optics_rig')) hints.push('Optics: Better Loot');
-    if (scanType === 'gambit' && ss.activeGearSlots.includes('cortex_link')) hints.push('Cortex: Boosted');
-    if (ss.activeGearSlots.includes('salvage_drone')) hints.push('Drone: Backup');
-    if (ss.activeGearSlots.includes('nav_boots')) hints.push('Boots: +Progress');
-    return hints;
-  };
-
-  const gridSize = ss.currentSector.gridSize || 5;
+  const remainingAfterLast = lastResult
+    ? (lastResult.droneProc ? ss.scansRemaining : Math.max(0, ss.scansRemaining - 1))
+    : ss.scansRemaining;
 
   return (
-    <ScreenWrapper>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{ss.currentSector.name}</Text>
-          <Text style={styles.scansLeft}>
-            <Text style={styles.scansLeftNum}>{ss.scansRemaining}</Text> scans left
+    <ScreenWrapper padded={false}>
+      {/* ─── TOP BAR ─── */}
+      <View style={styles.topBar}>
+        <View style={styles.topBarLeft}>
+          <Text style={styles.sectorName}>{ss.currentSector.name}</Text>
+          <Text style={styles.tilesCount}>{tilesCleared}/{totalTiles} tiles cleared</Text>
+        </View>
+        <View style={styles.topBarRight}>
+          <Text style={styles.scansRemaining}>
+            <Text style={styles.scansNumber}>{ss.scansRemaining}</Text> scans
           </Text>
+          <View style={styles.scanTypeIcons}>
+            <View style={[styles.scanTypeDot, { backgroundColor: SCAN_COLORS.scout }]} />
+            <View style={[styles.scanTypeDot, { backgroundColor: SCAN_COLORS.seeker }]} />
+            <View style={[styles.scanTypeDot, { backgroundColor: SCAN_COLORS.gambit }]} />
+          </View>
         </View>
+      </View>
 
-        {/* Scan Type Selector */}
-        <View style={styles.scanTypeRow}>
-          {(['scout', 'seeker', 'gambit'] as ScanType[]).map(type => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.scanTypeBtn,
-                {
-                  borderColor: SCAN_COLORS[type],
-                  backgroundColor: selectedScan === type ? SCAN_COLORS[type] + '22' : 'transparent',
-                },
-              ]}
-              onPress={() => setSelectedScan(type)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.scanTypeLabel, { color: SCAN_COLORS[type] }]}>
-                {SCAN_LABELS[type]}
-              </Text>
-            </TouchableOpacity>
+      {/* ─── 5x5 SECTOR GRID ─── */}
+      <View style={styles.gridContainer}>
+        {Array.from({ length: gridSize }, (_, row) => (
+          <View key={row} style={styles.gridRow}>
+            {Array.from({ length: gridSize }, (_, col) => {
+              const tile = ss.currentSector.tiles.find(t => t.row === row && t.col === col);
+              if (!tile) return <View key={col} style={styles.tileEmpty} />;
+
+              const scannable = isTileScannable(tile);
+              const isCleared = tile.cleared;
+              const isSelected = selectedTile?.id === tile.id;
+
+              return (
+                <TouchableOpacity
+                  key={col}
+                  style={[
+                    styles.tile,
+                    isCleared && styles.tileCleared,
+                    scannable && styles.tileScannable,
+                    !scannable && !isCleared && styles.tileFog,
+                    isSelected && styles.tileSelected,
+                  ]}
+                  onPress={() => handleTileSelect(tile)}
+                  disabled={!scannable || ss.scansRemaining <= 0}
+                  activeOpacity={0.6}
+                >
+                  <Text style={[
+                    styles.tileIcon,
+                    isCleared && styles.tileClearedIcon,
+                    scannable && { color: colors.neonGreen },
+                    tile.type === 'boss' && scannable && { color: colors.neonRed },
+                    tile.type === 'anomaly' && scannable && { color: colors.neonAmber },
+                    tile.type === 'resource' && scannable && { color: colors.neonCyan },
+                  ]}>
+                    {isCleared ? TILE_ICONS.cleared : scannable ? TILE_ICONS[tile.type] : ''}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+
+      {/* ─── SCAN TYPE BUTTONS (bottom) ─── */}
+      <View style={styles.bottomSection}>
+        {/* Gear influence chips */}
+        <View style={styles.gearHints}>
+          {getGearHints(selectedScan).map((hint, i) => (
+            <Text key={i} style={styles.gearHintText}>{hint}</Text>
           ))}
         </View>
 
-        {/* Gear Influence */}
-        <View style={styles.gearInfluence}>
-          {getGearInfluence(selectedScan).map((hint, i) => (
-            <Text key={i} style={styles.gearHint}>{hint}</Text>
-          ))}
+        <View style={styles.scanButtonRow}>
+          {(['scout', 'seeker', 'gambit'] as ScanType[]).map(type => {
+            const isSelected = selectedScan === type;
+            const whiffPct = Math.round(whiffRates[type] * 100);
+            return (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.scanButton,
+                  {
+                    borderColor: SCAN_COLORS[type],
+                    backgroundColor: isSelected ? SCAN_COLORS[type] + '20' : colors.surface,
+                  },
+                ]}
+                onPress={() => setSelectedScan(type)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.scanButtonLabel, { color: SCAN_COLORS[type] }]}>
+                  {SCAN_LABELS[type].name}
+                </Text>
+                <Text style={styles.scanButtonOdds}>
+                  {SCAN_LABELS[type].flavor} {'\u2014'} {whiffPct}% whiff
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* Sector Grid */}
-        <View style={styles.gridContainer}>
-          {Array.from({ length: gridSize }, (_, row) => (
-            <View key={row} style={styles.gridRow}>
-              {Array.from({ length: gridSize }, (_, col) => {
-                const tile = ss.currentSector.tiles.find(t => t.row === row && t.col === col);
-                if (!tile) return <View key={col} style={styles.tileEmpty} />;
-
-                const scannable = isTileScannable(tile);
-                const isCleared = tile.cleared;
-
-                return (
-                  <TouchableOpacity
-                    key={col}
-                    style={[
-                      styles.tile,
-                      isCleared && styles.tileCleared,
-                      scannable && styles.tileScannable,
-                      !scannable && !isCleared && styles.tileFog,
-                    ]}
-                    onPress={() => handleTileTap(tile)}
-                    disabled={!scannable || ss.scansRemaining <= 0}
-                    activeOpacity={0.6}
-                  >
-                    <Text style={[
-                      styles.tileIcon,
-                      isCleared && styles.tileClearedIcon,
-                      scannable && { color: SCAN_COLORS[selectedScan] },
-                    ]}>
-                      {isCleared ? TILE_ICONS.cleared : scannable ? TILE_ICONS[tile.type] : ''}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))}
-        </View>
-
-        {/* Sector progress */}
-        <Text style={styles.sectorProgressText}>
-          {tilesCleared}/{ss.currentSector.tiles.length} cleared
-        </Text>
-
-        {/* Session Stats */}
+        {/* Session stats bar */}
         {ss.sessionResults.length > 0 && (
-          <View style={styles.sessionStats}>
-            <Text style={styles.sessionStatsTitle}>Session</Text>
-            <View style={styles.sessionStatsRow}>
-              <Text style={styles.statText}>
-                Scans: {ss.sessionResults.length}
-              </Text>
-              <Text style={styles.statText}>
-                Whiffs: {ss.sessionResults.filter(r => r.outcome === 'whiff').length}
-              </Text>
-              <Text style={styles.statText}>
-                Rare+: {ss.sessionResults.filter(r => ['rare', 'legendary', 'component'].includes(r.outcome)).length}
-              </Text>
-            </View>
+          <View style={styles.sessionBar}>
+            <Text style={styles.sessionBarText}>
+              {ss.sessionResults.length} scans \u00b7{' '}
+              {ss.sessionResults.filter(r => r.outcome === 'whiff').length} whiffs \u00b7{' '}
+              {ss.sessionResults.filter(r => ['rare', 'legendary', 'component'].includes(r.outcome)).length} rare+
+            </Text>
           </View>
         )}
-      </ScrollView>
+      </View>
 
-      {/* Result Overlay */}
+      {/* ─── CONFIRMATION POPUP ─── */}
+      <Modal visible={showConfirm} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>
+              Use 1 {SCAN_LABELS[selectedScan].name} Scan?
+            </Text>
+            <Text style={styles.confirmTile}>
+              Target: {selectedTile?.type === 'boss' ? '\uD83D\uDC80 Boss Tile' :
+                       selectedTile?.type === 'anomaly' ? '\u26A0 Anomaly' :
+                       selectedTile?.type === 'resource' ? '\u26CF Resource' :
+                       '? Unknown Tile'}
+            </Text>
+            <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
+              {SCAN_LABELS[selectedScan].flavor} \u2014 {Math.round(whiffRates[selectedScan] * 100)}% whiff chance
+            </Text>
+            <View style={styles.confirmButtons}>
+              <NeonButton
+                title="Scan"
+                onPress={handleConfirmScan}
+                variant="primary"
+                style={styles.confirmBtn}
+              />
+              <NeonButton
+                title="Cancel"
+                onPress={() => { setShowConfirm(false); setSelectedTile(null); }}
+                variant="ghost"
+                style={styles.confirmBtn}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ─── RESULT POPUP ─── */}
       <Modal visible={showResult} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.resultCard}>
-            {lastResult && (
-              <>
-                <Text style={[
-                  styles.resultBanner,
-                  { color: OUTCOME_CONFIG[lastResult.outcome]?.color || colors.textPrimary },
-                ]}>
-                  {OUTCOME_CONFIG[lastResult.outcome]?.banner || lastResult.outcome}
-                </Text>
+            {lastResult && (() => {
+              const display = OUTCOME_DISPLAY[lastResult.outcome];
+              return (
+                <>
+                  {/* Scan type badge */}
+                  <View style={[styles.resultTypeBadge, { backgroundColor: SCAN_COLORS[lastResult.scanType] + '30', borderColor: SCAN_COLORS[lastResult.scanType] }]}>
+                    <Text style={[styles.resultTypeBadgeText, { color: SCAN_COLORS[lastResult.scanType] }]}>
+                      {SCAN_LABELS[lastResult.scanType].name}
+                    </Text>
+                  </View>
 
-                {lastResult.lootName && (
-                  <Text style={styles.lootName}>{lastResult.lootName}</Text>
-                )}
+                  {/* Outcome icon + banner */}
+                  <Text style={styles.resultIcon}>{display.icon}</Text>
+                  <Text style={[styles.resultBanner, { color: display.color }]}>
+                    {display.banner}
+                  </Text>
 
-                {lastResult.outcome !== 'whiff' && lastResult.sectorProgress > 0 && (
-                  <Text style={styles.progressText}>+{lastResult.sectorProgress} sector progress</Text>
-                )}
-
-                {/* Gear procs */}
-                {lastResult.droneProc && (
-                  <Text style={[styles.procText, { color: colors.neonAmber }]}>
-                    Salvage Drone recovered your scan!
-                  </Text>
-                )}
-                {lastResult.bootsProc && (
-                  <Text style={[styles.procText, { color: colors.neonCyan }]}>
-                    Nav Boots boosted progress!
-                  </Text>
-                )}
-                {lastResult.cortexProc && (
-                  <Text style={[styles.procText, { color: colors.neonPurple }]}>
-                    Cortex Link enhanced!
-                  </Text>
-                )}
-                {lastResult.opticsProc && (
-                  <Text style={[styles.procText, { color: colors.neonGreen }]}>
-                    Optics Rig sharpened!
-                  </Text>
-                )}
-
-                <View style={styles.resultActions}>
-                  {sessionDone ? (
-                    <NeonButton
-                      title="SESSION COMPLETE"
-                      onPress={handleSessionComplete}
-                      size="lg"
-                    />
-                  ) : (
-                    <NeonButton
-                      title={`NEXT SCAN (${Math.max(0, ss.scansRemaining - (lastResult.droneProc ? 0 : 1))} left)`}
-                      onPress={handleNextScan}
-                      variant="secondary"
-                      size="lg"
-                    />
+                  {/* Loot with rarity label */}
+                  {lastResult.lootName && (
+                    <Text style={[styles.resultLoot, { color: display.color }]}>
+                      {lastResult.outcome.charAt(0).toUpperCase() + lastResult.outcome.slice(1)}: {lastResult.lootName}
+                    </Text>
                   )}
-                </View>
-              </>
-            )}
+
+                  {/* Sector progress */}
+                  {lastResult.outcome !== 'whiff' && lastResult.sectorProgress > 0 && (
+                    <View style={styles.resultProgressRow}>
+                      <Text style={styles.resultProgress}>
+                        +{lastResult.sectorProgress} tile{lastResult.sectorProgress > 1 ? 's' : ''} cleared
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Gear procs */}
+                  <View style={styles.procsContainer}>
+                    {lastResult.droneProc && (
+                      <Text style={[styles.procText, { color: colors.neonAmber }]}>
+                        \uD83D\uDD04 Salvage Drone recovered your Scan!
+                      </Text>
+                    )}
+                    {lastResult.bootsProc && (
+                      <Text style={[styles.procText, { color: colors.neonCyan }]}>
+                        \uD83E\uDD7E Nav Boots found a shortcut!
+                      </Text>
+                    )}
+                    {lastResult.cortexProc && (
+                      <Text style={[styles.procText, { color: colors.neonPurple }]}>
+                        \uD83E\uDDE0 Cortex Link amplified the Gambit!
+                      </Text>
+                    )}
+                    {lastResult.opticsProc && (
+                      <Text style={[styles.procText, { color: colors.neonGreen }]}>
+                        \uD83D\uDD0D Optics Rig locked a rare signal!
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Action button */}
+                  <View style={styles.resultActions}>
+                    {sessionDone ? (
+                      <NeonButton
+                        title="SESSION COMPLETE"
+                        onPress={handleSessionComplete}
+                        size="lg"
+                      />
+                    ) : (
+                      <NeonButton
+                        title={`NEXT SCAN (${remainingAfterLast} left)`}
+                        onPress={handleNextScan}
+                        variant="secondary"
+                        size="lg"
+                      />
+                    )}
+                  </View>
+                </>
+              );
+            })()}
           </View>
         </View>
       </Modal>
@@ -289,82 +396,65 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  content: { paddingBottom: spacing.xxl },
-
-  // Header
-  header: {
+  // ─── Top Bar ───
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceLight,
+    backgroundColor: colors.surface,
   },
-  headerTitle: {
-    fontSize: fontSize.lg,
+  topBarLeft: {},
+  topBarRight: { alignItems: 'flex-end' },
+  sectorName: {
+    fontSize: fontSize.md,
     color: colors.textPrimary,
     fontWeight: '700',
   },
-  scansLeft: {
-    fontSize: fontSize.md,
+  tilesCount: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  scansRemaining: {
+    fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
-  scansLeftNum: {
+  scansNumber: {
     fontSize: fontSize.xl,
     color: colors.neonGreen,
     fontWeight: '700',
   },
-
-  // Scan Type
-  scanTypeRow: {
+  scanTypeIcons: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: 4,
+    marginTop: 4,
   },
-  scanTypeBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  scanTypeLabel: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    letterSpacing: 1,
+  scanTypeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 
-  // Gear Influence
-  gearInfluence: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-    minHeight: 20,
-  },
-  gearHint: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    backgroundColor: colors.surfaceLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-
-  // Grid
+  // ─── Grid ───
   gridContainer: {
-    alignSelf: 'center',
-    marginVertical: spacing.md,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
   },
   gridRow: {
     flexDirection: 'row',
   },
   tile: {
-    width: 56,
-    height: 56,
+    width: 54,
+    height: 54,
     margin: 2,
     borderRadius: borderRadius.sm,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.surfaceLight,
     backgroundColor: colors.surface,
     alignItems: 'center',
@@ -372,62 +462,92 @@ const styles = StyleSheet.create({
   },
   tileCleared: {
     backgroundColor: colors.surfaceHighlight,
-    borderColor: colors.textMuted,
+    borderColor: colors.surfaceLight,
   },
   tileScannable: {
-    borderColor: colors.neonGreen,
+    borderColor: colors.neonGreen + '80',
     backgroundColor: colors.surface,
   },
   tileFog: {
     backgroundColor: colors.background,
     borderColor: colors.background,
-    opacity: 0.4,
+    opacity: 0.3,
+  },
+  tileSelected: {
+    borderColor: colors.neonAmber,
+    borderWidth: 2,
+    backgroundColor: colors.neonAmber + '15',
   },
   tileEmpty: {
-    width: 56,
-    height: 56,
+    width: 54,
+    height: 54,
     margin: 2,
   },
   tileIcon: {
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textMuted,
   },
   tileClearedIcon: {
     color: colors.textMuted,
+    opacity: 0.5,
   },
 
-  sectorProgressText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
-
-  // Session Stats
-  sessionStats: {
-    marginTop: spacing.lg,
-    padding: spacing.md,
+  // ─── Bottom Section ───
+  bottomSection: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
   },
-  sessionStatsTitle: {
+  gearHints: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    minHeight: 24,
+  },
+  gearHintText: {
+    fontSize: 10,
+    color: colors.textMuted,
+    backgroundColor: colors.surfaceHighlight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  scanButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  scanButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    alignItems: 'center',
+  },
+  scanButtonLabel: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  scanButtonOdds: {
+    fontSize: 10,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  sessionBar: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.xs,
+    alignItems: 'center',
+  },
+  sessionBarText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  sessionStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
   },
 
-  // Result Overlay
+  // ─── Confirmation Popup ───
   overlay: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -435,8 +555,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.lg,
   },
-  resultCard: {
+  confirmCard: {
     width: '100%',
+    maxWidth: 320,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
@@ -444,31 +565,93 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: 'center',
   },
+  confirmTitle: {
+    fontSize: fontSize.lg,
+    color: colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  confirmTile: {
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  confirmWhiff: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginBottom: spacing.lg,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  confirmBtn: {
+    flex: 1,
+  },
+
+  // ─── Result Popup ───
+  resultCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  resultTypeBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  resultTypeBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  resultIcon: {
+    fontSize: 40,
+    marginBottom: spacing.sm,
+  },
   resultBanner: {
     fontSize: fontSize.xxl,
     fontWeight: '700',
     letterSpacing: 1,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  lootName: {
-    fontSize: fontSize.lg,
-    color: colors.textPrimary,
+  resultLoot: {
+    fontSize: fontSize.md,
     fontWeight: '600',
     marginBottom: spacing.sm,
   },
-  progressText: {
-    fontSize: fontSize.md,
+  resultProgressRow: {
+    backgroundColor: colors.surfaceHighlight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+  },
+  resultProgress: {
+    fontSize: fontSize.sm,
     color: colors.neonCyan,
+    fontWeight: '600',
+  },
+  procsContainer: {
+    alignItems: 'center',
     marginBottom: spacing.sm,
   },
   procText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    marginBottom: spacing.xs,
+    marginVertical: 2,
   },
   resultActions: {
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     width: '100%',
     alignItems: 'center',
   },
