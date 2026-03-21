@@ -21,55 +21,55 @@ export function getDailyObjective(ss: SeekerScanState): DailyObjective {
   // Sector nearly complete
   if (pct >= 0.8 && !ss.currentSector.completed) {
     return {
-      brief: `Finish ${ss.currentSector.name}.`,
-      context: `${totalTiles - tilesCleared} tiles left. Push through.`,
+      brief: `Clean out ${ss.currentSector.name}.`,
+      context: `${totalTiles - tilesCleared} tiles left. Strip it before the Directorate re-flags the zone.`,
     };
   }
 
   // Pathfinder close to unlock
   if (hasComponents && componentsNeeded <= 2) {
     return {
-      brief: 'Hunt relic fragments.',
-      context: `${componentsNeeded} more component${componentsNeeded > 1 ? 's' : ''} unlocks the Pathfinder Module. Run Gambits.`,
+      brief: 'Pull relic fragments.',
+      context: `${componentsNeeded} more and the Pathfinder Module goes live. Push Gambits.`,
     };
   }
 
   // Streak at risk (day 1 — just started or just lost it)
   if (ss.streakDay === 1) {
     return {
-      brief: 'Build your streak.',
-      context: 'Day 1. Every consecutive day sharpens your signal.',
+      brief: 'Start a run streak.',
+      context: 'Day 1. Show up consecutive and the reads get sharper.',
     };
   }
 
   // High streak — protect it
   if (ss.streakDay >= 5) {
     return {
-      brief: 'Protect the streak.',
-      context: `Day ${ss.streakDay}. Your reads are sharper than most will ever get.`,
+      brief: 'Keep the streak alive.',
+      context: `Day ${ss.streakDay}. Your rig is dialed in. Don't let it cool off.`,
     };
   }
 
   // Mid-sector push
   if (pct >= 0.4 && pct < 0.8) {
     return {
-      brief: `Push deeper into ${ss.currentSector.name}.`,
-      context: `${Math.round(pct * 100)}% mapped. The harder signals are ahead.`,
+      brief: `Work deeper into ${ss.currentSector.name}.`,
+      context: `${Math.round(pct * 100)}% stripped. The deeper signals are the ones worth running.`,
     };
   }
 
   // Early sector — explore
   if (pct < 0.4) {
     return {
-      brief: 'Read the sector.',
-      context: `${ss.currentSector.name} is mostly uncharted. Start pulling signal.`,
+      brief: 'Crack the sector open.',
+      context: `${ss.currentSector.name} — mostly dark. Start pulling what you can.`,
     };
   }
 
   // Sector done — generic
   return {
     brief: 'Run your scans.',
-    context: 'Every day on the Trail is earned, not given.',
+    context: 'The window\'s open. Use it.',
   };
 }
 

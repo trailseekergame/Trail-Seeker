@@ -2,20 +2,20 @@
 
 ## Who You Are
 
-You're nobody — a blank name in a dead waystation, staring at a half-corrupted map and a rover that barely runs. The Directorate doesn't know you exist. The Free Bands don't care. The only thing that separates you from the bones along the road is that you woke up this morning and chose to keep moving. Every mile you push into the ruins is a mile nobody told you to walk.
+You're an unlicensed operator running dark scans in Directorate-controlled territory. The signal you're pulling — buried caches, pre-collapse tech, relic fragments — belongs to whoever finds it first, and the Directorate says that's them. You say otherwise. Every scan is a job. Every job is a risk. And the deeper you push into the sectors they've written off, the more you find that was never supposed to be found.
 
 ## Why Scans and Gear Matter
 
-The Trail doesn't hand you anything. Seeker Scans are how you read the wreckage — pulling signal from static, finding what everyone else missed or was too afraid to dig for. Gear doesn't make you stronger; it makes you *smarter* about which risks to take. A Gambit scan with the right loadout isn't luck — it's a bet you've earned the right to make.
+Scans are your trade. The rover reads the wreckage, but you decide how hard to push the signal — surface probe, deep sweep, or an all-in gambit that burns the scan for one shot at something real. Gear is your edge: field-salvaged tech that sharpens your reads, steadies your signal, and lets you work sectors that would fry a stock rig. The better your loadout, the deeper you can operate. The deeper you operate, the more you pull that nobody else can reach.
 
 ## Tone Pillars
 
-- **Worn, not wrecked.** The world is broken but people are still patching things together with wire and stubbornness. There's dark humor in a diner with no roof serving filtered rainwater. Don't wallow in misery — find the grit in the cracks.
+- **Outlaw, not hero.** You're not saving the world. You're running jobs in the margins, pulling signal the Directorate marked as theirs. There's no quest log. There's work to do and a rover that needs fuel.
 
-- **Choices hit, not lecture.** Every decision should land like a fist to the ribs — felt immediately, understood later. No moralizing. No "you chose the dark path." Just consequences and the road ahead.
+- **Worn, not wrecked.** The world is broken but people are still patching things together with wire and stubbornness. There's dark humor in a diner with no roof serving filtered rainwater. Don't wallow — find the grit in the cracks.
 
-- **Earned, never given.** Nothing in the game should feel like a participation trophy. A 7-day streak means something because Day 1 was lean. A Legendary drop means something because you stared down a 36% whiff and pulled the trigger anyway.
+- **Earned, never given.** Nothing should feel like a participation trophy. A 7-day streak means you showed up when most people quit. A Legendary pull means you stared down a 36% dead signal and pressed the button anyway. The Trail respects consistency, not luck.
 
-- **Short and sharp.** Every line of text should justify its existence. If a sentence doesn't change what the player knows, feels, or does — cut it. This is a roadside radio broadcast, not a novel.
+- **Short and sharp.** Every line of text should justify its existence. If a sentence doesn't change what the player knows, feels, or does — cut it. This is a field dispatch, not a novel.
 
-- **Real people in a fake world.** The Lanterns mend your rover because kindness still costs nothing. The Taxmen shake you down because they're scared too. Nobody is a cartoon villain. Everyone is surviving.
+- **Anti-corporate, not political.** The Directorate is a machine. The Free Bands are chaos. You're neither. The game's stance is simple: systems that control access to resources are worth subverting. That's it. No speeches.

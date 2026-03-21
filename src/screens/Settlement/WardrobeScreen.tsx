@@ -146,7 +146,7 @@ export default function WardrobeScreen() {
           )}
         </View>
         <Text style={styles.sectionDesc}>
-          Field-salvaged tech. Each piece shapes how your rover reads the wreckage. Pick 3.
+          Your operational loadout. Each piece changes how the rover reads signal in the field. Choose 3.
         </Text>
 
         {/* Gear cards */}
@@ -229,7 +229,7 @@ export default function WardrobeScreen() {
           <Text style={styles.sectionHint}>visual only</Text>
         </View>
         <Text style={styles.sectionDesc}>
-          Salvaged gear. No field advantage — just how you carry yourself on the Trail.
+          No operational advantage. Just what you wear on the road.
         </Text>
 
         {/* Cosmetic slot tabs */}

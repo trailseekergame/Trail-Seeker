@@ -85,10 +85,10 @@ export default function DailyPlanScreen() {
         {/* ─── 1. HEADER: Day + Streak ─── */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> on the Trail
+            Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
           </Text>
           <Text style={styles.headerSubtext}>
-            {rareBoost > 0 ? `Signal clarity +${Math.round(rareBoost * 100)}%` : 'Come back tomorrow. The streak sharpens your reads.'}
+            {rareBoost > 0 ? `Signal clarity +${Math.round(rareBoost * 100)}% from consecutive ops` : 'Show up tomorrow. Consecutive runs sharpen the reads.'}
           </Text>
           {/* Streak progress dots */}
           <View style={styles.streakDots}>
@@ -219,15 +219,15 @@ export default function DailyPlanScreen() {
         {/* ─── 5. PRIMARY CTA ─── */}
         <View style={styles.ctaContainer}>
           <NeonButton
-            title="Begin Scan Run"
+            title="Run the Job"
             onPress={() => nav.navigate('ScanMain')}
             size="lg"
             disabled={ss.scansRemaining <= 0 || ss.activeGearSlots.length === 0}
           />
           <Text style={styles.ctaSubtext}>
             {ss.scansRemaining > 0
-              ? `Scanning ${ss.currentSector.name}`
-              : 'All scans used. Signal resets tomorrow.'}
+              ? `Operating in ${ss.currentSector.name}`
+              : 'Window\'s closed. Signal resets at dawn.'}
           </Text>
           {ss.activeGearSlots.length === 0 && (
             <Text style={styles.warningText}>Select at least 1 gear slot above</Text>

@@ -55,7 +55,7 @@ export default function OnboardingScreen() {
       <MaterialCommunityIcons name="access-point" size={48} color={colors.neonGreen + '60'} style={styles.wakeIcon} />
 
       <TypewriterText
-        text="2079. The war ended. Nobody won."
+        text="2079. The war is over. The Directorate won. You didn't."
         speed={45}
         onComplete={() => {}}
         style={styles.wakeLine1}
@@ -64,7 +64,7 @@ export default function OnboardingScreen() {
       <View style={{ height: spacing.lg }} />
 
       <TypewriterText
-        text={'You wake in a gutted waystation.\nA rover idles outside. The map on the dash is half-corrupted.\nYou don\'t remember how you got here.\nYou remember enough to know you can\'t stay.'}
+        text={'You wake in a gutted waystation with no ID and no clearance.\nA rover idles outside. Unlicensed. Unregistered.\nThe map on the dash is half-corrupted — but it shows sectors\nthe Directorate says don\'t exist anymore.'}
         speed={30}
         onComplete={() => setWakeTextDone(true)}
         style={styles.wakeBody}
@@ -146,7 +146,7 @@ export default function OnboardingScreen() {
       <Text style={styles.scanTitle}>Seeker Scans</Text>
 
       <TypewriterText
-        text={'Your rover picks up signals from the wreckage around you — buried caches, abandoned tech, things people left behind or died protecting.\n\nEach day, you get a handful of Scans. How you use them is the only thing that matters.'}
+        text={'Your rover runs dark scans on Directorate-controlled sectors — pulling signal from wreckage they\'ve marked as theirs.\n\nBuried caches. Pre-collapse tech. Things nobody was supposed to find.\nEach day you get a handful of Scans. That\'s your window.'}
         speed={25}
         onComplete={() => setScanTextDone(true)}
         style={styles.scanBody}
@@ -204,17 +204,17 @@ export default function OnboardingScreen() {
         <View style={styles.goDivider} />
 
         <Text style={styles.goText}>
-          The Directorate controls the sky.{'\n'}
-          The Free Bands hold the edges.{'\n'}
-          The Trail belongs to whoever keeps walking.
+          The Directorate locked down the good sectors.{'\n'}
+          The Free Bands fight over what's left.{'\n'}
+          You work the gaps between both.
         </Text>
 
         <Text style={styles.goKicker}>
-          Your first scan is waiting.
+          Time to run your first job.
         </Text>
 
         <NeonButton
-          title="Start scanning"
+          title="Start the run"
           onPress={handleComplete}
           variant="primary"
           size="lg"

@@ -107,7 +107,7 @@ export default function SettlementScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>Settlement</Text>
         <Text style={styles.subtitle}>
-          Waystation stop. Patch up, trade what you've got, check your gear.
+          Off-grid waystation. Refit, trade, and get back out before the signal window closes.
         </Text>
 
         {/* Resources Overview */}
@@ -264,7 +264,7 @@ export default function SettlementScreen({ navigation }: any) {
           accentColor={colors.neonCyan}
         >
           <Text style={styles.tradeDesc}>
-            Your loadout determines how your scans perform out there.
+            Your rig. What you're running determines what you can pull from the field.
           </Text>
           <View style={styles.equippedPreview}>
             {state.seekerScans.activeGearSlots.map((slotId) => {

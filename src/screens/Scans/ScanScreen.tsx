@@ -682,7 +682,7 @@ export default function ScanScreen() {
       <Modal visible={showSessionEnd} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.sessionEndCard}>
-            <Text style={styles.sessionEndLabel}>RUN COMPLETE</Text>
+            <Text style={styles.sessionEndLabel}>JOB DONE</Text>
             <View style={styles.sessionEndDivider} />
             <Text style={styles.sessionEndSummary}>
               {getSessionSummary(
@@ -712,7 +712,7 @@ export default function ScanScreen() {
               </View>
             </View>
             <NeonButton
-              title="Back to base"
+              title="Return to waystation"
               onPress={handleDismissSessionEnd}
               variant="primary"
               size="lg"
