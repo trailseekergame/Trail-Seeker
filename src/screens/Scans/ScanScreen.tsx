@@ -8,6 +8,7 @@ import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { ScanType, ScanResult, SectorTile } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
+import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
 
 // ─── Constants ───
 
@@ -129,6 +130,9 @@ export default function ScanScreen() {
       ss.streakDay,
     );
 
+    // Log Gambit results for balancing
+    logGambitResult(result, ss.streakDay, ss.activeGearSlots);
+
     setLastResult(result);
     setShowResult(true);
 
@@ -153,6 +157,10 @@ export default function ScanScreen() {
     const durationSec = Math.floor((Date.now() - sessionStartRef.current) / 1000);
     trackGearLoadout(ss.activeGearSlots);
     trackSession(ss.scansTotal, scansUsed, ss.streakDay, durationSec, ss.sectorsCompleted);
+
+    // Log session summary for balancing
+    logSessionSummary(ss);
+
     setShowResult(false);
     nav.goBack();
   };

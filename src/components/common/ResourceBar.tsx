@@ -2,35 +2,57 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSize } from '../../theme';
 import { useGame } from '../../context/GameContext';
-import { useMoveTimer } from '../../hooks/useMoveTimer';
+import { getStreakRareBoost } from '../../systems/scanEngine';
 
+/**
+ * ResourceBar — Updated for Seeker Scan system
+ * Shows: Scans remaining, Streak day, Rare boost, Sector progress
+ */
 export default function ResourceBar() {
   const { state } = useGame();
-  const { movesRemaining, timeRemaining } = useMoveTimer();
+  const ss = state.seekerScans;
+  const rareBoost = getStreakRareBoost(ss.streakDay);
+  const tilesCleared = ss.currentSector.tiles.filter(t => t.cleared).length;
+  const totalTiles = ss.currentSector.tiles.length || 25;
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <ResourceItem icon="⚡" value={movesRemaining} label="Moves" color={colors.neonCyan} />
-        <ResourceItem icon="🔩" value={state.resources.scrap} label="Scrap" color={colors.scrap} />
         <ResourceItem
-          icon="📦"
-          value={state.resources.supplies}
-          label="Supplies"
-          color={colors.supplies}
+          icon="📡"
+          value={ss.scansRemaining}
+          label="Scans"
+          color={ss.scansRemaining > 0 ? colors.neonGreen : colors.neonRed}
         />
         <ResourceItem
-          icon="❤️"
-          value={state.playerHealth}
-          label="HP"
-          color={state.playerHealth > 30 ? colors.neonGreen : colors.neonRed}
+          icon="🔥"
+          value={ss.streakDay}
+          label="Streak"
+          color={colors.neonAmber}
+        />
+        <ResourceItem
+          icon="💎"
+          value={rareBoost > 0 ? `+${Math.round(rareBoost * 100)}%` : '—'}
+          label="Rare"
+          color={colors.neonCyan}
+        />
+        <ResourceItem
+          icon="🗺️"
+          value={`${tilesCleared}/${totalTiles}`}
+          label="Sector"
+          color={colors.neonPurple}
         />
       </View>
-      <View style={styles.timerRow}>
-        <Text style={styles.timerText}>
-          Next refresh: {timeRemaining}
+      <View style={styles.infoRow}>
+        <Text style={styles.infoText}>
+          Day {ss.streakDay} Streak
+          {ss.scansUsedToday.scout + ss.scansUsedToday.seeker + ss.scansUsedToday.gambit > 0
+            ? ` · ${ss.scansUsedToday.scout}S ${ss.scansUsedToday.seeker}K ${ss.scansUsedToday.gambit}G used`
+            : ''}
         </Text>
-        <Text style={styles.dayText}>Day {state.dayNumber}</Text>
+        <Text style={styles.gearText}>
+          {ss.activeGearSlots.length} gear active
+        </Text>
       </View>
     </View>
   );
@@ -43,7 +65,7 @@ function ResourceItem({
   color,
 }: {
   icon: string;
-  value: number;
+  value: number | string;
   label: string;
   color: string;
 }) {
@@ -86,7 +108,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 1,
   },
-  timerRow: {
+  infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: spacing.xs,
@@ -94,13 +116,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.surfaceLight,
   },
-  timerText: {
+  infoText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
   },
-  dayText: {
+  gearText: {
     fontSize: fontSize.xs,
-    color: colors.neonAmber,
+    color: colors.neonGreen,
     fontWeight: '600',
   },
 });
