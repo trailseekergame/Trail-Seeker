@@ -30,17 +30,24 @@ export function useNotifications(): void {
     // One-time setup
     if (!initialized.current) {
       initialized.current = true;
-      configureNotifications();
+
+      try {
+        configureNotifications();
+      } catch (e) {
+        console.warn('[Notifications] Configure failed (Expo Go limitation):', e);
+      }
 
       // Request permissions (non-blocking, respects OS settings)
       requestPermissions().then((granted) => {
         if (granted) {
           console.log('[Notifications] Permissions granted');
         }
+      }).catch((e) => {
+        console.warn('[Notifications] Permission request failed (Expo Go limitation):', e);
       });
 
       // Player just opened the app — cancel any pending reminders
-      cancelAllReminders();
+      cancelAllReminders().catch(() => {});
     }
 
     // Listen for app state changes

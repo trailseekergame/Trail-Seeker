@@ -70,46 +70,55 @@ export async function saveNotificationPrefs(prefs: NotificationPrefs): Promise<v
  * Call once at app startup.
  */
 export function configureNotifications(): void {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch (e) {
+    console.warn('[Notifications] setNotificationHandler not available:', e);
+  }
 }
 
 /**
  * Request notification permissions. Returns true if granted.
  */
 export async function requestPermissions(): Promise<boolean> {
-  if (!Device.isDevice) {
-    console.log('[Notifications] Must use physical device for push notifications');
+  try {
+    if (!Device.isDevice) {
+      console.log('[Notifications] Must use physical device for push notifications');
+      return false;
+    }
+
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === 'granted') return true;
+
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('[Notifications] Permission not granted');
+      return false;
+    }
+
+    // Android: create notification channel
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('trail-seeker-daily', {
+        name: 'Daily Reminders',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 100, 50, 100],
+        lightColor: '#39FF14',
+      });
+    }
+
+    return true;
+  } catch (e) {
+    console.warn('[Notifications] Permission request failed (Expo Go limitation):', e);
     return false;
   }
-
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
-
-  const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') {
-    console.log('[Notifications] Permission not granted');
-    return false;
-  }
-
-  // Android: create notification channel
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('trail-seeker-daily', {
-      name: 'Daily Reminders',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      vibrationPattern: [0, 100, 50, 100],
-      lightColor: '#39FF14',
-    });
-  }
-
-  return true;
 }
 
 // ─── Message Templates ───
@@ -231,6 +240,7 @@ function adjustForQuietHours(triggerDate: Date, quietStart: number, quietEnd: nu
  * Call this when the player ends a session or the app goes to background.
  */
 export async function scheduleReminders(state: GameState): Promise<void> {
+  try {
   const prefs = await loadNotificationPrefs();
 
   if (!prefs.enabled) {
@@ -299,6 +309,9 @@ export async function scheduleReminders(state: GameState): Promise<void> {
 
     console.log(`[Notifications] Streak warning scheduled in ${Math.round(streakSeconds / 3600)}h`);
   }
+  } catch (e) {
+    console.warn('[Notifications] Schedule failed (Expo Go limitation):', e);
+  }
 }
 
 /**
@@ -309,22 +322,30 @@ export async function cancelAllReminders(): Promise<void> {
   try {
     await Notifications.cancelScheduledNotificationAsync(NOTIF_ID_DAILY);
   } catch (_) {
-    // May not exist, that's fine
+    // May not exist or not available in Expo Go
   }
   try {
     await Notifications.cancelScheduledNotificationAsync(NOTIF_ID_STREAK);
   } catch (_) {
-    // May not exist, that's fine
+    // May not exist or not available in Expo Go
   }
 
-  // Clear badge
-  await Notifications.setBadgeCountAsync(0);
+  try {
+    await Notifications.setBadgeCountAsync(0);
+  } catch (_) {
+    // Not available in Expo Go
+  }
 }
 
 /**
  * Get count of currently scheduled notifications (for debug/settings UI).
  */
 export async function getScheduledCount(): Promise<number> {
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  return scheduled.length;
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    return scheduled.length;
+  } catch (e) {
+    console.warn('[Notifications] getScheduledCount failed:', e);
+    return 0;
+  }
 }
