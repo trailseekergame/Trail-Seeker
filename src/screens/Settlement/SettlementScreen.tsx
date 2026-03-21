@@ -12,6 +12,12 @@ import {
   NotificationPrefs,
   getScheduledCount,
 } from '../../services/notifications';
+import {
+  getEventCount,
+  forceSendReport,
+  clearAnalytics,
+  checkAndSendWeeklyReport,
+} from '../../services/analytics';
 
 interface TradeOption {
   id: string;
@@ -47,10 +53,14 @@ export default function SettlementScreen({ navigation }: any) {
   const { state, dispatch } = useGame();
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs | null>(null);
   const [scheduledCount, setScheduledCount] = useState(0);
+  const [analyticsCount, setAnalyticsCount] = useState(0);
 
   useEffect(() => {
     loadNotificationPrefs().then(setNotifPrefs);
     getScheduledCount().then(setScheduledCount);
+    getEventCount().then(setAnalyticsCount);
+    // Check if weekly report is due
+    checkAndSendWeeklyReport();
   }, []);
 
   const updateNotifPref = async (key: keyof NotificationPrefs, value: boolean) => {
@@ -210,6 +220,39 @@ export default function SettlementScreen({ navigation }: any) {
             </>
           )}
         </Card>
+
+        {/* Dev Analytics (only in development) */}
+        {__DEV__ && (
+          <Card title="Dev Analytics" icon="📊">
+            <Text style={styles.tradeDesc}>
+              Player behavior telemetry. Weekly report sent to trailseekergame@gmail.com.
+            </Text>
+            <Text style={styles.settingHint}>
+              {analyticsCount} events tracked this period
+            </Text>
+            <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+              <NeonButton
+                title="Send Report Now"
+                onPress={async () => {
+                  await forceSendReport();
+                  Alert.alert('Report Sent', 'Weekly analytics report opened in email client.');
+                }}
+                variant="secondary"
+                size="sm"
+              />
+              <NeonButton
+                title="Clear Data"
+                onPress={async () => {
+                  await clearAnalytics();
+                  setAnalyticsCount(0);
+                  Alert.alert('Cleared', 'All analytics data has been reset.');
+                }}
+                variant="ghost"
+                size="sm"
+              />
+            </View>
+          </Card>
+        )}
 
         {/* Wardrobe */}
         <Card
