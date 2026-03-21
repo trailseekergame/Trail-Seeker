@@ -1,27 +1,27 @@
 /**
  * Trail Seeker Theme
- * Grim, neon-tinted wasteland aesthetic
+ * Outlaw field console — dark, sharp, functional
  */
 
 export const colors = {
-  // Core palette
-  background: '#0A0E13',
-  surface: '#131922',
-  surfaceLight: '#1C2533',
-  surfaceHighlight: '#243044',
+  // Core palette — darker, more contrast
+  background: '#080B10',
+  surface: '#0F1319',
+  surfaceLight: '#1A2030',
+  surfaceHighlight: '#1E2A3C',
 
-  // Text
-  textPrimary: '#E8ECF1',
-  textSecondary: '#8B95A5',
-  textMuted: '#5A6577',
+  // Text — slightly cooler, more terminal-like
+  textPrimary: '#D8DDE5',
+  textSecondary: '#7A8696',
+  textMuted: '#4A5567',
   textAccent: '#00FFAA',
 
-  // Neon accents
-  neonGreen: '#00FFAA',
-  neonCyan: '#00D4FF',
-  neonAmber: '#FFB800',
-  neonRed: '#FF3B5C',
-  neonPurple: '#B44AFF',
+  // Neon accents — slightly desaturated for grit
+  neonGreen: '#00E89C',
+  neonCyan: '#00C4EE',
+  neonAmber: '#E8A800',
+  neonRed: '#E8354F',
+  neonPurple: '#A040E8',
 
   // Functional
   success: '#00FFAA',
@@ -46,8 +46,8 @@ export const colors = {
   tabInactive: '#5A6577',
 
   // Overlay
-  overlay: 'rgba(10, 14, 19, 0.85)',
-  overlayLight: 'rgba(10, 14, 19, 0.6)',
+  overlay: 'rgba(8, 11, 16, 0.9)',
+  overlayLight: 'rgba(8, 11, 16, 0.65)',
 };
 
 export const spacing = {
@@ -77,10 +77,10 @@ export const fontWeight = {
 };
 
 export const borderRadius = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 2,
+  md: 4,
+  lg: 6,
+  xl: 8,
   full: 999,
 };
 
@@ -100,10 +100,10 @@ export const shadows = {
     elevation: 4,
   },
   neonGlow: {
-    shadowColor: '#00FFAA',
+    shadowColor: '#00E89C',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
     elevation: 6,
   },
 };

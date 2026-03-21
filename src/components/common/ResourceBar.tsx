@@ -104,9 +104,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   label: {
-    fontSize: fontSize.xs,
+    fontSize: 9,
     color: colors.textMuted,
     marginTop: 1,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   infoRow: {
     flexDirection: 'row',

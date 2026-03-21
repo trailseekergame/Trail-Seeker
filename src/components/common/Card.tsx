@@ -76,9 +76,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
+    fontSize: fontSize.sm,
+    fontWeight: '700',
     color: colors.textPrimary,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   subtitle: {
     fontSize: fontSize.sm,
