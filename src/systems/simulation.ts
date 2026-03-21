@@ -47,6 +47,8 @@ function createTestState(
     pathfinderComponents: 0,
     pathfinderUnlocked: false,
     lastRefreshDate: new Date().toISOString().split('T')[0],
+    shieldedNextScan: false,
+    boostedNextScan: false,
   };
 }
 

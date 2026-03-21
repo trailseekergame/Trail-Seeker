@@ -282,6 +282,8 @@ export const INITIAL_GAME_STATE: GameState = {
     pathfinderComponents: 0,
     pathfinderUnlocked: false,
     lastRefreshDate: new Date().toISOString().split('T')[0],
+    shieldedNextScan: false,
+    boostedNextScan: false,
   },
 };
 
@@ -307,6 +309,8 @@ export interface SectorTile {
   type: TileType;
   cleared: boolean;
   adjacentTo: string[];
+  durability: number;    // hits remaining (1 = normal, 2-3 = hardened)
+  maxDurability: number; // original durability for display
 }
 
 export interface Sector {
@@ -324,6 +328,7 @@ export interface ScanResult {
   sectorProgress: number;
   lootName?: string;
   lootRarity?: string;
+  fieldNote?: string;  // Short flavor line about the find
   droneProc: boolean;
   bootsProc: boolean;
   cortexProc: boolean;
@@ -346,6 +351,8 @@ export interface SeekerScanState {
   pathfinderComponents: number; // 0-4, unlocks Pathfinder Module at 4
   pathfinderUnlocked: boolean;
   lastRefreshDate: string; // tracks when scans were last refreshed to prevent mid-session resets
+  shieldedNextScan: boolean;  // next scan skips whiff roll
+  boostedNextScan: boolean;   // next scan outcome upgraded one tier
 }
 
 export const MAX_FREE_MOVES = 3;

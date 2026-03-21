@@ -60,6 +60,12 @@ type GameAction =
   | { type: 'ADVANCE_STREAK' }
   | { type: 'REFRESH_DAILY_SCANS'; payload: number }
   | { type: 'CLEAR_TILE'; payload: string }
+  | { type: 'DAMAGE_TILE'; payload: { tileId: string; amount: number } }
+  | { type: 'REVEAL_ADJACENT_TILE'; payload: string }
+  | { type: 'SET_SHIELDED_SCAN' }
+  | { type: 'CLEAR_SHIELDED_SCAN' }
+  | { type: 'SET_BOOSTED_SCAN' }
+  | { type: 'CLEAR_BOOSTED_SCAN' }
   | { type: 'COMPLETE_SECTOR' }
   | { type: 'ADD_PATHFINDER_COMPONENT' }
   | { type: 'UNLOCK_PATHFINDER' }
@@ -348,7 +354,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'CLEAR_TILE': {
       const tiles = state.seekerScans.currentSector.tiles.map(t =>
-        t.id === action.payload ? { ...t, cleared: true, type: 'cleared' as const } : t
+        t.id === action.payload ? { ...t, cleared: true, type: 'cleared' as const, durability: 0 } : t
       );
       const allCleared = tiles.every(t => t.cleared);
       return {
@@ -364,6 +370,72 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
       };
     }
+
+    case 'DAMAGE_TILE': {
+      const { tileId, amount } = action.payload;
+      const tiles = state.seekerScans.currentSector.tiles.map(t => {
+        if (t.id !== tileId) return t;
+        const newDur = Math.max(0, t.durability - amount);
+        if (newDur <= 0) {
+          return { ...t, durability: 0, cleared: true, type: 'cleared' as const };
+        }
+        return { ...t, durability: newDur };
+      });
+      const allCleared = tiles.every(t => t.cleared);
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: {
+            ...state.seekerScans.currentSector,
+            tiles,
+            completed: allCleared,
+          },
+          sectorsCompleted: allCleared ? state.seekerScans.sectorsCompleted + 1 : state.seekerScans.sectorsCompleted,
+        },
+      };
+    }
+
+    case 'REVEAL_ADJACENT_TILE': {
+      // Make a random fog tile adjacent to given tile scannable by clearing an adjacent fog tile
+      // Actually, reveal means nothing special in adjacency logic — we need to clear it.
+      // For micro-event: reveal = mark as cleared so adjacent tiles open up
+      const sourceTile = state.seekerScans.currentSector.tiles.find(t => t.id === action.payload);
+      if (!sourceTile) return state;
+      const fogNeighbors = sourceTile.adjacentTo
+        .map(id => state.seekerScans.currentSector.tiles.find(t => t.id === id))
+        .filter((t): t is NonNullable<typeof t> => !!t && !t.cleared);
+      if (fogNeighbors.length === 0) return state;
+      const pick = fogNeighbors[Math.floor(Math.random() * fogNeighbors.length)];
+      const tiles = state.seekerScans.currentSector.tiles.map(t =>
+        t.id === pick.id ? { ...t, cleared: true, type: 'cleared' as const, durability: 0 } : t
+      );
+      const allCleared = tiles.every(t => t.cleared);
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: {
+            ...state.seekerScans.currentSector,
+            tiles,
+            completed: allCleared,
+          },
+          sectorsCompleted: allCleared ? state.seekerScans.sectorsCompleted + 1 : state.seekerScans.sectorsCompleted,
+        },
+      };
+    }
+
+    case 'SET_SHIELDED_SCAN':
+      return { ...state, seekerScans: { ...state.seekerScans, shieldedNextScan: true } };
+
+    case 'CLEAR_SHIELDED_SCAN':
+      return { ...state, seekerScans: { ...state.seekerScans, shieldedNextScan: false } };
+
+    case 'SET_BOOSTED_SCAN':
+      return { ...state, seekerScans: { ...state.seekerScans, boostedNextScan: true } };
+
+    case 'CLEAR_BOOSTED_SCAN':
+      return { ...state, seekerScans: { ...state.seekerScans, boostedNextScan: false } };
 
     case 'COMPLETE_SECTOR': {
       // Sector completion rewards: bonus scrap + rare loot chance

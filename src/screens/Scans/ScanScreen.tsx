@@ -14,6 +14,7 @@ import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger'
 import { getDailyObjective, getSessionSummary, getReturnHook } from '../../systems/dailyObjective';
 import CoachMark, { COACH, hasBeenShown } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
+import MicroEvent, { rollMicroEvent, MicroEventData, MicroEventEffect } from '../../components/scans/MicroEvent';
 
 // ─── Constants ───
 
@@ -82,6 +83,10 @@ export default function ScanScreen() {
   const [isResolving, setIsResolving] = useState(false);
   const [resolvePhrase, setResolvePhrase] = useState('');
   const [showSkillCheck, setShowSkillCheck] = useState(false);
+  const [showMicroEvent, setShowMicroEvent] = useState(false);
+  const [pendingMicroEvent, setPendingMicroEvent] = useState<MicroEventData | null>(null);
+  const [tileWeakenedNote, setTileWeakenedNote] = useState<string | null>(null);
+  const lastScannedTileRef = useRef<string | null>(null);
   const sessionStartRef = useRef(ss.sessionStartTime);
 
   // Resolving animation values
@@ -217,15 +222,47 @@ export default function ScanScreen() {
   const handleConfirmScan = () => {
     if (!selectedTile) return;
     setShowConfirm(false);
+    setTileWeakenedNote(null);
 
     AudioManager.playSfx('scan_press');
     AudioManager.vibrate('light');
 
-    const result = resolveScan(selectedScan, selectedTile.id, ss);
+    let result = resolveScan(selectedScan, selectedTile.id, ss);
+
+    // Shielded scan: force non-whiff by re-rolling until success
+    if (ss.shieldedNextScan && result.outcome === 'whiff') {
+      // Re-resolve without whiff — simply override outcome to common (shield guarantees hit)
+      result = { ...result, outcome: 'common', lootName: 'Shielded Salvage', fieldNote: 'The corridor held. Clean read.' };
+    }
+    if (ss.shieldedNextScan) {
+      dispatch({ type: 'CLEAR_SHIELDED_SCAN' });
+    }
+
+    // Boosted scan: upgrade outcome one tier
+    if (ss.boostedNextScan && result.outcome !== 'whiff') {
+      const upgraded = TIER_UPGRADE[result.outcome];
+      if (upgraded) {
+        result = { ...result, outcome: upgraded };
+      }
+      dispatch({ type: 'CLEAR_BOOSTED_SCAN' });
+    } else if (ss.boostedNextScan) {
+      dispatch({ type: 'CLEAR_BOOSTED_SCAN' });
+    }
+
     dispatch({ type: 'USE_SCAN', payload: result });
 
+    // Handle durability: damage tile instead of clearing directly
+    lastScannedTileRef.current = selectedTile.id;
     if (result.outcome !== 'whiff') {
-      dispatch({ type: 'CLEAR_TILE', payload: selectedTile.id });
+      const tileDur = selectedTile.durability ?? 1;
+      if (tileDur > 1) {
+        // Hardened tile — damage but don't clear
+        dispatch({ type: 'DAMAGE_TILE', payload: { tileId: selectedTile.id, amount: 1 } });
+        const remaining_dur = tileDur - 1;
+        setTileWeakenedNote(`Tile weakened. ${remaining_dur} more hit${remaining_dur > 1 ? 's' : ''} to crack it.`);
+      } else {
+        dispatch({ type: 'DAMAGE_TILE', payload: { tileId: selectedTile.id, amount: 1 } });
+      }
     }
 
     // Analytics
@@ -315,11 +352,47 @@ export default function ScanScreen() {
     setShowResult(true);
   };
 
-  // ─── Dismiss result ───
+  // ─── Dismiss result — check for micro-event on rare+ ───
   const handleNextScan = () => {
+    const effectiveOutcome = displayOutcome || lastResult?.outcome;
+    // Roll micro-event for rare+ outcomes
+    if (effectiveOutcome && ['rare', 'legendary', 'component'].includes(effectiveOutcome)) {
+      const event = rollMicroEvent();
+      if (event) {
+        setShowResult(false);
+        setPendingMicroEvent(event);
+        setShowMicroEvent(true);
+        return;
+      }
+    }
     setShowResult(false);
     setLastResult(null);
     setDisplayOutcome(null);
+    setTileWeakenedNote(null);
+  };
+
+  // ─── Micro-event dismissed ───
+  const handleMicroEventDismiss = (effect: MicroEventEffect) => {
+    setShowMicroEvent(false);
+    setPendingMicroEvent(null);
+
+    switch (effect) {
+      case 'reveal_tile':
+        if (lastScannedTileRef.current) {
+          dispatch({ type: 'REVEAL_ADJACENT_TILE', payload: lastScannedTileRef.current });
+        }
+        break;
+      case 'shield_next':
+        dispatch({ type: 'SET_SHIELDED_SCAN' });
+        break;
+      case 'boost_next':
+        dispatch({ type: 'SET_BOOSTED_SCAN' });
+        break;
+    }
+
+    setLastResult(null);
+    setDisplayOutcome(null);
+    setTileWeakenedNote(null);
   };
 
   // ─── Session complete ───
@@ -364,6 +437,24 @@ export default function ScanScreen() {
           </View>
         </View>
       </View>
+
+      {/* ─── Active buff badges ─── */}
+      {(ss.shieldedNextScan || ss.boostedNextScan) && (
+        <View style={styles.buffRow}>
+          {ss.shieldedNextScan && (
+            <View style={[styles.buffBadge, { borderColor: colors.neonCyan }]}>
+              <MaterialCommunityIcons name="shield-check" size={12} color={colors.neonCyan} />
+              <Text style={[styles.buffText, { color: colors.neonCyan }]}>Shielded</Text>
+            </View>
+          )}
+          {ss.boostedNextScan && (
+            <View style={[styles.buffBadge, { borderColor: colors.neonAmber }]}>
+              <MaterialCommunityIcons name="arrow-up-bold-circle" size={12} color={colors.neonAmber} />
+              <Text style={[styles.buffText, { color: colors.neonAmber }]}>Boosted</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* ─── Coach: first tile ─── */}
       <CoachMark
@@ -442,6 +533,12 @@ export default function ScanScreen() {
                       scannable && styles.tileScannable,
                       !scannable && !isCleared && styles.tileFog,
                       isSelected && styles.tileSelected,
+                      // Hardened tile border
+                      scannable && !isCleared && (tile.maxDurability ?? 1) > 1 && {
+                        borderColor: (tile.durability ?? 1) === (tile.maxDurability ?? 1)
+                          ? colors.neonAmber + '80'
+                          : colors.neonGreen + '60',
+                      },
                     ]}
                     onPress={() => handleTileSelect(tile)}
                     disabled={!scannable || ss.scansRemaining <= 0}
@@ -461,6 +558,22 @@ export default function ScanScreen() {
                         }
                         style={isCleared ? { opacity: 0.5 } : undefined}
                       />
+                    )}
+                    {/* Durability pips for hardened tiles */}
+                    {scannable && !isCleared && (tile.maxDurability ?? 1) > 1 && (
+                      <View style={styles.durabilityPips}>
+                        {Array.from({ length: tile.maxDurability ?? 1 }, (_, i) => (
+                          <View
+                            key={i}
+                            style={[
+                              styles.durabilityPip,
+                              i < (tile.durability ?? 0)
+                                ? styles.durabilityPipFull
+                                : styles.durabilityPipEmpty,
+                            ]}
+                          />
+                        ))}
+                      </View>
                     )}
                   </TouchableOpacity>
                 );
@@ -665,6 +778,19 @@ export default function ScanScreen() {
                     </Text>
                   )}
 
+                  {/* Field note */}
+                  {lastResult.fieldNote && (
+                    <Text style={styles.fieldNote}>{lastResult.fieldNote}</Text>
+                  )}
+
+                  {/* Tile weakened note */}
+                  {tileWeakenedNote && effectiveOutcome !== 'whiff' && (
+                    <View style={styles.tileWeakenedRow}>
+                      <MaterialCommunityIcons name="shield-alert" size={14} color={colors.neonAmber} />
+                      <Text style={styles.tileWeakenedText}>{tileWeakenedNote}</Text>
+                    </View>
+                  )}
+
                   {/* Whiff guidance */}
                   {effectiveOutcome === 'whiff' && (
                     <>
@@ -756,6 +882,13 @@ export default function ScanScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ─── MICRO-EVENT ─── */}
+      <MicroEvent
+        visible={showMicroEvent}
+        event={pendingMicroEvent}
+        onDismiss={handleMicroEventDismiss}
+      />
 
       {/* ─── SESSION END SUMMARY ─── */}
       <Modal visible={showSessionEnd} transparent animationType="fade">
@@ -903,6 +1036,23 @@ const styles = StyleSheet.create({
   tileClearedIcon: {
     color: colors.textMuted,
     opacity: 0.5,
+  },
+  durabilityPips: {
+    position: 'absolute',
+    bottom: 3,
+    flexDirection: 'row',
+    gap: 2,
+  },
+  durabilityPip: {
+    width: 6,
+    height: 3,
+    borderRadius: 1,
+  },
+  durabilityPipFull: {
+    backgroundColor: colors.neonAmber,
+  },
+  durabilityPipEmpty: {
+    backgroundColor: colors.surfaceLight,
   },
 
   // ─── Bottom Section ───
@@ -1070,6 +1220,29 @@ const styles = StyleSheet.create({
     color: colors.neonCyan,
     fontWeight: '600',
   },
+  fieldNote: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: spacing.sm,
+    lineHeight: 20,
+  },
+  tileWeakenedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.neonAmber + '15',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+  },
+  tileWeakenedText: {
+    fontSize: fontSize.sm,
+    color: colors.neonAmber,
+    fontWeight: '600',
+  },
   whiffHint: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
@@ -1232,5 +1405,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.lg,
     lineHeight: 20,
+  },
+
+  // ─── Buff Badges ───
+  buffRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+  },
+  buffBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    backgroundColor: colors.surfaceHighlight,
+  },
+  buffText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

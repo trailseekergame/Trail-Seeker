@@ -85,11 +85,13 @@ export function resolveScan(
       }
     }
 
+    const { fieldNote } = generateLootData('whiff');
     return {
       scanType,
       outcome: 'whiff',
       tileId,
       sectorProgress: 0,
+      fieldNote,
       droneProc,
       bootsProc: false,
       cortexProc: false,
@@ -191,8 +193,8 @@ export function resolveScan(
 
   sectorProgress = Math.min(sectorProgress, progressConfig.base + rails.max_sector_progress_bonus);
 
-  // Generate loot name
-  const lootName = generateLootName(outcome);
+  // Generate loot name + field note
+  const { lootName, fieldNote } = generateLootData(outcome);
 
   return {
     scanType,
@@ -201,6 +203,7 @@ export function resolveScan(
     sectorProgress,
     lootName,
     lootRarity: outcome,
+    fieldNote,
     droneProc: false,
     bootsProc,
     cortexProc,
@@ -208,7 +211,11 @@ export function resolveScan(
   };
 }
 
-function generateLootName(outcome: ScanOutcome): string | undefined {
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateLootData(outcome: ScanOutcome): { lootName?: string; fieldNote?: string } {
   const names: Record<string, string[]> = {
     common: ['Scrap Bundle', 'Worn Filter', 'Rusted Bolt Set', 'Cracked Lens', 'Salvage Wire'],
     uncommon: ['Intact Module', 'Signal Booster', 'Plated Bearing', 'Charged Cell', 'Data Chip'],
@@ -217,9 +224,63 @@ function generateLootName(outcome: ScanOutcome): string | undefined {
     component: ['Signal Fragment', 'Void Shard', 'Circuit Relic', 'Trail Cipher'],
   };
 
-  if (outcome === 'whiff') return undefined;
-  const pool = names[outcome] || names.common;
-  return pool[Math.floor(Math.random() * pool.length)];
+  const fieldNotes: Record<string, string[]> = {
+    whiff: [
+      'Nothing but dead air and dust.',
+      'Signal collapsed before you could lock it.',
+      'The static ate everything.',
+      'Burned a scan for empty ground.',
+      'Whatever was here, it\'s gone.',
+      'Ground reads cold. Move on.',
+      'The frequency died mid-sweep.',
+      'Noise floor swallowed the ping.',
+    ],
+    common: [
+      'Bottom of the barrel, but it spends.',
+      'Junk salvage. Better than nothing.',
+      'Standard pull. Keeps the lights on.',
+      'The kind of haul nobody brags about.',
+      'Scraps. The Trail\'s daily bread.',
+      'Worn, dented, functional. It\'ll do.',
+      'Barely worth the scan charge.',
+    ],
+    uncommon: [
+      'Something worth packing. Decent signal.',
+      'Not junk. Someone maintained this.',
+      'Clean tech. The rover flagged it immediately.',
+      'A real find buried under the noise.',
+      'Solid pull. The kind that keeps you coming back.',
+      'Better than expected. The read was right.',
+    ],
+    rare: [
+      'The kind of signal that makes the risk worth it.',
+      'Buried deep. The Directorate missed this one.',
+      'Pre-collapse hardware. Still sealed.',
+      'Your hands are shaking. That\'s how you know it\'s good.',
+      'Rare grade. The scanners barely believed it.',
+    ],
+    legendary: [
+      'This changes the run. This changes the week.',
+      'You\'ve never pulled anything like this.',
+      'The signal was so clean it scared you.',
+    ],
+    component: [
+      'Relic-grade. The Pathfinder array is responding.',
+      'Fragment locked. The module is one step closer.',
+      'Ancient tech. It hums when you hold it.',
+    ],
+  };
+
+  if (outcome === 'whiff') {
+    return { fieldNote: pickRandom(fieldNotes.whiff) };
+  }
+
+  const namePool = names[outcome] || names.common;
+  const notePool = fieldNotes[outcome] || fieldNotes.common;
+  return {
+    lootName: pickRandom(namePool),
+    fieldNote: pickRandom(notePool),
+  };
 }
 
 // ─── Streak management ───

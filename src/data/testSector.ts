@@ -22,7 +22,14 @@ export function generateTestSector(): Sector {
       if (col > 0) adjacentTo.push(`tile-${row}-${col - 1}`);
       if (col < gridSize - 1) adjacentTo.push(`tile-${row}-${col + 1}`);
 
-      tiles.push({ id, row, col, type, cleared: type === 'cleared', adjacentTo });
+      // Durability based on tile type
+      const durabilityMap: Record<string, number> = {
+        cleared: 0, unknown: 1, resource: 1, anomaly: 2, boss: 3,
+      };
+      const dur = durabilityMap[type] ?? 1;
+      const maxDur = type === 'cleared' ? 1 : dur;
+
+      tiles.push({ id, row, col, type, cleared: type === 'cleared', adjacentTo, durability: dur, maxDurability: maxDur });
     }
   }
 
