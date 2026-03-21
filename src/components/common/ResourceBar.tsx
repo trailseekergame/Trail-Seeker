@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize } from '../../theme';
 import { useGame } from '../../context/GameContext';
 import { getStreakRareBoost } from '../../systems/scanEngine';
@@ -19,25 +20,25 @@ export default function ResourceBar() {
     <View style={styles.container}>
       <View style={styles.row}>
         <ResourceItem
-          icon="◈"
+          icon="radar"
           value={ss.scansRemaining}
           label="Scans"
           color={ss.scansRemaining > 0 ? colors.neonGreen : colors.neonRed}
         />
         <ResourceItem
-          icon="▲"
+          icon="fire"
           value={ss.streakDay}
           label="Streak"
           color={colors.neonAmber}
         />
         <ResourceItem
-          icon="◇"
+          icon="star-four-points"
           value={rareBoost > 0 ? `+${Math.round(rareBoost * 100)}%` : '—'}
           label="Rare"
           color={colors.neonCyan}
         />
         <ResourceItem
-          icon="▣"
+          icon="map-marker-distance"
           value={`${tilesCleared}/${totalTiles}`}
           label="Sector"
           color={colors.neonPurple}
@@ -71,7 +72,7 @@ function ResourceItem({
 }) {
   return (
     <View style={styles.item}>
-      <Text style={styles.icon}>{icon}</Text>
+      <MaterialCommunityIcons name={icon as any} size={20} color={color} style={styles.icon} />
       <Text style={[styles.value, { color }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
@@ -96,7 +97,6 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   icon: {
-    fontSize: 20,
     marginBottom: 2,
   },
   value: {

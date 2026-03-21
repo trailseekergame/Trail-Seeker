@@ -18,7 +18,7 @@ export default function ArcadeScreen({ navigation }: any) {
         </Text>
 
         {/* Trail Flier */}
-        <Card title="Trail Flier" icon="▸" accentColor={colors.neonCyan}>
+        <Card title="Trail Flier" icon="play" accentColor={colors.neonCyan}>
           <Text style={styles.gameDesc}>
             Pilot your rover-drone through the debris field. One-tap to dodge. How far can you
             fly?
@@ -37,12 +37,12 @@ export default function ArcadeScreen({ navigation }: any) {
             title="Play Trail Flier"
             onPress={() => navigation.navigate('MiniGame')}
             variant="primary"
-            icon="▸"
+            icon="play"
           />
         </Card>
 
         {/* Coming Soon – Rock Paper Scissors */}
-        <Card title="Trail Standoff" icon="✕" style={styles.lockedCard}>
+        <Card title="Trail Standoff" icon="close" style={styles.lockedCard}>
           <Text style={styles.gameDesc}>
             Rock-Paper-Scissors with a wasteland twist. Challenge other drifters.
           </Text>
@@ -52,7 +52,7 @@ export default function ArcadeScreen({ navigation }: any) {
         </Card>
 
         {/* Leaderboard */}
-        <Card title="Leaderboard" icon="★">
+        <Card title="Leaderboard" icon="trophy">
           {state.leaderboard.length === 0 ? (
             <Text style={styles.emptyText}>
               No scores yet. Play Trail Flier to get on the board.
@@ -74,7 +74,7 @@ export default function ArcadeScreen({ navigation }: any) {
         </Card>
 
         {/* Rewards Info */}
-        <Card title="Rewards" icon="◇">
+        <Card title="Rewards" icon="gift">
           <Text style={styles.gameDesc}>
             Playing mini-games earns small resource rewards:
           </Text>

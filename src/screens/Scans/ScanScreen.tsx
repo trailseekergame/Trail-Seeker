@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
 import { resolveScan, getEffectiveWhiffRate } from '../../systems/scanEngine';
@@ -26,20 +27,20 @@ const SCAN_LABELS: Record<ScanType, { name: string; flavor: string; desc: string
 };
 
 const TILE_ICONS: Record<string, string> = {
-  unknown: '?',
-  resource: '◆',
-  anomaly: '△',
-  boss: '☠',
-  cleared: '✓',
+  unknown: 'help',
+  resource: 'diamond-stone',
+  anomaly: 'alert-rhombus',
+  boss: 'skull',
+  cleared: 'check',
 };
 
 const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: string }> = {
-  whiff: { banner: 'Nothing Found', color: colors.neonRed, icon: '✕' },
-  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: '▪' },
-  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: '◈' },
-  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: '◇' },
-  legendary: { banner: 'Jackpot', color: '#FFD700', icon: '★' },
-  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: '⬡' },
+  whiff: { banner: 'Nothing Found', color: colors.neonRed, icon: 'signal-off' },
+  common: { banner: 'Standard Haul', color: colors.textSecondary, icon: 'cube-outline' },
+  uncommon: { banner: 'Solid Find', color: colors.neonCyan, icon: 'diamond-stone' },
+  rare: { banner: 'Rare Signal', color: colors.neonGreen, icon: 'star-four-points' },
+  legendary: { banner: 'Jackpot', color: '#FFD700', icon: 'trophy' },
+  component: { banner: 'Relic Detected', color: colors.neonPurple, icon: 'hexagon-outline' },
 };
 
 // ─── Resolving animation durations ───
@@ -120,22 +121,22 @@ export default function ScanScreen() {
   }, [ss.currentSector.tiles]);
 
   // ─── Gear influence hints ───
-  const getGearHints = (scanType: ScanType): string[] => {
-    const hints: string[] = [];
+  const getGearHints = (scanType: ScanType): { icon: string; text: string }[] => {
+    const hints: { icon: string; text: string }[] = [];
     if (ss.activeGearSlots.includes('grip_gauntlets') && scanType !== 'scout') {
-      hints.push('▽ Gauntlets: Safer');
+      hints.push({ icon: 'hand-back-fist', text: 'Gauntlets: Safer' });
     }
     if (ss.activeGearSlots.includes('optics_rig')) {
-      hints.push('◎ Optics: Better Loot');
+      hints.push({ icon: 'binoculars', text: 'Optics: Better Loot' });
     }
     if (scanType === 'gambit' && ss.activeGearSlots.includes('cortex_link')) {
-      hints.push('⟁ Cortex: Boosted');
+      hints.push({ icon: 'brain', text: 'Cortex: Boosted' });
     }
     if (ss.activeGearSlots.includes('salvage_drone')) {
-      hints.push('↻ Drone: Backup');
+      hints.push({ icon: 'drone', text: 'Drone: Backup' });
     }
     if (ss.activeGearSlots.includes('nav_boots')) {
-      hints.push('⇥ Boots: +Progress');
+      hints.push({ icon: 'shoe-print', text: 'Boots: +Progress' });
     }
     return hints;
   };
@@ -391,16 +392,21 @@ export default function ScanScreen() {
                     disabled={!scannable || ss.scansRemaining <= 0}
                     activeOpacity={0.6}
                   >
-                    <Text style={[
-                      styles.tileIcon,
-                      isCleared && styles.tileClearedIcon,
-                      scannable && { color: colors.neonGreen },
-                      tile.type === 'boss' && scannable && { color: colors.neonRed },
-                      tile.type === 'anomaly' && scannable && { color: colors.neonAmber },
-                      tile.type === 'resource' && scannable && { color: colors.neonCyan },
-                    ]}>
-                      {isCleared ? TILE_ICONS.cleared : scannable ? TILE_ICONS[tile.type] : ''}
-                    </Text>
+                    {(isCleared || scannable) && (
+                      <MaterialCommunityIcons
+                        name={(isCleared ? TILE_ICONS.cleared : TILE_ICONS[tile.type]) as any}
+                        size={18}
+                        color={
+                          isCleared ? colors.textMuted :
+                          tile.type === 'boss' && scannable ? colors.neonRed :
+                          tile.type === 'anomaly' && scannable ? colors.neonAmber :
+                          tile.type === 'resource' && scannable ? colors.neonCyan :
+                          scannable ? colors.neonGreen :
+                          colors.textMuted
+                        }
+                        style={isCleared ? { opacity: 0.5 } : undefined}
+                      />
+                    )}
                   </TouchableOpacity>
                 );
               })}
@@ -414,7 +420,10 @@ export default function ScanScreen() {
         {/* Gear influence chips */}
         <View style={styles.gearHints}>
           {getGearHints(selectedScan).map((hint, i) => (
-            <Text key={i} style={styles.gearHintText}>{hint}</Text>
+            <View key={i} style={styles.gearHintChip}>
+              <MaterialCommunityIcons name={hint.icon as any} size={10} color={colors.textMuted} />
+              <Text style={styles.gearHintText}>{hint.text}</Text>
+            </View>
           ))}
         </View>
 
@@ -467,12 +476,25 @@ export default function ScanScreen() {
             <Text style={styles.confirmDesc}>
               {SCAN_LABELS[selectedScan].desc}
             </Text>
-            <Text style={styles.confirmTile}>
-              {selectedTile?.type === 'boss' ? '☠ Boss Tile' :
-               selectedTile?.type === 'anomaly' ? '△ Anomaly' :
-               selectedTile?.type === 'resource' ? '◆ Resource' :
-               '? Unknown'}
-            </Text>
+            <View style={styles.confirmTileRow}>
+              <MaterialCommunityIcons
+                name={(selectedTile?.type === 'boss' ? 'skull' :
+                       selectedTile?.type === 'anomaly' ? 'alert-rhombus' :
+                       selectedTile?.type === 'resource' ? 'diamond-stone' :
+                       'help') as any}
+                size={18}
+                color={selectedTile?.type === 'boss' ? colors.neonRed :
+                       selectedTile?.type === 'anomaly' ? colors.neonAmber :
+                       selectedTile?.type === 'resource' ? colors.neonCyan :
+                       colors.textSecondary}
+              />
+              <Text style={styles.confirmTile}>
+                {selectedTile?.type === 'boss' ? 'Boss Tile' :
+                 selectedTile?.type === 'anomaly' ? 'Anomaly' :
+                 selectedTile?.type === 'resource' ? 'Resource' :
+                 'Unknown'}
+              </Text>
+            </View>
             <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
               {Math.round(whiffRates[selectedScan] * 100)}% miss chance
             </Text>
@@ -509,17 +531,15 @@ export default function ScanScreen() {
             ]}
           >
             <View style={[styles.resolvingIcon, { borderColor: SCAN_COLORS[selectedScan] }]}>
-              <Text style={[styles.resolvingIconText, { color: SCAN_COLORS[selectedScan] }]}>
-                ⟐
-              </Text>
+              <MaterialCommunityIcons name="radar" size={28} color={SCAN_COLORS[selectedScan]} />
             </View>
             <Text style={[styles.resolvingText, { color: SCAN_COLORS[selectedScan] }]}>
               {resolvePhrase}
             </Text>
             <View style={styles.resolvingDots}>
-              <Text style={[styles.resolvingDotsText, { color: SCAN_COLORS[selectedScan] + '80' }]}>
-                ●  ●  ●
-              </Text>
+              <MaterialCommunityIcons name="circle-small" size={20} color={SCAN_COLORS[selectedScan] + '80'} />
+              <MaterialCommunityIcons name="circle-small" size={20} color={SCAN_COLORS[selectedScan] + '80'} />
+              <MaterialCommunityIcons name="circle-small" size={20} color={SCAN_COLORS[selectedScan] + '80'} />
             </View>
           </Animated.View>
         </Animated.View>
@@ -553,7 +573,7 @@ export default function ScanScreen() {
                   </View>
 
                   {/* Outcome icon + banner */}
-                  <Text style={styles.resultIcon}>{display.icon}</Text>
+                  <MaterialCommunityIcons name={display.icon as any} size={44} color={display.color} style={styles.resultIcon} />
                   <Text style={[styles.resultBanner, { color: display.color }]}>
                     {display.banner}
                   </Text>
@@ -561,7 +581,10 @@ export default function ScanScreen() {
                   {/* Upgraded badge (Gambit skill check success) */}
                   {displayOutcome && displayOutcome !== lastResult.outcome && (
                     <View style={styles.upgradedBadge}>
-                      <Text style={styles.upgradedBadgeText}>⬆ UPGRADED</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <MaterialCommunityIcons name="arrow-up-bold" size={12} color={colors.neonGreen} />
+                        <Text style={styles.upgradedBadgeText}>UPGRADED</Text>
+                      </View>
                     </View>
                   )}
 
@@ -591,24 +614,36 @@ export default function ScanScreen() {
                   {/* Gear procs */}
                   <View style={styles.procsContainer}>
                     {lastResult.droneProc && (
-                      <Text style={[styles.procText, { color: colors.neonAmber }]}>
-                        ↻ Drone recovered your Scan!
-                      </Text>
+                      <View style={styles.procRow}>
+                        <MaterialCommunityIcons name="drone" size={14} color={colors.neonAmber} />
+                        <Text style={[styles.procText, { color: colors.neonAmber }]}>
+                          Drone recovered your Scan!
+                        </Text>
+                      </View>
                     )}
                     {lastResult.bootsProc && (
-                      <Text style={[styles.procText, { color: colors.neonCyan }]}>
-                        ⇥ Boots found a shortcut!
-                      </Text>
+                      <View style={styles.procRow}>
+                        <MaterialCommunityIcons name="shoe-print" size={14} color={colors.neonCyan} />
+                        <Text style={[styles.procText, { color: colors.neonCyan }]}>
+                          Boots found a shortcut!
+                        </Text>
+                      </View>
                     )}
                     {lastResult.cortexProc && (
-                      <Text style={[styles.procText, { color: colors.neonPurple }]}>
-                        ⟁ Cortex amplified the Gambit!
-                      </Text>
+                      <View style={styles.procRow}>
+                        <MaterialCommunityIcons name="brain" size={14} color={colors.neonPurple} />
+                        <Text style={[styles.procText, { color: colors.neonPurple }]}>
+                          Cortex amplified the Gambit!
+                        </Text>
+                      </View>
                     )}
                     {lastResult.opticsProc && (
-                      <Text style={[styles.procText, { color: colors.neonGreen }]}>
-                        ◎ Optics locked a rare signal!
-                      </Text>
+                      <View style={styles.procRow}>
+                        <MaterialCommunityIcons name="binoculars" size={14} color={colors.neonGreen} />
+                        <Text style={[styles.procText, { color: colors.neonGreen }]}>
+                          Optics locked a rare signal!
+                        </Text>
+                      </View>
                     )}
                   </View>
 
@@ -731,7 +766,6 @@ const styles = StyleSheet.create({
     margin: 2,
   },
   tileIcon: {
-    fontSize: 18,
     color: colors.textMuted,
   },
   tileClearedIcon: {
@@ -755,13 +789,18 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     minHeight: 24,
   },
-  gearHintText: {
-    fontSize: 10,
-    color: colors.textMuted,
+  gearHintChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: colors.surfaceHighlight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.sm,
+  },
+  gearHintText: {
+    fontSize: 10,
+    color: colors.textMuted,
   },
   scanButtonRow: {
     flexDirection: 'row',
@@ -824,10 +863,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
+  confirmTileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.xs,
+  },
   confirmTile: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
   },
   confirmWhiff: {
     fontSize: fontSize.sm,
@@ -867,7 +911,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   resultIcon: {
-    fontSize: 44,
     marginBottom: spacing.sm,
   },
   resultBanner: {
@@ -906,10 +949,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
+  procRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginVertical: 2,
+  },
   procText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    marginVertical: 2,
   },
   resultActions: {
     marginTop: spacing.md,
@@ -954,9 +1002,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     marginBottom: spacing.md,
   },
-  resolvingIconText: {
-    fontSize: 28,
-  },
+  resolvingIconText: {},
   resolvingText: {
     fontSize: fontSize.lg,
     fontWeight: '700',
@@ -964,11 +1010,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   resolvingDots: {
+    flexDirection: 'row',
     marginTop: spacing.sm,
-  },
-  resolvingDotsText: {
-    fontSize: fontSize.md,
-    letterSpacing: 4,
   },
 
   // ─── Gambit Skill Check ───

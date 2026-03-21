@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 interface Props {
@@ -35,7 +36,14 @@ export default function Card({
     >
       {(title || icon) && (
         <View style={styles.header}>
-          {icon && <Text style={styles.icon}>{icon}</Text>}
+          {icon && (
+            <MaterialCommunityIcons
+              name={icon as any}
+              size={24}
+              color={accentColor || colors.textPrimary}
+              style={styles.icon}
+            />
+          )}
           <View style={styles.titleGroup}>
             {title && <Text style={styles.title}>{title}</Text>}
             {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -62,7 +70,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   icon: {
-    fontSize: 24,
     marginRight: spacing.sm,
   },
   titleGroup: {

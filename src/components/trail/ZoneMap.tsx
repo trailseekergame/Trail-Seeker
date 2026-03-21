@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import { ZoneNode } from '../../types';
 import { useGame } from '../../context/GameContext';
@@ -38,17 +39,17 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
   const getNodeIcon = (node: ZoneNode) => {
     switch (node.type) {
       case 'hub':
-        return '△';
+        return 'home';
       case 'settlement':
-        return '▣';
+        return 'store';
       case 'encounter':
-        return '✕';
+        return 'sword-cross';
       case 'waypoint':
-        return '◆';
+        return 'map-marker';
       case 'boss':
-        return '☠';
+        return 'skull';
       default:
-        return '●';
+        return 'circle';
     }
   };
 
@@ -110,7 +111,7 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
                   },
                 ]}
               >
-                <Text style={styles.hiddenIcon}>?</Text>
+                <MaterialCommunityIcons name="help" size={14} color={colors.textMuted} />
               </View>
             );
           }
@@ -135,7 +136,7 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
                 isCurrent && styles.currentNode,
               ]}
             >
-              <Text style={styles.nodeIcon}>{getNodeIcon(node)}</Text>
+              <MaterialCommunityIcons name={getNodeIcon(node) as any} size={16} color={nodeColor} />
             </TouchableOpacity>
           );
         })}
@@ -144,7 +145,7 @@ export default function ZoneMap({ nodes, onNodePress }: Props) {
       {/* Current location label */}
       {currentNode && (
         <View style={styles.locationBar}>
-          <Text style={styles.locationIcon}>{getNodeIcon(currentNode)}</Text>
+          <MaterialCommunityIcons name={getNodeIcon(currentNode) as any} size={24} color={colors.neonGreen} style={{ marginRight: spacing.sm }} />
           <View style={styles.locationInfo}>
             <Text style={styles.locationName}>{currentNode.name}</Text>
             <Text style={styles.locationDesc} numberOfLines={1}>
@@ -197,14 +198,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  nodeIcon: {
-    fontSize: 16,
-  },
-  hiddenIcon: {
-    fontSize: 14,
-    color: colors.textMuted,
-    fontWeight: '700',
-  },
   locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -214,10 +207,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     borderWidth: 1,
     borderColor: colors.neonGreen + '30',
-  },
-  locationIcon: {
-    fontSize: 24,
-    marginRight: spacing.sm,
   },
   locationInfo: {
     flex: 1,

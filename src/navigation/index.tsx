@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../context/GameContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { colors, fontSize } from '../theme';
@@ -37,7 +38,11 @@ const screenOptions = {
 function TabIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
   return (
     <View style={tabIconStyles.container}>
-      <Text style={[tabIconStyles.icon, focused && tabIconStyles.iconActive]}>{icon}</Text>
+      <MaterialCommunityIcons
+        name={icon as any}
+        size={focused ? 24 : 22}
+        color={focused ? colors.tabActive : colors.tabInactive}
+      />
       <Text
         style={[tabIconStyles.label, focused && tabIconStyles.labelActive]}
         numberOfLines={1}
@@ -157,7 +162,7 @@ function MainTabs() {
         component={TrailStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🛤️" label="Trail" focused={focused} />
+            <TabIcon icon="map-marker-path" label="Trail" focused={focused} />
           ),
         }}
       />
@@ -166,7 +171,7 @@ function MainTabs() {
         component={SettlementStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🏘️" label="Camp" focused={focused} />
+            <TabIcon icon="home-group" label="Camp" focused={focused} />
           ),
         }}
       />
@@ -175,7 +180,7 @@ function MainTabs() {
         component={CodexStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="📖" label="Codex" focused={focused} />
+            <TabIcon icon="book-open-variant" label="Codex" focused={focused} />
           ),
         }}
       />
@@ -184,7 +189,7 @@ function MainTabs() {
         component={ArcadeStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🕹️" label="Arcade" focused={focused} />
+            <TabIcon icon="gamepad-variant" label="Arcade" focused={focused} />
           ),
         }}
       />

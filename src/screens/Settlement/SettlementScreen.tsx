@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import Card from '../../components/common/Card';
 import NeonButton from '../../components/common/NeonButton';
@@ -110,24 +111,24 @@ export default function SettlementScreen({ navigation }: any) {
         </Text>
 
         {/* Resources Overview */}
-        <Card title="Resources" icon="🎒">
+        <Card title="Resources" icon="backpack">
           <View style={styles.resourceGrid}>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>🔩</Text>
+              <MaterialCommunityIcons name="cog" size={28} color={colors.scrap} style={{ marginBottom: 4 }} />
               <Text style={[styles.resourceValue, { color: colors.scrap }]}>
                 {state.resources.scrap}
               </Text>
               <Text style={styles.resourceLabel}>Scrap</Text>
             </View>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>📦</Text>
+              <MaterialCommunityIcons name="package-variant" size={28} color={colors.supplies} style={{ marginBottom: 4 }} />
               <Text style={[styles.resourceValue, { color: colors.supplies }]}>
                 {state.resources.supplies}
               </Text>
               <Text style={styles.resourceLabel}>Supplies</Text>
             </View>
             <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>✦</Text>
+              <MaterialCommunityIcons name="star-four-points" size={28} color={colors.specialLoot} style={{ marginBottom: 4 }} />
               <Text style={[styles.resourceValue, { color: colors.specialLoot }]}>
                 {state.resources.specialLoot.length}
               </Text>
@@ -138,16 +139,17 @@ export default function SettlementScreen({ navigation }: any) {
           {state.resources.specialLoot.length > 0 && (
             <View style={styles.lootSection}>
               {state.resources.specialLoot.map((item, i) => (
-                <Text key={i} style={styles.lootItem}>
-                  ✦ {item}
-                </Text>
+                <View key={i} style={styles.lootItemRow}>
+                  <MaterialCommunityIcons name="star-four-points" size={14} color={colors.specialLoot} style={{ marginRight: 6 }} />
+                  <Text style={styles.lootItem}>{item}</Text>
+                </View>
               ))}
             </View>
           )}
         </Card>
 
         {/* Health Status */}
-        <Card title="Status" icon="❤️">
+        <Card title="Status" icon="heart-pulse">
           <HealthBar value={state.playerHealth} max={100} label="Player Health" />
           <HealthBar
             value={state.roverHealth}
@@ -158,7 +160,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Trade */}
-        <Card title="Trade Post" icon="🤝">
+        <Card title="Trade Post" icon="swap-horizontal">
           <Text style={styles.tradeDesc}>
             Exchange resources at fixed rates. Not the best deal, but it beats starving.
           </Text>
@@ -175,7 +177,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Repair */}
-        <Card title="Repair Bay" icon="🔧">
+        <Card title="Repair Bay" icon="wrench">
           <Text style={styles.tradeDesc}>
             Spend {REPAIR_COST} scrap to repair your rover (+15 condition).
           </Text>
@@ -189,7 +191,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Notifications */}
-        <Card title="Notifications" icon="🔔">
+        <Card title="Notifications" icon="bell-outline">
           <Text style={styles.tradeDesc}>
             Daily reminders to claim your Seeker Scans and protect your streak.
           </Text>
@@ -223,7 +225,7 @@ export default function SettlementScreen({ navigation }: any) {
 
         {/* Dev Analytics (only in development) */}
         {__DEV__ && (
-          <Card title="Dev Analytics" icon="📊">
+          <Card title="Dev Analytics" icon="chart-bar">
             <Text style={styles.tradeDesc}>
               Player behavior telemetry. Weekly report sent to trailseekergame@gmail.com.
             </Text>
@@ -257,7 +259,7 @@ export default function SettlementScreen({ navigation }: any) {
         {/* Equipment */}
         <Card
           title="Equipment"
-          icon="⚙️"
+          icon="cog"
           onPress={() => navigation.navigate('Wardrobe')}
           accentColor={colors.neonCyan}
         >
@@ -269,7 +271,10 @@ export default function SettlementScreen({ navigation }: any) {
               const gear = state.seekerScans.gearInventory.find(g => g.slotId === slotId);
               return gear ? (
                 <View key={slotId} style={styles.equippedItem}>
-                  <Text style={styles.equippedSlot}>{gear.icon} {gear.name}</Text>
+                  <View style={styles.equippedSlotRow}>
+                    <MaterialCommunityIcons name={gear.icon as any} size={14} color={colors.neonPurple} style={{ marginRight: 4 }} />
+                    <Text style={styles.equippedSlot}>{gear.name}</Text>
+                  </View>
                 </View>
               ) : null;
             })}
@@ -282,7 +287,7 @@ export default function SettlementScreen({ navigation }: any) {
           />
         </Card>
         {/* Feedback */}
-        <Card title="Feedback" icon="✉">
+        <Card title="Feedback" icon="email-outline">
           <Text style={styles.tradeDesc}>
             Found a bug or have an idea? Let us know.
           </Text>
@@ -318,9 +323,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 80,
   },
-  resourceIcon: {
-    fontSize: 32,
-    marginBottom: 4,
+  lootItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
+  },
+  equippedSlotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   resourceValue: {
     fontSize: fontSize.xl,

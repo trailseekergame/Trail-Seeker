@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
 import { computeDailyScans, getStreakRareBoost } from '../../systems/scanEngine';
@@ -134,7 +135,7 @@ export default function DailyPlanScreen() {
             <View style={styles.activeStrip}>
               {activeGearItems.map((gear) => (
                 <View key={gear.slotId} style={styles.activeGearCard}>
-                  <Text style={styles.activeGearIcon}>{gear.icon}</Text>
+                  <MaterialCommunityIcons name={gear.icon as any} size={28} color={colors.neonGreen} style={{ marginBottom: spacing.xs }} />
                   <Text style={styles.activeGearName}>{gear.name}</Text>
                   <Text style={styles.activeGearEffect}>
                     {GEAR_SHORT[gear.slotId]}
@@ -361,10 +362,6 @@ const styles = StyleSheet.create({
     borderColor: colors.neonGreen + '40',
     padding: spacing.sm,
     alignItems: 'center',
-  },
-  activeGearIcon: {
-    fontSize: 28,
-    marginBottom: spacing.xs,
   },
   activeGearName: {
     fontSize: fontSize.xs,

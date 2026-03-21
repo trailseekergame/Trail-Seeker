@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import { GameEvent, EventChoice, EventOutcome, OutcomeQuality, ChoiceRisk } from '../../types';
 import NeonButton from '../common/NeonButton';
@@ -179,13 +180,13 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
-      case 'encounter': return '⚔️';
-      case 'discovery': return '🔍';
-      case 'trade': return '🤝';
-      case 'hazard': return '⚠️';
-      case 'lore': return '📖';
-      case 'faction': return '🏴';
-      default: return '?';
+      case 'encounter': return 'sword-cross';
+      case 'discovery': return 'magnify';
+      case 'trade': return 'swap-horizontal';
+      case 'hazard': return 'alert';
+      case 'lore': return 'book-open-variant';
+      case 'faction': return 'flag';
+      default: return 'help-circle';
     }
   };
 
@@ -211,28 +212,28 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
   const getQualityIcon = (quality: OutcomeQuality) => {
     switch (quality) {
-      case 'GOOD': return '\u2726';
-      case 'NEUTRAL': return '\u2014';
-      case 'BAD': return '▼';
+      case 'GOOD': return 'chevron-up';
+      case 'NEUTRAL': return 'minus';
+      case 'BAD': return 'chevron-down';
     }
   };
 
   const renderOutcomeChanges = (outcome: EventOutcome) => {
-    const changes: string[] = [];
+    const changes: { icon: string; text: string; positive: boolean }[] = [];
     if (outcome.resourceChanges?.scrap) {
       const v = outcome.resourceChanges.scrap;
-      changes.push(v > 0 ? `+${v} ▫ Scrap` : `${v} ▫ Scrap`);
+      changes.push({ icon: 'cog', text: v > 0 ? `+${v} Scrap` : `${v} Scrap`, positive: v > 0 });
     }
     if (outcome.resourceChanges?.supplies) {
       const v = outcome.resourceChanges.supplies;
-      changes.push(v > 0 ? `+${v} ▪ Supplies` : `${v} ▪ Supplies`);
+      changes.push({ icon: 'package-variant', text: v > 0 ? `+${v} Supplies` : `${v} Supplies`, positive: v > 0 });
     }
-    if (outcome.damage) changes.push(`-${outcome.damage} ♥ Health`);
-    if (outcome.heal) changes.push(`+${outcome.heal} ♥ Health`);
-    if (outcome.addItem) changes.push(`+ ${outcome.addItem}`);
-    if (outcome.unlockCodex?.length) changes.push('◇ New codex entry');
-    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push('▸ Pushed forward');
-    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push('◂ Pushed back');
+    if (outcome.damage) changes.push({ icon: 'heart', text: `-${outcome.damage} Health`, positive: false });
+    if (outcome.heal) changes.push({ icon: 'heart', text: `+${outcome.heal} Health`, positive: true });
+    if (outcome.addItem) changes.push({ icon: 'plus-box', text: outcome.addItem, positive: true });
+    if (outcome.unlockCodex?.length) changes.push({ icon: 'book-open-variant', text: 'New codex entry', positive: true });
+    if (outcome.movePlayer && outcome.movePlayer > 0) changes.push({ icon: 'arrow-right-bold', text: 'Pushed forward', positive: true });
+    if (outcome.movePlayer && outcome.movePlayer < 0) changes.push({ icon: 'arrow-left-bold', text: 'Pushed back', positive: false });
     return changes;
   };
 
@@ -261,7 +262,12 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
         <View style={styles.modal}>
           {/* Header — always visible */}
           <View style={styles.header}>
-            <Text style={styles.categoryIcon}>{getCategoryIcon(event.category)}</Text>
+            <MaterialCommunityIcons
+              name={getCategoryIcon(event.category) as any}
+              size={28}
+              color={getCategoryColor(event.category)}
+              style={styles.categoryIcon}
+            />
             <View style={styles.headerText}>
               <Text style={[styles.category, { color: getCategoryColor(event.category) }]}>
                 {event.category.toUpperCase()}
@@ -313,10 +319,15 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
                               )}
                             </View>
                             {locked && lockedReason && (
-                              <Text style={styles.lockedReason}>{'◉'} {lockedReason}</Text>
+                              <View style={styles.lockedRow}>
+                                <MaterialCommunityIcons name="lock" size={12} color={colors.neonAmber} style={{ marginRight: 4 }} />
+                                <Text style={styles.lockedReason}>{lockedReason}</Text>
+                              </View>
                             )}
                           </View>
-                          {!locked && <Text style={styles.choiceArrow}>{'\u203A'}</Text>}
+                          {!locked && (
+                            <MaterialCommunityIcons name="chevron-right" size={22} color={colors.neonGreen} style={{ marginLeft: spacing.sm }} />
+                          )}
                         </TouchableOpacity>
                       );
                     })}
@@ -328,7 +339,7 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
             {/* ─── ROLLING PHASE: animated tension build ─── */}
             {phase === 'rolling' && (
               <Animated.View style={[styles.rollContainer, { opacity: rollOpacity, transform: [{ scale: rollScale }] }]}>
-                <Text style={styles.rollDice}>{'⟐'}</Text>
+                <MaterialCommunityIcons name="dice-multiple" size={48} color={colors.neonCyan} style={{ marginBottom: spacing.sm }} />
                 <Text style={styles.rollPhrase}>
                   {rollPhrases[rollPhraseIndex] || 'Resolving...'}
                 </Text>
@@ -375,9 +386,12 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
 
                 {/* Quality badge */}
                 <View style={[styles.qualityBadge, { borderColor: getQualityColor(outcomeQuality) + '40' }]}>
-                  <Text style={[styles.qualityIcon, { color: getQualityColor(outcomeQuality) }]}>
-                    {getQualityIcon(outcomeQuality)}
-                  </Text>
+                  <MaterialCommunityIcons
+                    name={getQualityIcon(outcomeQuality) as any}
+                    size={24}
+                    color={getQualityColor(outcomeQuality)}
+                    style={{ marginRight: spacing.sm }}
+                  />
                   <Text style={[styles.qualityLabel, { color: getQualityColor(outcomeQuality) }]}>
                     {outcomeQuality}
                   </Text>
@@ -389,23 +403,17 @@ export default function EventModal({ event, visible, onChoose, availableChoices,
                 {/* Effect changes */}
                 {renderOutcomeChanges(resolvedOutcome).length > 0 && (
                   <View style={styles.outcomeChanges}>
-                    {renderOutcomeChanges(resolvedOutcome).map((change, i) => (
-                      <Text
-                        key={i}
-                        style={[
-                          styles.changeText,
-                          {
-                            color: change.startsWith('+')
-                              ? colors.neonGreen
-                              : change.startsWith('-')
-                              ? colors.neonRed
-                              : colors.neonCyan,
-                          },
-                        ]}
-                      >
-                        {change}
-                      </Text>
-                    ))}
+                    {renderOutcomeChanges(resolvedOutcome).map((change, i) => {
+                      const changeColor = change.positive ? colors.neonGreen : change.text.startsWith('-') ? colors.neonRed : colors.neonCyan;
+                      return (
+                        <View key={i} style={styles.changeRow}>
+                          <MaterialCommunityIcons name={change.icon as any} size={16} color={changeColor} style={{ marginRight: 6 }} />
+                          <Text style={[styles.changeText, { color: changeColor }]}>
+                            {change.text}
+                          </Text>
+                        </View>
+                      );
+                    })}
                   </View>
                 )}
 
@@ -482,7 +490,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.surfaceLight,
   },
   categoryIcon: {
-    fontSize: 28,
     marginRight: spacing.md,
   },
   headerText: {
@@ -558,19 +565,20 @@ const styles = StyleSheet.create({
     color: colors.neonAmber,
     marginTop: 4,
   },
-  choiceArrow: {
-    fontSize: fontSize.xl,
-    color: colors.neonGreen,
-    marginLeft: spacing.sm,
+  lockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
   // ─── Rolling ───
   rollContainer: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,
   },
-  rollDice: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
+  changeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 3,
   },
   rollPhrase: {
     fontSize: fontSize.lg,
@@ -639,11 +647,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     marginBottom: spacing.md,
   },
-  qualityIcon: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginRight: spacing.sm,
-  },
   qualityLabel: {
     fontSize: fontSize.sm,
     fontWeight: '700',
@@ -664,7 +667,6 @@ const styles = StyleSheet.create({
   changeText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    marginVertical: 3,
   },
   continueButton: {
     marginBottom: spacing.lg,

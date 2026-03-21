@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../../context/GameContext';
 import { ALL_GEAR_ITEMS } from '../../data/gearItems';
 import cosmeticItems from '../../data/cosmetics';
@@ -164,7 +165,7 @@ export default function WardrobeScreen() {
               activeOpacity={canToggle ? 0.7 : 0.9}
             >
               <View style={styles.gearCardLeft}>
-                <Text style={styles.gearIcon}>{gear.icon}</Text>
+                <MaterialCommunityIcons name={gear.icon as any} size={24} color={isActive ? colors.neonGreen : colors.textSecondary} />
               </View>
               <View style={styles.gearCardCenter}>
                 <View style={styles.gearNameRow}>
@@ -261,7 +262,7 @@ export default function WardrobeScreen() {
               ]}
             >
               <View style={styles.cosmeticHeader}>
-                <Text style={styles.cosmeticIcon}>{item.icon}</Text>
+                <MaterialCommunityIcons name={item.icon as any} size={28} color={getRarityColor(item.rarity)} style={{ marginRight: spacing.sm }} />
                 <View style={styles.cosmeticInfo}>
                   <Text style={[styles.cosmeticName, !unlocked && styles.dimmed]}>
                     {item.name}
@@ -280,7 +281,10 @@ export default function WardrobeScreen() {
                 {item.description}
               </Text>
               {!unlocked && item.unlockCondition && (
-                <Text style={styles.unlockCondition}>◉ {item.unlockCondition}</Text>
+                <View style={styles.unlockConditionRow}>
+                  <MaterialCommunityIcons name="lock" size={12} color={colors.neonAmber} style={{ marginRight: 4 }} />
+                  <Text style={styles.unlockCondition}>{item.unlockCondition}</Text>
+                </View>
               )}
               <View style={styles.cosmeticActions}>
                 {unlocked && !equipped && (
@@ -307,7 +311,7 @@ export default function WardrobeScreen() {
         >
           {selectedGear && (
             <View style={styles.popupCard}>
-              <Text style={styles.popupIcon}>{selectedGear.icon}</Text>
+              <MaterialCommunityIcons name={selectedGear.icon as any} size={40} color={QUALITY_COLORS[selectedGear.quality] || colors.textSecondary} style={{ marginBottom: spacing.sm }} />
               <Text style={styles.popupName}>{selectedGear.name}</Text>
               <Text style={[styles.popupQuality, { color: QUALITY_COLORS[selectedGear.quality] }]}>
                 {selectedGear.quality.toUpperCase()}
@@ -398,9 +402,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
-  },
-  gearIcon: {
-    fontSize: 24,
   },
   gearCardCenter: {
     flex: 1,
@@ -577,10 +578,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xs,
   },
-  cosmeticIcon: {
-    fontSize: 28,
-    marginRight: spacing.sm,
-  },
   cosmeticInfo: {
     flex: 1,
   },
@@ -616,10 +613,14 @@ const styles = StyleSheet.create({
   dimmed: {
     opacity: 0.5,
   },
+  unlockConditionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   unlockCondition: {
     fontSize: fontSize.xs,
     color: colors.neonAmber,
-    marginBottom: spacing.sm,
   },
   cosmeticActions: {
     flexDirection: 'row',
@@ -643,10 +644,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 300,
     alignItems: 'center',
-  },
-  popupIcon: {
-    fontSize: 40,
-    marginBottom: spacing.sm,
   },
   popupName: {
     fontSize: fontSize.xl,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 interface Props {
@@ -71,18 +72,28 @@ export default function NeonButton({
         style,
       ]}
     >
-      <Text
-        style={[
-          styles.text,
-          {
-            color: disabled ? colors.textMuted : v.text,
-            fontSize: s.font,
-          },
-          textStyle,
-        ]}
-      >
-        {icon ? `${icon} ${title}` : title}
-      </Text>
+      <View style={styles.content}>
+        {icon && (
+          <MaterialCommunityIcons
+            name={icon as any}
+            size={s.font}
+            color={disabled ? colors.textMuted : v.text}
+            style={{ marginRight: 6 }}
+          />
+        )}
+        <Text
+          style={[
+            styles.text,
+            {
+              color: disabled ? colors.textMuted : v.text,
+              fontSize: s.font,
+            },
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -91,6 +102,11 @@ const styles = StyleSheet.create({
   button: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

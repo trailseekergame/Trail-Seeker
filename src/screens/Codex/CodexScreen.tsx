@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import Card from '../../components/common/Card';
 import { useGame } from '../../context/GameContext';
@@ -8,12 +9,12 @@ import codexEntries from '../../data/codex';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 const CATEGORIES: { key: CodexCategory; label: string; icon: string }[] = [
-  { key: 'world', label: 'World', icon: '◉' },
-  { key: 'zones', label: 'Zones', icon: '▣' },
-  { key: 'factions', label: 'Factions', icon: '⬡' },
-  { key: 'enemies', label: 'Enemies', icon: '✕' },
-  { key: 'loot', label: 'Loot', icon: '✦' },
-  { key: 'personal', label: 'Personal', icon: '≡' },
+  { key: 'world', label: 'World', icon: 'earth' },
+  { key: 'zones', label: 'Zones', icon: 'map-marker' },
+  { key: 'factions', label: 'Factions', icon: 'account-group' },
+  { key: 'enemies', label: 'Enemies', icon: 'sword-cross' },
+  { key: 'loot', label: 'Loot', icon: 'star-four-points' },
+  { key: 'personal', label: 'Personal', icon: 'account' },
 ];
 
 export default function CodexScreen({ navigation }: any) {
@@ -49,7 +50,7 @@ export default function CodexScreen({ navigation }: any) {
 
     return (
       <>
-        <Card title="Identity" icon="◫">
+        <Card title="Identity" icon="card-account-details">
           <Text style={styles.personalLabel}>Name</Text>
           <Text style={styles.personalValue}>{state.playerName}</Text>
 
@@ -67,7 +68,7 @@ export default function CodexScreen({ navigation }: any) {
           )}
         </Card>
 
-        <Card title="Trail Stats" icon="▦">
+        <Card title="Trail Stats" icon="chart-bar">
           <View style={styles.statRow}>
             <Text style={styles.statLabel}>Days on the Trail</Text>
             <Text style={styles.statValue}>{state.dayNumber}</Text>
@@ -120,7 +121,12 @@ export default function CodexScreen({ navigation }: any) {
               selectedCategory === cat.key && styles.categoryTabActive,
             ]}
           >
-            <Text style={styles.categoryIcon}>{cat.icon}</Text>
+            <MaterialCommunityIcons
+              name={cat.icon as any}
+              size={16}
+              color={selectedCategory === cat.key ? colors.neonCyan : colors.textMuted}
+              style={{ marginRight: spacing.xs }}
+            />
             <Text
               style={[
                 styles.categoryLabel,
@@ -167,9 +173,12 @@ export default function CodexScreen({ navigation }: any) {
 
             {lockedCount > 0 && (
               <View style={styles.lockedInfo}>
-                <Text style={styles.lockedText}>
-                  ◉ {lockedCount} more {lockedCount === 1 ? 'entry' : 'entries'} to discover
-                </Text>
+                <View style={styles.lockedRow}>
+                  <MaterialCommunityIcons name="lock" size={14} color={colors.textMuted} style={{ marginRight: 6 }} />
+                  <Text style={styles.lockedText}>
+                    {lockedCount} more {lockedCount === 1 ? 'entry' : 'entries'} to discover
+                  </Text>
+                </View>
               </View>
             )}
           </>
@@ -213,10 +222,6 @@ const styles = StyleSheet.create({
     borderColor: colors.neonCyan,
     backgroundColor: colors.neonCyan + '15',
   },
-  categoryIcon: {
-    fontSize: 16,
-    marginRight: spacing.xs,
-  },
   categoryLabel: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
@@ -243,6 +248,10 @@ const styles = StyleSheet.create({
   },
   lockedInfo: {
     padding: spacing.md,
+    alignItems: 'center',
+  },
+  lockedRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   lockedText: {
