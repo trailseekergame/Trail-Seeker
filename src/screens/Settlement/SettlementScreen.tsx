@@ -49,6 +49,8 @@ const TRADE_OPTIONS: TradeOption[] = [
 ];
 
 const REPAIR_COST = 5; // scrap per 15 repair points
+const HEAL_COST = 4; // supplies per 15 heal points
+const SCRAP_PER_ITEM = 3; // scrap returned when scrapping a special loot item
 
 export default function SettlementScreen({ navigation }: any) {
   const { state, dispatch } = useGame();
@@ -102,6 +104,24 @@ export default function SettlementScreen({ navigation }: any) {
     dispatch({ type: 'REPAIR_ROVER', payload: 15 });
   };
 
+  const handleHeal = () => {
+    if (state.playerHealth >= 100) {
+      Alert.alert('Full Health', 'You\'re already at full health.');
+      return;
+    }
+    if (state.resources.supplies < HEAL_COST) {
+      Alert.alert('Not Enough Supplies', `You need ${HEAL_COST} supplies to heal.`);
+      return;
+    }
+    dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { supplies: -HEAL_COST } });
+    dispatch({ type: 'HEAL', payload: 15 });
+  };
+
+  const handleScrapItem = (item: string, index: number) => {
+    dispatch({ type: 'REMOVE_SPECIAL_LOOT', payload: item });
+    dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: SCRAP_PER_ITEM } });
+  };
+
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -141,22 +161,48 @@ export default function SettlementScreen({ navigation }: any) {
               {state.resources.specialLoot.map((item, i) => (
                 <View key={i} style={styles.lootItemRow}>
                   <MaterialCommunityIcons name="star-four-points" size={14} color={colors.specialLoot} style={{ marginRight: 6 }} />
-                  <Text style={styles.lootItem}>{item}</Text>
+                  <Text style={[styles.lootItem, { flex: 1 }]}>{item}</Text>
+                  <NeonButton
+                    title={`Scrap (+${SCRAP_PER_ITEM})`}
+                    onPress={() => handleScrapItem(item, i)}
+                    variant="ghost"
+                    size="sm"
+                  />
                 </View>
               ))}
             </View>
           )}
         </Card>
 
-        {/* Health Status */}
+        {/* Health Status + Quick Actions */}
         <Card title="Status" icon="heart-pulse">
           <HealthBar value={state.playerHealth} max={100} label="Player Health" />
+          {state.playerHealth < 100 && (
+            <NeonButton
+              title={`Heal (+15 HP for ${HEAL_COST} Supplies)`}
+              onPress={handleHeal}
+              variant="secondary"
+              size="sm"
+              disabled={state.resources.supplies < HEAL_COST || state.playerHealth >= 100}
+              style={styles.healButton}
+            />
+          )}
           <HealthBar
             value={state.roverHealth}
             max={100}
             label="Rover Condition"
             color={colors.neonCyan}
           />
+          {state.roverHealth < 100 && (
+            <NeonButton
+              title={`Repair (+15 Rover for ${REPAIR_COST} Scrap)`}
+              onPress={handleRepair}
+              variant="secondary"
+              size="sm"
+              disabled={state.resources.scrap < REPAIR_COST || state.roverHealth >= 100}
+              style={styles.healButton}
+            />
+          )}
         </Card>
 
         {/* Trade */}
@@ -363,6 +409,10 @@ const styles = StyleSheet.create({
   },
   repairButton: {
     marginTop: spacing.xs,
+  },
+  healButton: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   equippedPreview: {
     flexDirection: 'row',

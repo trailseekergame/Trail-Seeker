@@ -19,6 +19,8 @@ export default function MissionSelectScreen() {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
 
+  const roverDisabled = state.roverHealth <= 0;
+
   const handleSelectMission = (mapId: MapId) => {
     const mapDef = MAP_DEFS[mapId];
     const isCompleted = state.completedMapIds.includes(mapId);
@@ -47,7 +49,7 @@ export default function MissionSelectScreen() {
           const requiresMet = mapDef.requiresCompleted.every((req) =>
             state.completedMapIds.includes(req)
           );
-          const available = isUnlocked && requiresMet;
+          const available = isUnlocked && requiresMet && !roverDisabled;
 
           return (
             <TouchableOpacity
@@ -119,7 +121,12 @@ export default function MissionSelectScreen() {
                     </View>
                   )}
 
-                  {!available && (
+                  {!available && roverDisabled && isUnlocked && requiresMet && (
+                    <Text style={styles.lockReason}>
+                      Rover disabled. Repair it with Scrap at camp first.
+                    </Text>
+                  )}
+                  {!available && !roverDisabled && (
                     <Text style={styles.lockReason}>
                       Clear {mapDef.requiresCompleted.map((r) => MAP_DEFS[r].name).join(', ')} first
                     </Text>

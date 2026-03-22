@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Imag
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { resolveScan, getEffectiveWhiffRate } from '../../systems/scanEngine';
+import { resolveScan, getEffectiveWhiffRate, computeScanRewards } from '../../systems/scanEngine';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
@@ -91,6 +91,8 @@ export default function ScanScreen({ route }: any) {
   const [showMicroEvent, setShowMicroEvent] = useState(false);
   const [pendingMicroEvent, setPendingMicroEvent] = useState<MicroEventData | null>(null);
   const [tileWeakenedNote, setTileWeakenedNote] = useState<string | null>(null);
+  const [showFailedMission, setShowFailedMission] = useState(false);
+  const [failReason, setFailReason] = useState<'hp_zero' | 'rover_zero' | null>(null);
   const lastScannedTileRef = useRef<string | null>(null);
   const sessionStartRef = useRef(ss.sessionStartTime);
 
@@ -254,7 +256,31 @@ export default function ScanScreen({ route }: any) {
       dispatch({ type: 'CLEAR_BOOSTED_SCAN' });
     }
 
+    // Compute resource rewards + damage based on tile type
+    const tileType = selectedTile.type === 'cleared' ? 'unknown' : selectedTile.type;
+    const rewards = computeScanRewards(result.outcome, result.scanType, tileType);
+    result = { ...result, ...rewards };
+
     dispatch({ type: 'USE_SCAN', payload: result });
+
+    // Apply resource awards
+    if (rewards.scrapAwarded > 0 || rewards.suppliesAwarded > 0) {
+      dispatch({
+        type: 'APPLY_RESOURCE_CHANGES',
+        payload: {
+          scrap: rewards.scrapAwarded,
+          supplies: rewards.suppliesAwarded,
+        },
+      });
+    }
+
+    // Apply damage
+    if (rewards.playerDamage > 0) {
+      dispatch({ type: 'TAKE_DAMAGE', payload: rewards.playerDamage });
+    }
+    if (rewards.roverDamage > 0) {
+      dispatch({ type: 'DAMAGE_ROVER', payload: rewards.roverDamage });
+    }
 
     // Handle durability: damage tile instead of clearing directly
     lastScannedTileRef.current = selectedTile.id;
@@ -329,6 +355,23 @@ export default function ScanScreen({ route }: any) {
             AudioManager.vibrate('medium');
             break;
         }
+      }
+
+      // Check for HP zero or Rover zero after damage applied
+      const newPlayerHp = state.playerHealth - rewards.playerDamage;
+      const newRoverHp = state.roverHealth - rewards.roverDamage;
+
+      if (newPlayerHp <= 0) {
+        setFailReason('hp_zero');
+        setShowFailedMission(true);
+        setSelectedTile(null);
+        return;
+      }
+      if (newRoverHp <= 0) {
+        setFailReason('rover_zero');
+        setShowFailedMission(true);
+        setSelectedTile(null);
+        return;
       }
 
       // Gambit non-whiff → skill check before showing result
@@ -873,6 +916,48 @@ export default function ScanScreen({ route }: any) {
                     </View>
                   )}
 
+                  {/* Resource awards */}
+                  {(lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0) && (
+                    <View style={styles.rewardRow}>
+                      {lastResult.scrapAwarded > 0 && (
+                        <View style={styles.rewardChip}>
+                          <MaterialCommunityIcons name="cog" size={12} color={colors.scrap} />
+                          <Text style={[styles.rewardChipText, { color: colors.scrap }]}>+{lastResult.scrapAwarded}</Text>
+                        </View>
+                      )}
+                      {lastResult.suppliesAwarded > 0 && (
+                        <View style={styles.rewardChip}>
+                          <MaterialCommunityIcons name="package-variant" size={12} color={colors.supplies} />
+                          <Text style={[styles.rewardChipText, { color: colors.supplies }]}>+{lastResult.suppliesAwarded}</Text>
+                        </View>
+                      )}
+                      {lastResult.scrapValue > 0 && lastResult.lootName && (
+                        <View style={styles.rewardChip}>
+                          <MaterialCommunityIcons name="recycle" size={12} color={colors.textMuted} />
+                          <Text style={[styles.rewardChipText, { color: colors.textMuted }]}>Scrap: {lastResult.scrapValue}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Damage taken */}
+                  {(lastResult.playerDamage > 0 || lastResult.roverDamage > 0) && (
+                    <View style={styles.damageRow}>
+                      {lastResult.playerDamage > 0 && (
+                        <View style={styles.damageChip}>
+                          <MaterialCommunityIcons name="heart-broken" size={12} color={colors.neonRed} />
+                          <Text style={[styles.damageChipText, { color: colors.neonRed }]}>-{lastResult.playerDamage} HP</Text>
+                        </View>
+                      )}
+                      {lastResult.roverDamage > 0 && (
+                        <View style={styles.damageChip}>
+                          <MaterialCommunityIcons name="car-wrench" size={12} color={colors.neonAmber} />
+                          <Text style={[styles.damageChipText, { color: colors.neonAmber }]}>-{lastResult.roverDamage} Rover</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
                   {/* Gear procs */}
                   <View style={styles.procsContainer}>
                     {lastResult.droneProc && (
@@ -994,6 +1079,45 @@ export default function ScanScreen({ route }: any) {
             <NeonButton
               title={allTilesCleared ? 'Return to camp' : 'Return to waystation'}
               onPress={allTilesCleared ? handleMapComplete : handleDismissSessionEnd}
+              variant="primary"
+              size="lg"
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* ─── FAILED MISSION MODAL ─── */}
+      <Modal visible={showFailedMission} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.sessionEndCard}>
+            <MaterialCommunityIcons
+              name={failReason === 'hp_zero' ? 'heart-broken' : 'car-wrench'}
+              size={40}
+              color={colors.neonRed}
+              style={{ marginBottom: spacing.sm }}
+            />
+            <Text style={[styles.sessionEndLabel, { color: colors.neonRed }]}>
+              {failReason === 'hp_zero' ? 'OPERATOR DOWN' : 'ROVER DISABLED'}
+            </Text>
+            <View style={styles.sessionEndDivider} />
+            <Text style={styles.sessionEndSummary}>
+              {failReason === 'hp_zero'
+                ? 'You pushed too hard. The signal\'s gone and so is your footing. Forced return to camp — lost a day, kept partial loot.'
+                : 'The rover\'s done. Limping back to camp on fumes. Repair it with Scrap before the next run.'}
+            </Text>
+            <NeonButton
+              title="Limp back to camp"
+              onPress={() => {
+                setShowFailedMission(false);
+                // Increment day as penalty for HP zero
+                if (failReason === 'hp_zero') {
+                  dispatch({ type: 'INCREMENT_DAY' });
+                  // Restore to 20 HP so player isn't stuck
+                  dispatch({ type: 'HEAL', payload: 20 });
+                }
+                dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
+                nav.goBack();
+              }}
               variant="primary"
               size="lg"
             />
@@ -1537,6 +1661,49 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+
+  // ─── Resource Rewards & Damage ───
+  rewardRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  rewardChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceHighlight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+  },
+  rewardChipText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+  },
+  damageRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  damageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.neonRed + '12',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.neonRed + '25',
+  },
+  damageChipText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
   },
 
   // ─── Map Unlock ───

@@ -347,6 +347,12 @@ export interface ScanResult {
   bootsProc: boolean;
   cortexProc: boolean;
   opticsProc: boolean;
+  // Phase 1: risk & resources
+  scrapAwarded: number;
+  suppliesAwarded: number;
+  playerDamage: number;   // HP damage taken this scan
+  roverDamage: number;    // Rover condition damage this scan
+  scrapValue: number;     // How much scrap the loot item is worth if scrapped
 }
 
 export interface SeekerScanState {

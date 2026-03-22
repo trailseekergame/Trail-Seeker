@@ -96,6 +96,11 @@ export function resolveScan(
       bootsProc: false,
       cortexProc: false,
       opticsProc: false,
+      scrapAwarded: 0,
+      suppliesAwarded: 0,
+      playerDamage: 0,
+      roverDamage: 0,
+      scrapValue: 0,
     };
   }
 
@@ -208,7 +213,118 @@ export function resolveScan(
     bootsProc,
     cortexProc,
     opticsProc,
+    // Rewards/damage filled in by caller after tile type is known
+    scrapAwarded: 0,
+    suppliesAwarded: 0,
+    playerDamage: 0,
+    roverDamage: 0,
+    scrapValue: 0,
   };
+}
+
+// ─── Phase 1: Risk & Resource tables ───
+
+/** Scrap awarded per loot tier */
+const SCRAP_BY_OUTCOME: Record<string, [number, number]> = {
+  whiff: [0, 0],
+  common: [2, 4],
+  uncommon: [3, 6],
+  rare: [5, 10],
+  legendary: [10, 18],
+  component: [0, 0],
+};
+
+/** Supplies awarded per loot tier (less common than scrap) */
+const SUPPLIES_BY_OUTCOME: Record<string, [number, number]> = {
+  whiff: [0, 0],
+  common: [0, 2],
+  uncommon: [1, 3],
+  rare: [2, 5],
+  legendary: [4, 8],
+  component: [1, 2],
+};
+
+/** Small damage on whiffs and risky scans. [min, max] HP or rover */
+const WHIFF_PLAYER_DAMAGE: [number, number] = [2, 5];
+const WHIFF_ROVER_DAMAGE: [number, number] = [1, 4];
+const GAMBIT_WHIFF_PLAYER_DAMAGE: [number, number] = [4, 8];
+const GAMBIT_WHIFF_ROVER_DAMAGE: [number, number] = [3, 6];
+/** Anomaly tiles always deal a little extra damage even on success */
+const ANOMALY_DAMAGE: [number, number] = [2, 4];
+/** Boss tiles hit harder */
+const BOSS_DAMAGE: [number, number] = [5, 10];
+
+/** Scrap value when scrapping loot items */
+const SCRAP_VALUE_BY_OUTCOME: Record<string, [number, number]> = {
+  whiff: [0, 0],
+  common: [1, 2],
+  uncommon: [2, 4],
+  rare: [4, 7],
+  legendary: [8, 14],
+  component: [0, 0],
+};
+
+function rollRange(range: [number, number]): number {
+  return range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
+}
+
+export interface ScanRewards {
+  scrapAwarded: number;
+  suppliesAwarded: number;
+  playerDamage: number;
+  roverDamage: number;
+  scrapValue: number;
+}
+
+/** Compute resource rewards and damage for a scan result */
+export function computeScanRewards(
+  outcome: ScanOutcome,
+  scanType: ScanType,
+  tileType: string,
+): ScanRewards {
+  const scrapAwarded = rollRange(SCRAP_BY_OUTCOME[outcome] || [0, 0]);
+  const suppliesAwarded = rollRange(SUPPLIES_BY_OUTCOME[outcome] || [0, 0]);
+  const scrapValue = rollRange(SCRAP_VALUE_BY_OUTCOME[outcome] || [0, 0]);
+
+  let playerDamage = 0;
+  let roverDamage = 0;
+
+  // Whiff damage — teaches risk
+  if (outcome === 'whiff') {
+    if (scanType === 'gambit') {
+      playerDamage = rollRange(GAMBIT_WHIFF_PLAYER_DAMAGE);
+      roverDamage = rollRange(GAMBIT_WHIFF_ROVER_DAMAGE);
+    } else if (scanType === 'seeker') {
+      // 50% chance of light damage on seeker whiff
+      if (Math.random() < 0.5) {
+        playerDamage = rollRange(WHIFF_PLAYER_DAMAGE);
+      } else {
+        roverDamage = rollRange(WHIFF_ROVER_DAMAGE);
+      }
+    }
+    // Scout whiffs are safe — no damage
+  }
+
+  // Anomaly / boss tile hazard damage (even on success)
+  if (tileType === 'anomaly' && outcome !== 'whiff') {
+    // 40% chance of anomaly backlash
+    if (Math.random() < 0.4) {
+      const dmg = rollRange(ANOMALY_DAMAGE);
+      if (Math.random() < 0.5) {
+        playerDamage += dmg;
+      } else {
+        roverDamage += dmg;
+      }
+    }
+  }
+  if (tileType === 'boss') {
+    // Boss always hits
+    const dmg = rollRange(BOSS_DAMAGE);
+    playerDamage += Math.ceil(dmg * 0.6);
+    roverDamage += Math.ceil(dmg * 0.4);
+  }
+
+  return { scrapAwarded, suppliesAwarded, playerDamage, roverDamage, scrapValue };
 }
 
 function pickRandom<T>(arr: T[]): T {
