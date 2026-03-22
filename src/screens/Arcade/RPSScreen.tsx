@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
-import NeonButton from '../../components/common/NeonButton';
+import ScrapBoyFrame from '../../components/arcade/ScrapBoyFrame';
 import { useGame } from '../../context/GameContext';
 import {
   joinQueue,
@@ -17,10 +16,11 @@ import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 type ScreenView = 'menu' | 'searching' | 'choose' | 'result' | 'leaderboard';
 
-const CHOICE_ICONS: Record<RpsChoice, string> = {
-  rock: 'hand-back-fist',
-  paper: 'hand-back-right',
-  scissors: 'content-cut',
+// ─── Pixel art text icons for RPS ───
+const PIXEL_ICONS: Record<RpsChoice, string> = {
+  rock: '✊',
+  paper: '✋',
+  scissors: '✌',
 };
 
 const CHOICE_LABELS: Record<RpsChoice, string> = {
@@ -30,9 +30,9 @@ const CHOICE_LABELS: Record<RpsChoice, string> = {
 };
 
 const RESULT_CONFIG = {
-  win: { label: 'YOU WIN', color: colors.neonGreen, icon: 'trophy' },
-  lose: { label: 'YOU LOSE', color: colors.neonRed, icon: 'skull' },
-  draw: { label: 'DRAW', color: colors.neonAmber, icon: 'equal' },
+  win: { label: '>> WIN <<', color: '#00FF88', pixel: '★' },
+  lose: { label: '>> LOSE <<', color: '#FF4466', pixel: '✗' },
+  draw: { label: '>> DRAW <<', color: '#FFAA00', pixel: '=' },
 };
 
 export default function RPSScreen() {
@@ -45,7 +45,7 @@ export default function RPSScreen() {
     setView('searching');
     clearMatch();
     try {
-      const m = await joinQueue(state.playerName);
+      const m = await joinQueue(state.playerName, 0); // stake = 0 (wagering disabled)
       setMatch(m);
       setView('choose');
     } catch {
@@ -55,17 +55,15 @@ export default function RPSScreen() {
 
   const handleChoice = async (choice: RpsChoice) => {
     if (!match) return;
-    setView('searching'); // brief loading while opponent "picks"
+    setView('searching');
     try {
       const resolved = await submitChoice(choice);
       setMatch(resolved);
 
-      // Record result
       if (resolved.result === 'win') dispatch({ type: 'RPS_WIN' });
       else if (resolved.result === 'lose') dispatch({ type: 'RPS_LOSS' });
       else dispatch({ type: 'RPS_DRAW' });
 
-      // Small scrap reward for winning
       if (resolved.result === 'win') {
         dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: 2 } });
       }
@@ -88,51 +86,38 @@ export default function RPSScreen() {
   // ─── MENU ───
   if (view === 'menu') {
     return (
-      <ScreenWrapper>
-        <ScrollView contentContainerStyle={styles.center}>
-          <MaterialCommunityIcons name="sword-cross" size={48} color={colors.neonAmber} style={styles.heroIcon} />
-          <Text style={styles.title}>Trail Standoff</Text>
-          <Text style={styles.subtitle}>Rock-Paper-Scissors. Wasteland rules.</Text>
+      <ScreenWrapper padded={false}>
+        <ScrapBoyFrame title="SCRAP-BOY">
+          <View style={s.screenContent}>
+            <Text style={s.pixelTitle}>TRAIL{'\n'}STANDOFF</Text>
+            <Text style={s.pixelSub}>- RPS DUEL -</Text>
 
-          {/* Record */}
-          <View style={styles.recordRow}>
-            <View style={styles.recordItem}>
-              <Text style={[styles.recordValue, { color: colors.neonGreen }]}>{state.rpsWins}</Text>
-              <Text style={styles.recordLabel}>Wins</Text>
+            <View style={s.pixelDivider} />
+
+            {/* Record */}
+            <View style={s.recordRow}>
+              <Text style={[s.recordStat, { color: '#00FF88' }]}>W:{state.rpsWins}</Text>
+              <Text style={[s.recordStat, { color: '#FF4466' }]}>L:{state.rpsLosses}</Text>
+              <Text style={[s.recordStat, { color: '#FFAA00' }]}>D:{state.rpsDraws}</Text>
             </View>
-            <View style={styles.recordItem}>
-              <Text style={[styles.recordValue, { color: colors.neonRed }]}>{state.rpsLosses}</Text>
-              <Text style={styles.recordLabel}>Losses</Text>
-            </View>
-            <View style={styles.recordItem}>
-              <Text style={[styles.recordValue, { color: colors.neonAmber }]}>{state.rpsDraws}</Text>
-              <Text style={styles.recordLabel}>Draws</Text>
-            </View>
+
+            {totalGames > 0 && (
+              <Text style={s.winRate}>
+                {Math.round((state.rpsWins / totalGames) * 100)}% WIN RATE
+              </Text>
+            )}
+
+            <View style={s.pixelDivider} />
+
+            <TouchableOpacity style={s.pixelBtn} onPress={handleFindMatch} activeOpacity={0.7}>
+              <Text style={s.pixelBtnText}>&gt; FIND MATCH</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={s.pixelBtnGhost} onPress={handleLeaderboard} activeOpacity={0.7}>
+              <Text style={s.pixelBtnGhostText}>&gt; LEADERBOARD</Text>
+            </TouchableOpacity>
           </View>
-
-          <NeonButton
-            title="Find Opponent"
-            onPress={handleFindMatch}
-            variant="primary"
-            size="lg"
-            icon="sword-cross"
-            style={styles.mainBtn}
-          />
-          <NeonButton
-            title="Leaderboard"
-            onPress={handleLeaderboard}
-            variant="secondary"
-            size="sm"
-            icon="trophy"
-            style={styles.secondaryBtn}
-          />
-
-          {totalGames > 0 && (
-            <Text style={styles.winRate}>
-              Win rate: {Math.round((state.rpsWins / totalGames) * 100)}% ({totalGames} games)
-            </Text>
-          )}
-        </ScrollView>
+        </ScrapBoyFrame>
       </ScreenWrapper>
     );
   }
@@ -140,12 +125,15 @@ export default function RPSScreen() {
   // ─── SEARCHING ───
   if (view === 'searching') {
     return (
-      <ScreenWrapper>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.neonAmber} />
-          <Text style={styles.searchText}>Searching for opponent...</Text>
-          <Text style={styles.searchSub}>Scanning nearby frequencies</Text>
-        </View>
+      <ScreenWrapper padded={false}>
+        <ScrapBoyFrame title="SCRAP-BOY">
+          <View style={s.screenContent}>
+            <Text style={s.pixelTitle}>SCANNING{'\n'}FREQUENCIES</Text>
+            <View style={s.pixelDivider} />
+            <ActivityIndicator size="small" color="#FFAA00" />
+            <Text style={s.scanDots}>. . . . .</Text>
+          </View>
+        </ScrapBoyFrame>
       </ScreenWrapper>
     );
   }
@@ -153,31 +141,30 @@ export default function RPSScreen() {
   // ─── CHOOSE ───
   if (view === 'choose' && match) {
     return (
-      <ScreenWrapper>
-        <View style={styles.center}>
-          <Text style={styles.matchedText}>MATCHED</Text>
-          <Text style={styles.opponentName}>vs. {match.opponentName}</Text>
+      <ScreenWrapper padded={false}>
+        <ScrapBoyFrame title="SCRAP-BOY">
+          <View style={s.screenContent}>
+            <Text style={s.pixelLabel}>OPPONENT FOUND</Text>
+            <Text style={s.opponentName}>vs {match.opponentName}</Text>
 
-          <Text style={styles.choosePrompt}>Make your call.</Text>
+            <View style={s.pixelDivider} />
+            <Text style={s.pixelLabel}>MAKE YOUR CALL</Text>
 
-          <View style={styles.choiceRow}>
-            {(['rock', 'paper', 'scissors'] as RpsChoice[]).map(choice => (
-              <TouchableOpacity
-                key={choice}
-                style={styles.choiceBtn}
-                onPress={() => handleChoice(choice)}
-                activeOpacity={0.7}
-              >
-                <MaterialCommunityIcons
-                  name={CHOICE_ICONS[choice] as any}
-                  size={40}
-                  color={colors.neonAmber}
-                />
-                <Text style={styles.choiceLabel}>{CHOICE_LABELS[choice]}</Text>
-              </TouchableOpacity>
-            ))}
+            <View style={s.choiceRow}>
+              {(['rock', 'paper', 'scissors'] as RpsChoice[]).map(choice => (
+                <TouchableOpacity
+                  key={choice}
+                  style={s.choiceBtn}
+                  onPress={() => handleChoice(choice)}
+                  activeOpacity={0.6}
+                >
+                  <Text style={s.choiceIcon}>{PIXEL_ICONS[choice]}</Text>
+                  <Text style={s.choiceLabel}>{CHOICE_LABELS[choice]}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        </ScrapBoyFrame>
       </ScreenWrapper>
     );
   }
@@ -186,54 +173,41 @@ export default function RPSScreen() {
   if (view === 'result' && match?.result) {
     const rc = RESULT_CONFIG[match.result];
     return (
-      <ScreenWrapper>
-        <View style={styles.center}>
-          <MaterialCommunityIcons name={rc.icon as any} size={56} color={rc.color} style={styles.heroIcon} />
-          <Text style={[styles.resultLabel, { color: rc.color }]}>{rc.label}</Text>
+      <ScreenWrapper padded={false}>
+        <ScrapBoyFrame title="SCRAP-BOY">
+          <View style={s.screenContent}>
+            <Text style={[s.resultBanner, { color: rc.color }]}>
+              {rc.pixel} {rc.label} {rc.pixel}
+            </Text>
 
-          <View style={styles.resultMatchup}>
-            <View style={styles.resultSide}>
-              <Text style={styles.resultPlayer}>You</Text>
-              <MaterialCommunityIcons
-                name={CHOICE_ICONS[match.playerChoice!] as any}
-                size={36}
-                color={colors.textPrimary}
-              />
-              <Text style={styles.resultChoice}>{CHOICE_LABELS[match.playerChoice!]}</Text>
+            <View style={s.matchupRow}>
+              <View style={s.matchupSide}>
+                <Text style={s.matchupLabel}>YOU</Text>
+                <Text style={s.matchupIcon}>{PIXEL_ICONS[match.playerChoice!]}</Text>
+                <Text style={s.matchupChoice}>{CHOICE_LABELS[match.playerChoice!]}</Text>
+              </View>
+              <Text style={s.matchupVs}>VS</Text>
+              <View style={s.matchupSide}>
+                <Text style={s.matchupLabel}>{match.opponentName.toUpperCase()}</Text>
+                <Text style={s.matchupIcon}>{PIXEL_ICONS[match.opponentChoice!]}</Text>
+                <Text style={s.matchupChoice}>{CHOICE_LABELS[match.opponentChoice!]}</Text>
+              </View>
             </View>
-            <Text style={styles.resultVs}>vs</Text>
-            <View style={styles.resultSide}>
-              <Text style={styles.resultPlayer}>{match.opponentName}</Text>
-              <MaterialCommunityIcons
-                name={CHOICE_ICONS[match.opponentChoice!] as any}
-                size={36}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.resultChoice}>{CHOICE_LABELS[match.opponentChoice!]}</Text>
-            </View>
+
+            {match.result === 'win' && (
+              <Text style={s.rewardLine}>+2 SCRAP</Text>
+            )}
+
+            <View style={s.pixelDivider} />
+
+            <TouchableOpacity style={s.pixelBtn} onPress={handleFindMatch} activeOpacity={0.7}>
+              <Text style={s.pixelBtnText}>&gt; REMATCH</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.pixelBtnGhost} onPress={() => { clearMatch(); setView('menu'); }} activeOpacity={0.7}>
+              <Text style={s.pixelBtnGhostText}>&gt; BACK</Text>
+            </TouchableOpacity>
           </View>
-
-          {match.result === 'win' && (
-            <View style={styles.rewardBadge}>
-              <MaterialCommunityIcons name="cog" size={14} color={colors.scrap} />
-              <Text style={styles.rewardText}>+2 Scrap</Text>
-            </View>
-          )}
-
-          <NeonButton
-            title="Rematch"
-            onPress={handleFindMatch}
-            variant="primary"
-            size="lg"
-            style={styles.mainBtn}
-          />
-          <NeonButton
-            title="Back to Menu"
-            onPress={() => { clearMatch(); setView('menu'); }}
-            variant="ghost"
-            size="sm"
-          />
-        </View>
+        </ScrapBoyFrame>
       </ScreenWrapper>
     );
   }
@@ -241,35 +215,39 @@ export default function RPSScreen() {
   // ─── LEADERBOARD ───
   if (view === 'leaderboard') {
     return (
-      <ScreenWrapper>
-        <ScrollView contentContainerStyle={styles.lbContent}>
-          <Text style={styles.lbTitle}>RPS Leaderboard</Text>
+      <ScreenWrapper padded={false}>
+        <ScrapBoyFrame title="SCRAP-BOY">
+          <ScrollView style={s.lbScroll} contentContainerStyle={s.screenContent}>
+            <Text style={s.pixelTitle}>LEADERBOARD</Text>
+            <View style={s.pixelDivider} />
 
-          {leaderboard.map((entry, i) => {
-            const isPlayer = entry.playerName === state.playerName;
-            return (
-              <View key={i} style={[styles.lbRow, isPlayer && styles.lbRowPlayer]}>
-                <Text style={styles.lbRank}>#{i + 1}</Text>
-                <Text style={[styles.lbName, isPlayer && { color: colors.neonGreen }]}>
-                  {entry.playerName}{isPlayer ? ' (you)' : ''}
-                </Text>
-                <View style={styles.lbStats}>
-                  <Text style={[styles.lbWins, { color: colors.neonGreen }]}>{entry.wins}W</Text>
-                  <Text style={styles.lbRecord}>{entry.losses}L</Text>
-                  <Text style={styles.lbRecord}>{entry.draws}D</Text>
+            <View style={s.lbHeader}>
+              <Text style={[s.lbHeaderText, { width: 24 }]}>#</Text>
+              <Text style={[s.lbHeaderText, { flex: 1 }]}>NAME</Text>
+              <Text style={[s.lbHeaderText, { width: 36 }]}>W</Text>
+              <Text style={[s.lbHeaderText, { width: 36 }]}>L</Text>
+            </View>
+
+            {leaderboard.map((entry, i) => {
+              const isPlayer = entry.playerName === state.playerName;
+              return (
+                <View key={i} style={[s.lbRow, isPlayer && s.lbRowPlayer]}>
+                  <Text style={[s.lbRank, i < 3 && { color: '#FFAA00' }]}>{i + 1}.</Text>
+                  <Text style={[s.lbName, isPlayer && { color: '#00FF88' }]} numberOfLines={1}>
+                    {entry.playerName}{isPlayer ? '*' : ''}
+                  </Text>
+                  <Text style={[s.lbWins]}>{entry.wins}</Text>
+                  <Text style={s.lbLosses}>{entry.losses}</Text>
                 </View>
-              </View>
-            );
-          })}
+              );
+            })}
 
-          <NeonButton
-            title="Back"
-            onPress={() => setView('menu')}
-            variant="ghost"
-            size="sm"
-            style={styles.mainBtn}
-          />
-        </ScrollView>
+            <View style={s.pixelDivider} />
+            <TouchableOpacity style={s.pixelBtnGhost} onPress={() => setView('menu')} activeOpacity={0.7}>
+              <Text style={s.pixelBtnGhostText}>&gt; BACK</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </ScrapBoyFrame>
       </ScreenWrapper>
     );
   }
@@ -277,191 +255,242 @@ export default function RPSScreen() {
   return null;
 }
 
-const styles = StyleSheet.create({
-  center: {
+// ─── Pixel-style green-on-black styles ───
+const PIXEL_GREEN = '#00FF88';
+const PIXEL_DIM = '#336644';
+const PIXEL_BG = '#0A0E14';
+
+const s = StyleSheet.create({
+  screenContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    padding: spacing.md,
   },
-  heroIcon: { marginBottom: spacing.md },
-  title: {
-    fontSize: fontSize.xxl,
+  pixelTitle: {
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: PIXEL_GREEN,
+    textAlign: 'center',
+    letterSpacing: 3,
+    fontFamily: 'monospace',
+    lineHeight: 26,
   },
-  subtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.xl,
+  pixelSub: {
+    fontSize: 11,
+    color: PIXEL_DIM,
+    letterSpacing: 4,
+    fontFamily: 'monospace',
+    marginTop: 4,
   },
-  recordRow: {
-    flexDirection: 'row',
-    gap: spacing.xl,
-    marginBottom: spacing.xl,
+  pixelLabel: {
+    fontSize: 11,
+    color: PIXEL_DIM,
+    letterSpacing: 2,
+    fontFamily: 'monospace',
+    marginBottom: spacing.sm,
   },
-  recordItem: { alignItems: 'center' },
-  recordValue: {
-    fontSize: fontSize.xxl,
-    fontWeight: '700',
-  },
-  recordLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  mainBtn: { marginTop: spacing.md, width: 240 },
-  secondaryBtn: { marginTop: spacing.sm },
-  winRate: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: spacing.lg,
+  pixelDivider: {
+    width: '80%',
+    height: 1,
+    backgroundColor: PIXEL_DIM + '40',
+    marginVertical: spacing.md,
   },
 
-  // Search
-  searchText: {
-    fontSize: fontSize.lg,
-    color: colors.neonAmber,
-    fontWeight: '600',
-    marginTop: spacing.lg,
+  // Record
+  recordRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginVertical: spacing.sm,
   },
-  searchSub: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
+  recordStat: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  winRate: {
+    fontSize: 10,
+    color: PIXEL_DIM,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+
+  // Buttons
+  pixelBtn: {
+    backgroundColor: PIXEL_GREEN + '15',
+    borderWidth: 1,
+    borderColor: PIXEL_GREEN + '60',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: 2,
+    marginBottom: spacing.sm,
+  },
+  pixelBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: PIXEL_GREEN,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+  },
+  pixelBtnGhost: {
+    paddingVertical: spacing.sm,
+  },
+  pixelBtnGhostText: {
+    fontSize: 11,
+    color: PIXEL_DIM,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+  },
+
+  // Searching
+  scanDots: {
+    fontSize: 18,
+    color: '#FFAA00',
+    fontFamily: 'monospace',
+    letterSpacing: 6,
+    marginTop: spacing.md,
   },
 
   // Choose
-  matchedText: {
-    fontSize: fontSize.xs,
-    color: colors.neonAmber,
-    fontWeight: '700',
-    letterSpacing: 3,
-    marginBottom: spacing.xs,
-  },
   opponentName: {
-    fontSize: fontSize.xl,
-    color: colors.textPrimary,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: spacing.xl,
-  },
-  choosePrompt: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
+    color: '#FF4466',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+    marginTop: spacing.xs,
   },
   choiceRow: {
     flexDirection: 'row',
     gap: spacing.md,
+    marginTop: spacing.md,
   },
   choiceBtn: {
-    backgroundColor: colors.surface,
+    backgroundColor: PIXEL_GREEN + '0A',
     borderWidth: 2,
-    borderColor: colors.neonAmber + '40',
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    borderColor: PIXEL_GREEN + '40',
+    borderRadius: 4,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
-    width: 100,
+    width: 90,
+  },
+  choiceIcon: {
+    fontSize: 32,
   },
   choiceLabel: {
-    fontSize: fontSize.xs,
+    fontSize: 9,
     fontWeight: '700',
-    color: colors.neonAmber,
-    letterSpacing: 1,
+    color: PIXEL_GREEN,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
     marginTop: spacing.sm,
   },
 
   // Result
-  resultLabel: {
-    fontSize: 32,
+  resultBanner: {
+    fontSize: 20,
     fontWeight: '700',
+    fontFamily: 'monospace',
     letterSpacing: 2,
-    marginBottom: spacing.xl,
-  },
-  resultMatchup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
     marginBottom: spacing.lg,
   },
-  resultSide: { alignItems: 'center', width: 100 },
-  resultPlayer: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
-  },
-  resultChoice: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-    letterSpacing: 1,
-  },
-  resultVs: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  rewardBadge: {
+  matchupRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceHighlight,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  rewardText: {
-    fontSize: fontSize.sm,
-    color: colors.scrap,
+  matchupSide: {
+    alignItems: 'center',
+    width: 90,
+  },
+  matchupLabel: {
+    fontSize: 8,
+    color: PIXEL_DIM,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  matchupIcon: {
+    fontSize: 28,
+  },
+  matchupChoice: {
+    fontSize: 9,
+    color: PIXEL_GREEN,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  matchupVs: {
+    fontSize: 11,
+    color: PIXEL_DIM,
+    fontFamily: 'monospace',
     fontWeight: '700',
+  },
+  rewardLine: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFAA00',
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+    marginTop: spacing.md,
   },
 
   // Leaderboard
-  lbContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xxl,
+  lbScroll: { flex: 1 },
+  lbHeader: {
+    flexDirection: 'row',
+    paddingBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: PIXEL_DIM + '30',
+    marginBottom: spacing.xs,
+    width: '100%',
   },
-  lbTitle: {
-    fontSize: fontSize.xxl,
+  lbHeaderText: {
+    fontSize: 9,
+    color: PIXEL_DIM,
+    fontFamily: 'monospace',
     fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    letterSpacing: 1,
   },
   lbRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceLight,
+    paddingVertical: 4,
+    width: '100%',
   },
   lbRowPlayer: {
-    backgroundColor: colors.neonGreen + '08',
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
+    backgroundColor: PIXEL_GREEN + '10',
+    borderRadius: 2,
+    paddingHorizontal: 4,
   },
   lbRank: {
-    fontSize: fontSize.md,
+    width: 24,
+    fontSize: 11,
+    color: PIXEL_DIM,
+    fontFamily: 'monospace',
     fontWeight: '700',
-    color: colors.neonAmber,
-    width: 40,
   },
   lbName: {
     flex: 1,
-    fontSize: fontSize.md,
-    color: colors.textPrimary,
-  },
-  lbStats: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+    fontSize: 11,
+    color: PIXEL_GREEN,
+    fontFamily: 'monospace',
   },
   lbWins: {
-    fontSize: fontSize.sm,
+    width: 36,
+    fontSize: 11,
+    color: '#00FF88',
+    fontFamily: 'monospace',
     fontWeight: '700',
+    textAlign: 'center',
   },
-  lbRecord: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
+  lbLosses: {
+    width: 36,
+    fontSize: 11,
+    color: '#FF4466',
+    fontFamily: 'monospace',
+    textAlign: 'center',
   },
 });
