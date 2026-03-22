@@ -387,15 +387,15 @@ export default function DailyPlanScreen() {
             onPress={() => nav.navigate('MissionSelect')}
             size="lg"
             icon="map-marker-path"
-            disabled={ss.scansRemaining <= 0 || ss.activeGearSlots.length === 0}
+            disabled={ss.scansRemaining <= 0}
           />
           <Text style={styles.ctaSubtext}>
             {ss.scansRemaining > 0
               ? 'Pick a sector and spend your scans.'
               : 'Window\'s closed. Signal resets at dawn.'}
           </Text>
-          {ss.activeGearSlots.length === 0 && (
-            <Text style={styles.warningText}>Rig empty. Equip at least 1 piece of gear.</Text>
+          {ss.activeGearSlots.length === 0 && ss.gearInventory.length > 0 && (
+            <Text style={styles.warningText}>Tip: Tap your gear above to equip it for bonus effects.</Text>
           )}
         </View>
       </ScrollView>

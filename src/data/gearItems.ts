@@ -46,3 +46,17 @@ export const ALL_GEAR_ITEMS: GearItem[] = [
 ];
 
 export const DEFAULT_ACTIVE_GEAR: GearSlotId[] = ['optics_rig', 'exo_vest', 'grip_gauntlets'];
+
+/** Starter kit for a fresh profile: 1 basic vest, nothing else */
+export const STARTER_GEAR: GearItem[] = [
+  {
+    slotId: 'exo_vest',
+    quality: 'standard',
+    name: 'Drifter Vest',
+    shortDesc: 'Reinforced frame lets you run more scans per day.',
+    icon: 'shield-half-full',
+  },
+];
+
+/** Starter active slots: nothing equipped (player must choose) */
+export const STARTER_ACTIVE_GEAR: GearSlotId[] = [];

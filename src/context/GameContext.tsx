@@ -20,7 +20,7 @@ import {
   ActiveBoost,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
-import { ALL_GEAR_ITEMS } from '../data/gearItems';
+import { ALL_GEAR_ITEMS, STARTER_GEAR } from '../data/gearItems';
 import { generateTestSector } from '../data/testSector';
 import { computeDailyScans } from '../systems/scanEngine';
 import gameBalanceConfig from '../config/gameBalance.json';
@@ -618,9 +618,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       // Initialize Seeker Scan system if not yet set up
       if (!loaded.seekerScans || loaded.seekerScans.gearInventory.length === 0) {
+        // Fresh profile: start with starter gear only (1 basic vest)
         dispatch({
           type: 'INIT_SEEKER_SCANS',
-          payload: { gearInventory: ALL_GEAR_ITEMS, sector: generateTestSector() },
+          payload: { gearInventory: STARTER_GEAR, sector: generateTestSector() },
         });
       }
 
@@ -632,7 +633,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const totalScans = computeDailyScans(
           scansState.streakDay,
           scansState.activeGearSlots,
-          scansState.gearInventory.length > 0 ? scansState.gearInventory : ALL_GEAR_ITEMS
+          scansState.gearInventory.length > 0 ? scansState.gearInventory : STARTER_GEAR
         );
         dispatch({ type: 'REFRESH_DAILY_SCANS', payload: totalScans });
       }

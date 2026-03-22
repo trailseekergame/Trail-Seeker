@@ -313,7 +313,7 @@ export const INITIAL_GAME_STATE: GameState = {
     scansTotal: 4,
     scansUsedToday: { scout: 0, seeker: 0, gambit: 0 },
     gearInventory: [],
-    activeGearSlots: ['optics_rig', 'exo_vest', 'grip_gauntlets'],
+    activeGearSlots: [],
     gearLockedToday: false,
     currentSector: { id: 'sector-01', name: 'Rustbelt Outskirts', tiles: [], gridSize: 5, completed: false },
     sectorsCompleted: 0,
