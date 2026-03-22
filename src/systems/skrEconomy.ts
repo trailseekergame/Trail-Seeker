@@ -10,6 +10,12 @@ import { ActiveBoost, BoostEffect, GameState } from '../types';
  * - Base progression is 100% free; $SKR = convenience + style
  * - All values in this file can be rebalanced without touching core game code
  *
+ * FEATURE FLAG: SKR_MILESTONES_ENABLED
+ * Set to false for v0/v1 soft launch. No $SKR is earned or shown.
+ * The shop, balance display, and session summary all gate on
+ * skrBalance > 0, so disabling earning hides everything downstream.
+ * To re-enable: set SKR_MILESTONES_ENABLED = true.
+ *
  * PACING (conservative — tighten supply for small early player base):
  * - Milestone rewards halved from original design
  * - Cosmetic prices doubled — they should feel rare and exclusive
@@ -106,7 +112,15 @@ export const SKR_MILESTONES: SkrMilestone[] = [
  * Loosen milestone rewards (not cosmetic prices) if retention data supports it.
  */
 
+/**
+ * Master switch for $SKR milestone rewards.
+ * false = no milestones fire, no $SKR earned, shop stays hidden.
+ * Flip to true when ready to activate the token economy.
+ */
+export const SKR_MILESTONES_ENABLED = false;
+
 export function checkMilestones(state: GameState): SkrMilestone[] {
+  if (!SKR_MILESTONES_ENABLED) return [];
   return SKR_MILESTONES.filter(
     m => m.check(state) && !state.skrMilestonesCompleted.includes(m.id)
   );
