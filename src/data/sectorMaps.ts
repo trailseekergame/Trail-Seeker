@@ -60,8 +60,8 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     background: require('../assets/backgrounds/bg_broken_overpass.jpg'),
     icon: 'road-variant',
     gridSize: 5,
-    hardenedRate: 0.12,
-    anomalyRate: 0.08,
+    hardenedRate: 0.22,
+    anomalyRate: 0.12,
     resourceRate: 0.20,
     requiresCompleted: [],
     briefing:
@@ -80,8 +80,8 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     background: require('../assets/backgrounds/bg_relay_field.jpg'),
     icon: 'satellite-uplink',
     gridSize: 5,
-    hardenedRate: 0.18,
-    anomalyRate: 0.14,
+    hardenedRate: 0.25,
+    anomalyRate: 0.16,
     resourceRate: 0.16,
     requiresCompleted: ['broken_overpass'],
     briefing:
