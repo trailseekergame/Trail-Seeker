@@ -10,22 +10,19 @@ interface Props {
 
 export default function TypewriterText({ text, speed = 30, onComplete, style }: Props) {
   const [displayedCount, setDisplayedCount] = useState(0);
+  const [isFinished, setIsFinished] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const completedRef = useRef(false);
 
+  // Reset when text or speed changes
   useEffect(() => {
     setDisplayedCount(0);
-    completedRef.current = false;
+    setIsFinished(false);
 
     intervalRef.current = setInterval(() => {
       setDisplayedCount(prev => {
         const next = prev + 1;
         if (next >= text.length) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          if (!completedRef.current) {
-            completedRef.current = true;
-            onComplete?.();
-          }
           return text.length;
         }
         return next;
@@ -37,13 +34,25 @@ export default function TypewriterText({ text, speed = 30, onComplete, style }: 
     };
   }, [text, speed]);
 
+  // Detect when the full string has been rendered
+  useEffect(() => {
+    if (displayedCount >= text.length && text.length > 0) {
+      setIsFinished(true);
+    }
+  }, [displayedCount, text.length]);
+
+  // Fire onComplete after render, not during
+  useEffect(() => {
+    if (isFinished) {
+      onComplete?.();
+    }
+  }, [isFinished]);
+
   const skipToEnd = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setDisplayedCount(text.length);
-    if (!completedRef.current) {
-      completedRef.current = true;
-      setTimeout(() => onComplete?.(), 0);
-    }
+    // isFinished will flip via the displayedCount effect above,
+    // which triggers onComplete via the isFinished effect
   };
 
   return (
