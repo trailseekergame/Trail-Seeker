@@ -243,6 +243,7 @@ export interface GameState {
   skrLifetimeEarned: number;
   skrMilestonesCompleted: string[]; // IDs of one-time milestones already claimed
   intelCollected: number;           // Intel/Data resource
+  connectedWalletAddress: string | null; // Solana wallet pubkey (persisted)
 
   // Active boosts (from $SKR shop, expire after next run)
   activeBoosts: ActiveBoost[];
@@ -326,6 +327,7 @@ export const INITIAL_GAME_STATE: GameState = {
   skrLifetimeEarned: 0,
   skrMilestonesCompleted: [],
   intelCollected: 0,
+  connectedWalletAddress: null,
   activeBoosts: [],
 };
 

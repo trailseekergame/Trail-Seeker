@@ -83,7 +83,8 @@ type GameAction =
   | { type: 'SPEND_SKR'; payload: number }
   | { type: 'ADD_BOOST'; payload: ActiveBoost }
   | { type: 'CONSUME_RUN_BOOSTS' }
-  | { type: 'ADD_INTEL'; payload: number };
+  | { type: 'ADD_INTEL'; payload: number }
+  | { type: 'SET_WALLET_ADDRESS'; payload: string | null };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -570,6 +571,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'ADD_INTEL': {
       return { ...state, intelCollected: state.intelCollected + action.payload };
     }
+
+    case 'SET_WALLET_ADDRESS':
+      return { ...state, connectedWalletAddress: action.payload };
 
     default:
       return state;

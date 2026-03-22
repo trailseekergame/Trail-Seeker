@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../../context/GameContext';
 import { ALL_GEAR_ITEMS } from '../../data/gearItems';
 import cosmeticItems from '../../data/cosmetics';
-import { purchaseCosmetic } from '../../services/solana';
+// Cosmetic purchases use off-chain profile $SKR balance
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
@@ -118,9 +118,9 @@ export default function WardrobeScreen() {
         { text: 'OK' },
         {
           text: 'Unlock (Dev)',
-          onPress: async () => {
-            const success = await purchaseCosmetic(item.id);
-            if (success) dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id });
+          onPress: () => {
+            // Dev unlock — in production, uses off-chain SKR via SPEND_SKR
+            dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id });
           },
         },
       ]);
