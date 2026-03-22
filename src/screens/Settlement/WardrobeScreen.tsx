@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../../context/GameContext';
-import { ALL_GEAR_ITEMS } from '../../data/gearItems';
 import cosmeticItems from '../../data/cosmetics';
-// Cosmetic purchases use off-chain profile $SKR balance
 import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
@@ -61,6 +59,13 @@ const QUALITY_COLORS: Record<string, string> = {
   ultra: colors.neonPurple,
 };
 
+const QUALITY_ORDER: Record<string, number> = {
+  standard: 0,
+  enhanced: 1,
+  perfected: 2,
+  ultra: 3,
+};
+
 // ─── Cosmetic constants ───
 const COSMETIC_SLOT_LABELS: Record<CosmeticSlot, string> = {
   headgear: 'Headgear',
@@ -88,12 +93,48 @@ const getRarityColor = (rarity: string) => {
   }
 };
 
+// ─── Compare hint: what does this item do vs what the player has equipped in the same slot ───
+function getCompareHint(gear: GearItem, inventory: GearItem[], activeSlots: GearSlotId[]): string | null {
+  // Only show hints for items that are NOT equipped
+  if (activeSlots.includes(gear.slotId)) return null;
+
+  const equippedInSlot = inventory.find(
+    g => g.slotId === gear.slotId && activeSlots.includes(g.slotId)
+  );
+
+  if (!equippedInSlot) {
+    // No item equipped in this slot
+    return 'Empty slot — equip for a bonus';
+  }
+
+  const myQ = QUALITY_ORDER[gear.quality] ?? 0;
+  const theirQ = QUALITY_ORDER[equippedInSlot.quality] ?? 0;
+
+  if (myQ > theirQ) return `Upgrade from ${equippedInSlot.name}`;
+  if (myQ === theirQ && gear.slotId !== equippedInSlot.slotId) return 'Same tier, different effect';
+  if (myQ < theirQ) return `Weaker than ${equippedInSlot.name}`;
+  return null;
+}
+
 export default function WardrobeScreen() {
   const { state, dispatch } = useGame();
   const ss = state.seekerScans;
 
   const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
   const [cosmeticSlot, setCosmeticSlot] = useState<CosmeticSlot>('headgear');
+
+  // ─── Sort gear: equipped first, then by quality desc, then unequipped ───
+  const sortedGear = useMemo(() => {
+    const inventory = ss.gearInventory.length > 0 ? [...ss.gearInventory] : [];
+    return inventory.sort((a, b) => {
+      const aActive = ss.activeGearSlots.includes(a.slotId) ? 1 : 0;
+      const bActive = ss.activeGearSlots.includes(b.slotId) ? 1 : 0;
+      if (bActive !== aActive) return bActive - aActive; // equipped first
+      const aQ = QUALITY_ORDER[a.quality] ?? 0;
+      const bQ = QUALITY_ORDER[b.quality] ?? 0;
+      return bQ - aQ; // higher quality first
+    });
+  }, [ss.gearInventory, ss.activeGearSlots]);
 
   // ─── Gear logic ───
   const toggleGear = (slotId: GearSlotId) => {
@@ -114,25 +155,29 @@ export default function WardrobeScreen() {
   const isUnlocked = (itemId: string) => state.unlockedCosmeticIds.includes(itemId);
 
   const handleEquipCosmetic = (item: CosmeticItem) => {
-    if (!isUnlocked(item.id)) {
-      Alert.alert('Locked', item.unlockCondition || 'This item is not yet available.', [
-        { text: 'OK' },
-        {
-          text: 'Unlock (Dev)',
-          onPress: () => {
-            // Dev unlock — in production, uses off-chain SKR via SPEND_SKR
-            dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id });
-          },
-        },
-      ]);
-      return;
-    }
+    if (!isUnlocked(item.id)) return;
     dispatch({ type: 'EQUIP_COSMETIC', payload: { [item.slot]: item.id } as Partial<EquippedCosmetics> });
   };
 
   const handleUnequipCosmetic = (slot: CosmeticSlot) => {
     dispatch({ type: 'EQUIP_COSMETIC', payload: { [slot]: undefined } as Partial<EquippedCosmetics> });
   };
+
+  // ─── Cosmetic sorting: equipped → unlocked → locked with obtainable conditions ───
+  const sortedCosmeticsForSlot = useMemo(() => {
+    const items = getItemsForSlot(cosmeticSlot);
+    const equipped: CosmeticItem[] = [];
+    const unlocked: CosmeticItem[] = [];
+    const locked: CosmeticItem[] = [];
+
+    for (const item of items) {
+      if (isEquipped(item.id)) equipped.push(item);
+      else if (isUnlocked(item.id)) unlocked.push(item);
+      else locked.push(item);
+    }
+
+    return [...equipped, ...unlocked, ...locked];
+  }, [cosmeticSlot, state.equipped, state.unlockedCosmeticIds]);
 
   return (
     <ScreenWrapper>
@@ -150,50 +195,79 @@ export default function WardrobeScreen() {
           Your operational loadout. Each piece changes how the rover reads signal in the field. Choose 3.
         </Text>
 
-        {/* Gear cards */}
-        {(ss.gearInventory.length > 0 ? ss.gearInventory : ALL_GEAR_ITEMS).map((gear) => {
-          const isActive = ss.activeGearSlots.includes(gear.slotId);
-          const statLine = GEAR_STAT_LINE[gear.slotId](gear.quality);
-          const bodyArea = GEAR_BODY_AREA[gear.slotId];
-          const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
-          const canToggle = !ss.gearLockedToday && (isActive || ss.activeGearSlots.length < 3);
+        {/* Gear cards — sorted: equipped first, then by quality */}
+        {sortedGear.length > 0 ? (
+          sortedGear.map((gear) => {
+            const isActive = ss.activeGearSlots.includes(gear.slotId);
+            const statLine = GEAR_STAT_LINE[gear.slotId](gear.quality);
+            const bodyArea = GEAR_BODY_AREA[gear.slotId];
+            const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
+            const canToggle = !ss.gearLockedToday && (isActive || ss.activeGearSlots.length < 3);
+            const compareHint = getCompareHint(gear, ss.gearInventory, ss.activeGearSlots);
 
-          return (
-            <TouchableOpacity
-              key={gear.slotId}
-              style={[styles.gearCard, isActive && styles.gearCardActive]}
-              onPress={() => canToggle ? toggleGear(gear.slotId) : setSelectedGear(gear)}
-              activeOpacity={canToggle ? 0.7 : 0.9}
-            >
-              <View style={styles.gearCardLeft}>
-                <MaterialCommunityIcons name={gear.icon as any} size={24} color={isActive ? colors.neonGreen : colors.textSecondary} />
-              </View>
-              <View style={styles.gearCardCenter}>
-                <View style={styles.gearNameRow}>
-                  <Text style={[styles.gearName, isActive && styles.gearNameActive]}>
-                    {gear.name}
-                  </Text>
-                  <Text style={[styles.gearBodyArea, { color: qualityColor }]}>
-                    {bodyArea}
-                  </Text>
+            return (
+              <TouchableOpacity
+                key={`${gear.slotId}-${gear.quality}`}
+                style={[styles.gearCard, isActive && styles.gearCardActive]}
+                onPress={() => canToggle ? toggleGear(gear.slotId) : setSelectedGear(gear)}
+                activeOpacity={canToggle ? 0.7 : 0.9}
+              >
+                <View style={[styles.gearCardLeft, isActive && styles.gearCardLeftActive]}>
+                  <MaterialCommunityIcons name={gear.icon as any} size={24} color={isActive ? colors.neonGreen : qualityColor} />
                 </View>
-                <Text style={styles.gearStatLine}>{statLine}</Text>
-                <Text style={[styles.gearQuality, { color: qualityColor }]}>
-                  {gear.quality.charAt(0).toUpperCase() + gear.quality.slice(1)}
-                </Text>
-              </View>
-              <View style={styles.gearCardRight}>
-                {isActive ? (
-                  <View style={styles.equippedDot}>
-                    <Text style={styles.equippedDotText}>ON</Text>
+                <View style={styles.gearCardCenter}>
+                  <View style={styles.gearNameRow}>
+                    <Text style={[styles.gearName, isActive && styles.gearNameActive]}>
+                      {gear.name}
+                    </Text>
+                    {isActive && (
+                      <View style={styles.equippedTag}>
+                        <Text style={styles.equippedTagText}>EQUIPPED</Text>
+                      </View>
+                    )}
                   </View>
-                ) : (
-                  <View style={styles.unequippedDot} />
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                  <Text style={styles.gearStatLine}>{statLine}</Text>
+                  <View style={styles.gearMetaRow}>
+                    <Text style={[styles.gearQuality, { color: qualityColor }]}>
+                      {gear.quality.charAt(0).toUpperCase() + gear.quality.slice(1)}
+                    </Text>
+                    <Text style={styles.gearBodyArea}>{bodyArea}</Text>
+                  </View>
+                  {/* Compare hint for non-equipped items */}
+                  {compareHint && !isActive && (
+                    <Text style={styles.compareHint}>{compareHint}</Text>
+                  )}
+                </View>
+                <View style={styles.gearCardRight}>
+                  {isActive ? (
+                    <View style={styles.equippedDot}>
+                      <Text style={styles.equippedDotText}>ON</Text>
+                    </View>
+                  ) : canToggle ? (
+                    <View style={styles.unequippedDot}>
+                      <MaterialCommunityIcons name="plus" size={14} color={colors.textMuted} />
+                    </View>
+                  ) : (
+                    <View style={styles.unequippedDot} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <View style={styles.emptyGearCard}>
+            <MaterialCommunityIcons name="shield-off-outline" size={28} color={colors.textMuted} />
+            <Text style={styles.emptyGearText}>No gear yet. Run scans on Broken Overpass to find your first drops.</Text>
+          </View>
+        )}
+
+        {/* Future gear placeholder — only when inventory is small */}
+        {sortedGear.length > 0 && sortedGear.length < 4 && (
+          <View style={styles.futureGearHint}>
+            <MaterialCommunityIcons name="radar" size={14} color={colors.textMuted} />
+            <Text style={styles.futureGearText}>New rigs will show up here as you earn them.</Text>
+          </View>
+        )}
 
         {/* Pathfinder progress */}
         {!ss.pathfinderUnlocked && ss.pathfinderComponents > 0 && (
@@ -248,8 +322,8 @@ export default function WardrobeScreen() {
           ))}
         </View>
 
-        {/* Cosmetic items for selected slot */}
-        {getItemsForSlot(cosmeticSlot).map((item: CosmeticItem) => {
+        {/* Cosmetic items — sorted: equipped → unlocked → locked */}
+        {sortedCosmeticsForSlot.map((item: CosmeticItem) => {
           const unlocked = isUnlocked(item.id);
           const equipped = isEquipped(item.id);
 
@@ -294,8 +368,9 @@ export default function WardrobeScreen() {
                 {equipped && (
                   <NeonButton title="Unequip" onPress={() => handleUnequipCosmetic(item.slot)} variant="ghost" size="sm" />
                 )}
-                {!unlocked && (
-                  <NeonButton title="Unlock (Dev)" onPress={() => handleEquipCosmetic(item)} variant="ghost" size="sm" />
+                {/* Locked items show no button in production — just the lock condition above */}
+                {__DEV__ && !unlocked && (
+                  <NeonButton title="Dev Unlock" onPress={() => dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id })} variant="ghost" size="sm" />
                 )}
               </View>
             </View>
@@ -310,33 +385,42 @@ export default function WardrobeScreen() {
           activeOpacity={1}
           onPress={() => setSelectedGear(null)}
         >
-          {selectedGear && (
-            <View style={styles.popupCard}>
-              <MaterialCommunityIcons name={selectedGear.icon as any} size={40} color={QUALITY_COLORS[selectedGear.quality] || colors.textSecondary} style={{ marginBottom: spacing.sm }} />
-              <Text style={styles.popupName}>{selectedGear.name}</Text>
-              <Text style={[styles.popupQuality, { color: QUALITY_COLORS[selectedGear.quality] }]}>
-                {selectedGear.quality.toUpperCase()}
-              </Text>
-              <View style={styles.popupDivider} />
-              <Text style={styles.popupBodyArea}>
-                {GEAR_BODY_AREA[selectedGear.slotId]}
-              </Text>
-              <Text style={styles.popupStatLine}>
-                {GEAR_STAT_LINE[selectedGear.slotId](selectedGear.quality)}
-              </Text>
-              <Text style={styles.popupShortDesc}>{selectedGear.shortDesc}</Text>
-              {ss.gearLockedToday && (
-                <Text style={styles.popupLocked}>Gear is locked after first scan today</Text>
-              )}
-              <NeonButton
-                title="Close"
-                onPress={() => setSelectedGear(null)}
-                variant="ghost"
-                size="sm"
-                style={styles.popupClose}
-              />
-            </View>
-          )}
+          {selectedGear && (() => {
+            const qualityColor = QUALITY_COLORS[selectedGear.quality] || colors.textSecondary;
+            const compareHint = getCompareHint(selectedGear, ss.gearInventory, ss.activeGearSlots);
+            return (
+              <View style={[styles.popupCard, { borderColor: qualityColor + '40' }]}>
+                <View style={[styles.popupIconBg, { borderColor: qualityColor + '60' }]}>
+                  <MaterialCommunityIcons name={selectedGear.icon as any} size={32} color={qualityColor} />
+                </View>
+                <Text style={styles.popupName}>{selectedGear.name}</Text>
+                <Text style={[styles.popupQuality, { color: qualityColor }]}>
+                  {selectedGear.quality.toUpperCase()}
+                </Text>
+                <View style={styles.popupDivider} />
+                <Text style={styles.popupBodyArea}>
+                  {GEAR_BODY_AREA[selectedGear.slotId]}
+                </Text>
+                <Text style={styles.popupStatLine}>
+                  {GEAR_STAT_LINE[selectedGear.slotId](selectedGear.quality)}
+                </Text>
+                <Text style={styles.popupShortDesc}>{selectedGear.shortDesc}</Text>
+                {compareHint && (
+                  <Text style={styles.popupCompare}>{compareHint}</Text>
+                )}
+                {ss.gearLockedToday && (
+                  <Text style={styles.popupLocked}>Gear is locked after first scan today</Text>
+                )}
+                <NeonButton
+                  title="Close"
+                  onPress={() => setSelectedGear(null)}
+                  variant="ghost"
+                  size="sm"
+                  style={styles.popupClose}
+                />
+              </View>
+            );
+          })()}
         </TouchableOpacity>
       </Modal>
     </ScreenWrapper>
@@ -396,7 +480,9 @@ const styles = StyleSheet.create({
   },
   gearCardActive: {
     borderColor: colors.neonGreen + '60',
-    backgroundColor: colors.surfaceHighlight,
+    backgroundColor: colors.neonGreen + '06',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.neonGreen,
   },
   gearCardLeft: {
     width: 44,
@@ -407,13 +493,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.sm,
   },
+  gearCardLeftActive: {
+    backgroundColor: colors.neonGreen + '15',
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '30',
+  },
   gearCardCenter: {
     flex: 1,
   },
   gearNameRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: 2,
   },
   gearName: {
@@ -425,10 +516,18 @@ const styles = StyleSheet.create({
   gearNameActive: {
     color: colors.neonGreen,
   },
-  gearBodyArea: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
+  equippedTag: {
+    backgroundColor: colors.neonGreen + '20',
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  equippedTagText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: colors.neonGreen,
+    letterSpacing: 1.5,
     fontFamily: fontMono,
   },
   gearStatLine: {
@@ -437,12 +536,31 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontFamily: fontMono,
   },
+  gearMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: 2,
+  },
   gearQuality: {
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 1,
-    marginTop: 2,
     fontFamily: fontMono,
+  },
+  gearBodyArea: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: fontMono,
+    color: colors.textMuted,
+  },
+  compareHint: {
+    fontSize: fontSize.xs,
+    color: colors.neonAmber,
+    fontFamily: fontMono,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   gearCardRight: {
     width: 36,
@@ -473,6 +591,43 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     borderWidth: 1,
     borderColor: colors.panelBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ─── Empty state ───
+  emptyGearCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    borderStyle: 'dashed',
+    marginHorizontal: spacing.md,
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyGearText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontFamily: fontMono,
+  },
+
+  // ─── Future gear hint ───
+  futureGearHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  futureGearText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    fontStyle: 'italic',
   },
 
   // ─── Pathfinder ───
@@ -586,6 +741,7 @@ const styles = StyleSheet.create({
   },
   cosmeticCardEquipped: {
     borderColor: colors.neonGreen + '30',
+    backgroundColor: colors.neonGreen + '04',
   },
   cosmeticHeader: {
     flexDirection: 'row',
@@ -638,6 +794,7 @@ const styles = StyleSheet.create({
   unlockCondition: {
     fontSize: fontSize.xs,
     color: colors.neonAmber,
+    fontFamily: fontMono,
   },
   cosmeticActions: {
     flexDirection: 'row',
@@ -662,11 +819,21 @@ const styles = StyleSheet.create({
     maxWidth: 300,
     alignItems: 'center',
   },
+  popupIconBg: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceLight,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+  },
   popupName: {
     fontSize: fontSize.xl,
     color: colors.textPrimary,
     fontWeight: '700',
     fontFamily: fontMono,
+    textAlign: 'center',
   },
   popupQuality: {
     fontSize: fontSize.xs,
@@ -702,11 +869,20 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  popupCompare: {
+    fontSize: fontSize.xs,
+    color: colors.neonAmber,
+    fontFamily: fontMono,
+    fontStyle: 'italic',
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
   popupLocked: {
     fontSize: fontSize.xs,
     color: colors.neonRed,
     marginTop: spacing.md,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
   popupClose: {
     marginTop: spacing.lg,
