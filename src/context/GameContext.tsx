@@ -88,7 +88,8 @@ type GameAction =
   | { type: 'RPS_WIN' }
   | { type: 'RPS_LOSS' }
   | { type: 'RPS_DRAW' }
-  | { type: 'ADD_GEAR_ITEM'; payload: GearItem };
+  | { type: 'ADD_GEAR_ITEM'; payload: GearItem }
+  | { type: 'SET_ACCENT_COLOR'; payload: string };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -603,6 +604,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         seekerScans: { ...state.seekerScans, gearInventory: updatedInventory },
       };
     }
+
+    case 'SET_ACCENT_COLOR':
+      return { ...state, accentColor: action.payload };
 
     case 'RPS_WIN':
       return { ...state, rpsWins: state.rpsWins + 1 };

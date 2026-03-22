@@ -248,6 +248,9 @@ export interface GameState {
   // Active boosts (from $SKR shop, expire after next run)
   activeBoosts: ActiveBoost[];
 
+  // Player accent color (chosen during onboarding)
+  accentColor: string;
+
   // RPS Duel record
   rpsWins: number;
   rpsLosses: number;
@@ -334,6 +337,7 @@ export const INITIAL_GAME_STATE: GameState = {
   intelCollected: 0,
   connectedWalletAddress: null,
   activeBoosts: [],
+  accentColor: '#00E89C',
   rpsWins: 0,
   rpsLosses: 0,
   rpsDraws: 0,

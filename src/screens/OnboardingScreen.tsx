@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,273 +6,520 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Image,
+  Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/common/ScreenWrapper';
 import NeonButton from '../components/common/NeonButton';
 import TypewriterText from '../components/common/TypewriterText';
 import { useGame } from '../context/GameContext';
-import { archetypes, lastLostOptions } from '../data/backstory';
-import { AVATARS } from '../data/avatars';
-import { AvatarId } from '../types';
-import { colors, spacing, fontSize, borderRadius, fontMono } from '../theme';
+import { colors, spacing, fontSize, fontMono } from '../theme';
 import AudioManager from '../services/audioManager';
 
-type Step = 'wake' | 'avatar' | 'identity' | 'scans' | 'go';
+// ─── Types ───
 
-const STEPS: Step[] = ['wake', 'avatar', 'identity', 'scans', 'go'];
+type Step = 'boot' | 'callsign' | 'origin' | 'rig' | 'confirm';
+
+const STEPS: Step[] = ['boot', 'callsign', 'origin', 'rig', 'confirm'];
+
+// ─── Random Callsign Generator ───
+
+const CALLSIGN_PREFIXES = [
+  'Ghost', 'Rust', 'Drift', 'Burn', 'Hollow', 'Wraith', 'Slag',
+  'Flint', 'Shade', 'Ember', 'Dust', 'Grit', 'Void', 'Thorn',
+  'Null', 'Glitch', 'Shard', 'Scrap', 'Ash', 'Bolt',
+];
+
+const CALLSIGN_SUFFIXES = [
+  'Runner', 'Walker', 'Seeker', 'Drifter', 'Hound', 'Hawk',
+  'Fox', 'Rat', 'Wolf', 'Jack', 'Eye', 'Hand', 'Blade', 'Wire',
+  'Fang', 'Bone', 'Steel', 'Glass', 'Root', 'Stone',
+];
+
+function generateCallsign(): string {
+  const prefix = CALLSIGN_PREFIXES[Math.floor(Math.random() * CALLSIGN_PREFIXES.length)];
+  const suffix = CALLSIGN_SUFFIXES[Math.floor(Math.random() * CALLSIGN_SUFFIXES.length)];
+  return `${prefix}${suffix}`;
+}
+
+// ─── Origins (simplified from 6 archetypes + 5 losses → 3 combined) ───
+
+interface Origin {
+  id: string;
+  label: string;
+  tagline: string;
+  icon: string;
+  backstoryArchetype: string;
+  backstoryLost: string;
+}
+
+const ORIGINS: Origin[] = [
+  {
+    id: 'wrench',
+    label: 'Wrench',
+    tagline: 'Kept machines alive when everything else died.',
+    icon: 'wrench',
+    backstoryArchetype: 'A Mechanic',
+    backstoryLost: 'My home',
+  },
+  {
+    id: 'ghost',
+    label: 'Ghost',
+    tagline: 'Ran contraband past Directorate lines for years.',
+    icon: 'incognito',
+    backstoryArchetype: 'A Smuggler',
+    backstoryLost: 'My freedom',
+  },
+  {
+    id: 'medic',
+    label: 'Sawbones',
+    tagline: 'Patched wounds at the edge of the Reclamation Zones.',
+    icon: 'needle',
+    backstoryArchetype: 'A Field Medic',
+    backstoryLost: 'Someone I loved',
+  },
+];
+
+// ─── Accent Color Picker ───
+
+const ACCENT_COLORS = [
+  { id: 'green', hex: '#00E89C', label: 'Phosphor' },
+  { id: 'cyan', hex: '#00C4EE', label: 'Ice' },
+  { id: 'amber', hex: '#E8A800', label: 'Amber' },
+  { id: 'red', hex: '#E8354F', label: 'Burn' },
+  { id: 'purple', hex: '#A040E8', label: 'Void' },
+];
+
+// ─── Boot Lines ───
+
+const BOOT_LINES = [
+  '> BIOS POST ............................... OK',
+  '> MEM CHECK: 4096K ........................ OK',
+  '> SIGNAL ARRAY ........................ OFFLINE',
+  '> DIRECTORATE AUTH .................. NOT FOUND',
+  '> GPS MODULE ........................... JAMMED',
+  '> ROVER LINK ............................ FOUND',
+  '',
+  '> WARNING: NO OPERATOR ID DETECTED',
+  '> WARNING: UNAUTHORIZED ACCESS — LOG SUPPRESSED',
+  '',
+  '> TERMINAL READY. AWAITING INPUT.',
+];
+
+// ─── Component ───
 
 export default function OnboardingScreen() {
   const { dispatch } = useGame();
-  const [step, setStep] = useState<Step>('wake');
-  const [playerName, setPlayerName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>('operator_a');
-  const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
-  const [selectedLost, setSelectedLost] = useState<string | null>(null);
-  const [wakeTextDone, setWakeTextDone] = useState(false);
-  const [scanTextDone, setScanTextDone] = useState(false);
 
-  const handleComplete = () => {
+  // Step state
+  const [step, setStep] = useState<Step>('boot');
+  const [transitioning, setTransitioning] = useState(false);
+
+  // Boot state
+  const [bootLine, setBootLine] = useState(0);
+  const [bootDone, setBootDone] = useState(false);
+
+  // Callsign state
+  const [callsign, setCallsign] = useState(generateCallsign);
+  const [customName, setCustomName] = useState('');
+  const [useCustom, setUseCustom] = useState(false);
+
+  // Origin state
+  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
+
+  // Rig state (accent color)
+  const [selectedColor, setSelectedColor] = useState('green');
+
+  // Transition animation
+  const transitionAnim = useRef(new Animated.Value(0)).current;
+
+  // ─── Boot Sequence ───
+
+  useEffect(() => {
+    if (step !== 'boot') return;
+    if (bootLine >= BOOT_LINES.length) {
+      setBootDone(true);
+      AudioManager.playSfx('ui_confirm');
+      AudioManager.vibrate('medium');
+      return;
+    }
+
+    const delay = BOOT_LINES[bootLine] === '' ? 200 : 80 + Math.random() * 120;
+    const timer = setTimeout(() => {
+      AudioManager.playSfx('ui_tap');
+      setBootLine((prev) => prev + 1);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [step, bootLine]);
+
+  // ─── Step Transition ───
+
+  const goToStep = useCallback(
+    (next: Step) => {
+      if (transitioning) return;
+      setTransitioning(true);
+      AudioManager.playSfx('ui_confirm');
+      AudioManager.vibrate('light');
+
+      transitionAnim.setValue(0);
+      Animated.timing(transitionAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: false,
+      }).start(() => {
+        setStep(next);
+        setTransitioning(false);
+      });
+    },
+    [transitioning, transitionAnim],
+  );
+
+  // ─── Reroll Callsign ───
+
+  const reroll = useCallback(() => {
+    AudioManager.playSfx('ui_tap');
+    AudioManager.vibrate('light');
+    setCallsign(generateCallsign());
+  }, []);
+
+  // ─── Complete Onboarding ───
+
+  const handleComplete = useCallback(() => {
+    const name = useCustom ? (customName.trim() || 'Drifter') : callsign;
+    const origin = ORIGINS.find((o) => o.id === selectedOrigin);
+    const accent = ACCENT_COLORS.find((c) => c.id === selectedColor);
+
     AudioManager.playSfx('sector_complete');
     AudioManager.vibrate('heavy');
-    dispatch({ type: 'SET_PLAYER_NAME', payload: playerName || 'Drifter' });
-    dispatch({ type: 'SET_AVATAR', payload: selectedAvatar });
 
-    const archetype = archetypes.find((a) => a.id === selectedArchetype);
-    const lost = lastLostOptions.find((l) => l.id === selectedLost);
+    dispatch({ type: 'SET_PLAYER_NAME', payload: name });
+    dispatch({ type: 'SET_AVATAR', payload: 'operator_a' });
 
-    if (archetype && lost) {
+    if (origin) {
       dispatch({
         type: 'SET_BACKSTORY',
         payload: {
-          archetype: archetype.label,
-          lastLost: lost.label,
+          archetype: origin.backstoryArchetype,
+          lastLost: origin.backstoryLost,
         },
       });
     }
 
-    dispatch({ type: 'COMPLETE_ONBOARDING' });
-  };
+    if (accent) {
+      dispatch({ type: 'SET_ACCENT_COLOR', payload: accent.hex });
+    }
 
+    dispatch({ type: 'COMPLETE_ONBOARDING' });
+  }, [useCustom, customName, callsign, selectedOrigin, selectedColor, dispatch]);
+
+  // ─── Current step index for progress bar ───
   const currentIndex = STEPS.indexOf(step);
 
-  // ─── STEP 1: WAKE UP ───
-  const renderWake = () => (
-    <View style={styles.centerContent}>
-      <MaterialCommunityIcons name="access-point" size={48} color={colors.neonGreen + '60'} style={styles.wakeIcon} />
+  // ─── Transition Bar Overlay ───
 
-      <TypewriterText
-        text="2079. The war is over. The Directorate won. You didn't."
-        speed={45}
-        onComplete={() => {}}
-        style={styles.wakeLine1}
-      />
+  const renderTransition = () => {
+    if (!transitioning) return null;
 
-      <View style={{ height: spacing.lg }} />
+    const barWidth = transitionAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+    });
 
-      <TypewriterText
-        text={'You wake in a gutted waystation with no ID and no clearance.\nA rover idles outside. Unlicensed. Unregistered.\nThe map on the dash is half-corrupted — but it shows sectors\nthe Directorate says don\'t exist anymore.'}
-        speed={30}
-        onComplete={() => setWakeTextDone(true)}
-        style={styles.wakeBody}
-      />
+    return (
+      <View style={styles.transitionOverlay}>
+        <View style={styles.transitionBarTrack}>
+          <Animated.View
+            style={[
+              styles.transitionBarFill,
+              { width: barWidth, backgroundColor: ACCENT_COLORS.find(c => c.id === selectedColor)?.hex || colors.neonGreen },
+            ]}
+          />
+        </View>
+        <Text style={styles.transitionLabel}>LOADING...</Text>
+      </View>
+    );
+  };
 
-      {wakeTextDone && (
+  // ═══════════════════════════════════════════
+  // STEP 1: BOOT
+  // ═══════════════════════════════════════════
+
+  const renderBoot = () => (
+    <View style={styles.bootContainer}>
+      <Text style={styles.bootHeader}>{'/// TRAIL SEEKER TERMINAL v2.079 ///'}</Text>
+      <View style={styles.bootDivider} />
+
+      <View style={styles.bootLines}>
+        {BOOT_LINES.slice(0, bootLine).map((line, i) => (
+          <Text
+            key={i}
+            style={[
+              styles.bootLine,
+              line.includes('NOT FOUND') && { color: colors.neonRed },
+              line.includes('JAMMED') && { color: colors.neonAmber },
+              line.includes('OFFLINE') && { color: colors.neonAmber },
+              line.includes('FOUND') && !line.includes('NOT') && { color: colors.neonGreen },
+              line.includes('OK') && { color: colors.neonGreen },
+              line.includes('WARNING') && { color: colors.neonRed },
+              line.includes('READY') && { color: colors.neonGreen },
+            ]}
+          >
+            {line}
+          </Text>
+        ))}
+        {!bootDone && <Text style={styles.bootCursor}>{'\u2588'}</Text>}
+      </View>
+
+      {bootDone && (
         <NeonButton
-          title="Get up."
-          onPress={() => { AudioManager.playSfx('ui_confirm'); setStep('avatar'); }}
+          title="> CONTINUE"
+          onPress={() => goToStep('callsign')}
           variant="primary"
           size="lg"
-          style={styles.wakeBtn}
+          style={styles.bootBtn}
         />
       )}
     </View>
   );
 
-  // ─── STEP 2: AVATAR SELECTION ───
-  const renderAvatar = () => (
-    <View style={styles.centerContent}>
-      <Text style={styles.avatarPrompt}>Choose your operator.</Text>
-      <Text style={styles.avatarHint}>Cosmetic only. Change anytime in Settings.</Text>
+  // ═══════════════════════════════════════════
+  // STEP 2: CALLSIGN
+  // ═══════════════════════════════════════════
 
-      <View style={styles.avatarRow}>
-        {(Object.keys(AVATARS) as AvatarId[]).map((id) => (
-          <TouchableOpacity
-            key={id}
-            onPress={() => setSelectedAvatar(id)}
-            style={[
-              styles.avatarCard,
-              selectedAvatar === id && styles.avatarCardSelected,
-            ]}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={AVATARS[id].image}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-        ))}
+  const renderCallsign = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepHeader}>OPERATOR CALLSIGN</Text>
+      <Text style={styles.stepDesc}>
+        No ID on file. Assign a designation for comms and logging.
+      </Text>
+
+      {/* Generated callsign */}
+      <View style={styles.callsignBox}>
+        <Text style={styles.callsignValue}>{callsign}</Text>
       </View>
 
       <NeonButton
-        title="This one."
-        onPress={() => setStep('identity')}
+        title="Reroll"
+        onPress={reroll}
+        variant="ghost"
+        size="sm"
+        icon="dice-multiple"
+        style={styles.rerollBtn}
+      />
+
+      {/* Custom name toggle */}
+      <TouchableOpacity
+        onPress={() => {
+          AudioManager.playSfx('ui_tap');
+          setUseCustom(!useCustom);
+        }}
+        style={styles.customToggle}
+        activeOpacity={0.7}
+      >
+        <MaterialCommunityIcons
+          name={useCustom ? 'checkbox-marked-outline' : 'checkbox-blank-outline'}
+          size={18}
+          color={colors.textMuted}
+        />
+        <Text style={styles.customToggleText}>Use custom callsign</Text>
+      </TouchableOpacity>
+
+      {useCustom && (
+        <TextInput
+          style={styles.textInput}
+          value={customName}
+          onChangeText={setCustomName}
+          placeholder="Enter callsign..."
+          placeholderTextColor={colors.textMuted}
+          maxLength={24}
+          autoFocus
+        />
+      )}
+
+      <NeonButton
+        title="> CONFIRM CALLSIGN"
+        onPress={() => goToStep('origin')}
         variant="primary"
         size="lg"
-        style={styles.avatarBtn}
+        style={styles.stepBtn}
       />
     </View>
   );
 
-  // ─── STEP 3: IDENTITY (name + archetype + lost — one screen) ───
-  const renderIdentity = () => (
+  // ═══════════════════════════════════════════
+  // STEP 3: ORIGIN
+  // ═══════════════════════════════════════════
+
+  const renderOrigin = () => (
     <ScrollView style={styles.scrollFlex} showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionLabel}>TRAIL NAME</Text>
-      <TextInput
-        style={styles.textInput}
-        value={playerName}
-        onChangeText={setPlayerName}
-        placeholder="What do they call you?"
-        placeholderTextColor={colors.textMuted}
-        maxLength={24}
-        autoFocus
-      />
+      <Text style={styles.stepHeader}>OPERATOR ORIGIN</Text>
+      <Text style={styles.stepDesc}>
+        Pre-collapse record fragment recovered. Select the closest match.
+      </Text>
 
-      <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>BEFORE THE TRAIL</Text>
-      <Text style={styles.sectionHint}>Who were you?</Text>
-      {archetypes.map((arch) => (
-        <TouchableOpacity
-          key={arch.id}
-          onPress={() => setSelectedArchetype(arch.id)}
-          style={[styles.optionCard, selectedArchetype === arch.id && styles.optionCardSelected]}
-        >
-          <Text style={styles.optionLabel}>{arch.label}</Text>
-          <Text style={styles.optionDesc}>{arch.description}</Text>
-          {selectedArchetype === arch.id && (
-            <Text style={styles.flavorText}>{arch.flavorText}</Text>
-          )}
-        </TouchableOpacity>
-      ))}
-
-      <Text style={[styles.sectionLabel, { marginTop: spacing.lg }]}>WHAT YOU LOST</Text>
-      {lastLostOptions.map((opt) => (
-        <TouchableOpacity
-          key={opt.id}
-          onPress={() => setSelectedLost(opt.id)}
-          style={[styles.optionCard, selectedLost === opt.id && styles.optionCardSelected]}
-        >
-          <Text style={styles.optionLabel}>{opt.label}</Text>
-          <Text style={styles.optionDesc}>{opt.description}</Text>
-          {selectedLost === opt.id && (
-            <Text style={styles.flavorText}>{opt.flavorText}</Text>
-          )}
-        </TouchableOpacity>
-      ))}
+      {ORIGINS.map((origin) => {
+        const selected = selectedOrigin === origin.id;
+        return (
+          <TouchableOpacity
+            key={origin.id}
+            onPress={() => {
+              AudioManager.playSfx('ui_tap');
+              AudioManager.vibrate('light');
+              setSelectedOrigin(origin.id);
+            }}
+            style={[styles.originCard, selected && styles.originCardSelected]}
+            activeOpacity={0.7}
+          >
+            <View style={styles.originHeader}>
+              <MaterialCommunityIcons
+                name={origin.icon as any}
+                size={22}
+                color={selected ? colors.neonGreen : colors.textMuted}
+              />
+              <Text style={[styles.originLabel, selected && { color: colors.neonGreen }]}>
+                {origin.label}
+              </Text>
+            </View>
+            <Text style={styles.originTagline}>{origin.tagline}</Text>
+          </TouchableOpacity>
+        );
+      })}
 
       <NeonButton
-        title="This is me."
-        onPress={() => setStep('scans')}
-        disabled={!playerName.trim() || !selectedArchetype || !selectedLost}
+        title="> CONFIRM ORIGIN"
+        onPress={() => goToStep('rig')}
+        disabled={!selectedOrigin}
         variant="primary"
         size="lg"
-        style={styles.identityBtn}
+        style={styles.stepBtn}
       />
     </ScrollView>
   );
 
-  // ─── STEP 3: WHAT SCANS ARE ───
-  const renderScans = () => (
-    <View style={styles.centerContent}>
-      <MaterialCommunityIcons name="radar" size={56} color={colors.neonCyan} style={styles.scanIcon} />
+  // ═══════════════════════════════════════════
+  // STEP 4: RIG (accent color)
+  // ═══════════════════════════════════════════
 
-      <Text style={styles.scanTitle}>Seeker Scans</Text>
-
-      <TypewriterText
-        text={'Your rover runs dark scans on Directorate-controlled sectors — pulling signal from wreckage they\'ve marked as theirs.\n\nBuried caches. Pre-collapse tech. Things nobody was supposed to find.\nEach day you get a handful of Scans. That\'s your window.'}
-        speed={25}
-        onComplete={() => setScanTextDone(true)}
-        style={styles.scanBody}
-      />
-
-      {scanTextDone && (
-        <View style={styles.scanTiers}>
-          <View style={styles.tierRow}>
-            <View style={[styles.tierDot, { backgroundColor: '#4A9EFF' }]} />
-            <View style={styles.tierInfo}>
-              <Text style={[styles.tierName, { color: '#4A9EFF' }]}>Scout</Text>
-              <Text style={styles.tierDesc}>Surface sweep. Low yield, low risk.</Text>
-            </View>
-          </View>
-          <View style={styles.tierRow}>
-            <View style={[styles.tierDot, { backgroundColor: colors.neonGreen }]} />
-            <View style={styles.tierInfo}>
-              <Text style={[styles.tierName, { color: colors.neonGreen }]}>Seeker</Text>
-              <Text style={styles.tierDesc}>Dig deeper. Better signal, real exposure.</Text>
-            </View>
-          </View>
-          <View style={styles.tierRow}>
-            <View style={[styles.tierDot, { backgroundColor: colors.neonRed }]} />
-            <View style={styles.tierInfo}>
-              <Text style={[styles.tierName, { color: colors.neonRed }]}>Gambit</Text>
-              <Text style={styles.tierDesc}>Burn the scan for the best signal or nothing.</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {scanTextDone && (
-        <NeonButton
-          title="Got it."
-          onPress={() => setStep('go')}
-          variant="primary"
-          size="lg"
-          style={styles.scanBtn}
-        />
-      )}
-    </View>
-  );
-
-  // ─── STEP 4: GO ───
-  const renderGo = () => {
-    const archetype = archetypes.find((a) => a.id === selectedArchetype);
+  const renderRig = () => {
+    const accent = ACCENT_COLORS.find((c) => c.id === selectedColor);
+    const accentHex = accent?.hex || colors.neonGreen;
 
     return (
-      <View style={styles.centerContent}>
-        <Image
-          source={AVATARS[selectedAvatar].image}
-          style={styles.goAvatar}
-          resizeMode="cover"
-        />
-        <Text style={styles.goName}>{playerName || 'Drifter'}</Text>
-        {archetype && (
-          <Text style={styles.goArchetype}>{archetype.label}</Text>
-        )}
-
-        <View style={styles.goDivider} />
-
-        <Text style={styles.goText}>
-          The Directorate locked down the good sectors.{'\n'}
-          The Free Bands fight over what's left.{'\n'}
-          You work the gaps between both.
+      <View style={styles.stepContainer}>
+        <Text style={styles.stepHeader}>TERMINAL DISPLAY</Text>
+        <Text style={styles.stepDesc}>
+          Calibrate your terminal's primary accent. Cosmetic only.
         </Text>
 
-        <Text style={styles.goKicker}>
-          Time to run your first job.
-        </Text>
+        <View style={styles.colorRow}>
+          {ACCENT_COLORS.map((c) => (
+            <TouchableOpacity
+              key={c.id}
+              onPress={() => {
+                AudioManager.playSfx('ui_tap');
+                AudioManager.vibrate('light');
+                setSelectedColor(c.id);
+              }}
+              style={[
+                styles.colorSwatch,
+                { borderColor: selectedColor === c.id ? c.hex : colors.surfaceLight },
+              ]}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.colorFill, { backgroundColor: c.hex }]} />
+              <Text
+                style={[
+                  styles.colorLabel,
+                  { color: selectedColor === c.id ? c.hex : colors.textMuted },
+                ]}
+              >
+                {c.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Preview */}
+        <View style={[styles.previewBox, { borderColor: accentHex }]}>
+          <Text style={[styles.previewHeader, { color: accentHex }]}>
+            {'/// SIGNAL ACQUIRED ///'}
+          </Text>
+          <View style={styles.previewBarTrack}>
+            <View style={[styles.previewBarFill, { backgroundColor: accentHex, width: '72%' }]} />
+          </View>
+          <Text style={styles.previewText}>
+            SCRAP: 15{'  '}|{'  '}SUPPLIES: 10{'  '}|{'  '}HP: 100
+          </Text>
+        </View>
 
         <NeonButton
-          title="Start the run"
-          onPress={handleComplete}
+          title="> CALIBRATE"
+          onPress={() => goToStep('confirm')}
           variant="primary"
           size="lg"
-          icon="radar"
-          style={styles.goBtn}
+          style={styles.stepBtn}
         />
       </View>
     );
   };
+
+  // ═══════════════════════════════════════════
+  // STEP 5: CONFIRM
+  // ═══════════════════════════════════════════
+
+  const renderConfirm = () => {
+    const name = useCustom ? (customName.trim() || 'Drifter') : callsign;
+    const origin = ORIGINS.find((o) => o.id === selectedOrigin);
+    const accent = ACCENT_COLORS.find((c) => c.id === selectedColor);
+    const accentHex = accent?.hex || colors.neonGreen;
+
+    return (
+      <View style={styles.stepContainer}>
+        <Text style={styles.stepHeader}>CONFIRM REGISTRATION</Text>
+        <Text style={styles.stepDesc}>
+          Review and lock in. No second chances out here.
+        </Text>
+
+        <View style={[styles.confirmCard, { borderLeftColor: accentHex, borderLeftWidth: 3 }]}>
+          <View style={styles.confirmRow}>
+            <Text style={styles.confirmKey}>CALLSIGN</Text>
+            <Text style={[styles.confirmVal, { color: accentHex }]}>{name}</Text>
+          </View>
+          <View style={styles.confirmRow}>
+            <Text style={styles.confirmKey}>ORIGIN</Text>
+            <Text style={styles.confirmVal}>{origin?.label || '—'}</Text>
+          </View>
+          <View style={styles.confirmRow}>
+            <Text style={styles.confirmKey}>DISPLAY</Text>
+            <View style={styles.confirmColorRow}>
+              <View style={[styles.confirmColorDot, { backgroundColor: accentHex }]} />
+              <Text style={[styles.confirmVal, { color: accentHex }]}>{accent?.label || 'Phosphor'}</Text>
+            </View>
+          </View>
+        </View>
+
+        <TypewriterText
+          text="The Directorate locked down the good sectors. The Free Bands fight over what's left. You work the gaps between both. Time to run your first job."
+          speed={25}
+          style={styles.confirmNarration}
+        />
+
+        <NeonButton
+          title="> DEPLOY OPERATOR"
+          onPress={handleComplete}
+          variant="primary"
+          size="lg"
+          icon="radar"
+          style={styles.stepBtn}
+        />
+      </View>
+    );
+  };
+
+  // ═══════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════
 
   return (
     <ScreenWrapper>
@@ -290,16 +537,21 @@ export default function OnboardingScreen() {
         ))}
       </View>
 
-      {step === 'wake' && renderWake()}
-      {step === 'avatar' && renderAvatar()}
-      {step === 'identity' && renderIdentity()}
-      {step === 'scans' && renderScans()}
-      {step === 'go' && renderGo()}
+      {!transitioning && step === 'boot' && renderBoot()}
+      {!transitioning && step === 'callsign' && renderCallsign()}
+      {!transitioning && step === 'origin' && renderOrigin()}
+      {!transitioning && step === 'rig' && renderRig()}
+      {!transitioning && step === 'confirm' && renderConfirm()}
+
+      {renderTransition()}
     </ScreenWrapper>
   );
 }
 
+// ─── Styles ───
+
 const styles = StyleSheet.create({
+  // Progress
   progressRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -320,53 +572,128 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonCyan,
   },
 
-  // ─── Wake ───
-  centerContent: {
-    flex: 1,
+  // Transition
+  transitionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background,
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  transitionBarTrack: {
+    width: '100%',
+    height: 4,
+    backgroundColor: colors.surfaceLight,
+  },
+  transitionBarFill: {
+    height: '100%',
+  },
+  transitionLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    letterSpacing: 3,
+    marginTop: spacing.md,
+  },
+
+  // Boot
+  bootContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xl,
+  },
+  bootHeader: {
+    fontSize: fontSize.sm,
+    color: colors.neonGreen,
+    fontFamily: fontMono,
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  bootDivider: {
+    height: 1,
+    backgroundColor: colors.panelBorder,
+    marginVertical: spacing.md,
+  },
+  bootLines: {
+    flex: 1,
+  },
+  bootLine: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontFamily: fontMono,
+    lineHeight: 22,
+  },
+  bootCursor: {
+    fontSize: fontSize.sm,
+    color: colors.neonGreen,
+    fontFamily: fontMono,
+  },
+  bootBtn: {
+    marginBottom: spacing.xl,
+    alignSelf: 'center',
+    width: 220,
+  },
+
+  // Shared step
+  stepContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+  },
+  scrollFlex: {
+    flex: 1,
     paddingHorizontal: spacing.md,
   },
-  wakeIcon: {
-    alignSelf: 'center',
-    marginBottom: spacing.xl,
-  },
-  wakeLine1: {
+  stepHeader: {
     fontSize: fontSize.xl,
     fontWeight: '700',
     color: colors.textPrimary,
-    textAlign: 'center',
-    lineHeight: 30,
-  },
-  wakeBody: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 26,
-    fontStyle: 'italic',
-  },
-  wakeBtn: {
-    marginTop: spacing.xxl,
-    alignSelf: 'center',
-    width: 200,
-  },
-
-  // ─── Identity ───
-  scrollFlex: {
-    flex: 1,
-  },
-  sectionLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    letterSpacing: 2,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
     fontFamily: fontMono,
+    letterSpacing: 2,
+    marginBottom: spacing.sm,
   },
-  sectionHint: {
+  stepDesc: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  stepBtn: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
+    alignSelf: 'center',
+    width: 260,
+  },
+
+  // Callsign
+  callsignBox: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    padding: spacing.lg,
+    alignItems: 'center',
+  },
+  callsignValue: {
+    fontSize: fontSize.xxl,
+    fontWeight: '700',
+    color: colors.neonGreen,
+    fontFamily: fontMono,
+    letterSpacing: 3,
+  },
+  rerollBtn: {
+    alignSelf: 'center',
+    marginTop: spacing.md,
+  },
+  customToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  customToggleText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontFamily: fontMono,
   },
   textInput: {
     backgroundColor: colors.surface,
@@ -377,194 +704,138 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.textPrimary,
     fontFamily: fontMono,
+    marginTop: spacing.sm,
   },
-  optionCard: {
+
+  // Origin
+  originCard: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.panelBorder,
-    borderRadius: 0,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  optionCardSelected: {
+  originCardSelected: {
     borderColor: colors.neonGreen,
-    backgroundColor: colors.neonGreen + '10',
+    backgroundColor: colors.neonGreen + '08',
   },
-  optionLabel: {
+  originHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  originLabel: {
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: 4,
     fontFamily: fontMono,
+    letterSpacing: 1,
   },
-  optionDesc: {
+  originTagline: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     lineHeight: 20,
-  },
-  flavorText: {
-    fontSize: fontSize.sm,
-    color: colors.neonGreen,
-    fontStyle: 'italic',
-    marginTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.neonGreen + '20',
-    paddingTop: spacing.sm,
-  },
-  identityBtn: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
+    marginLeft: 30,
   },
 
-  // ─── Scans ───
-  scanIcon: {
-    alignSelf: 'center',
-    marginBottom: spacing.md,
+  // Color picker
+  colorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  scanTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: '700',
-    color: colors.neonCyan,
-    textAlign: 'center',
+  colorSwatch: {
+    flex: 1,
+    alignItems: 'center',
+    borderWidth: 2,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  colorFill: {
+    width: 20,
+    height: 20,
+    borderRadius: 2,
+    marginBottom: spacing.xs,
+  },
+  colorLabel: {
+    fontSize: fontSize.xs,
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+
+  // Preview
+  previewBox: {
+    borderWidth: 1.5,
+    padding: spacing.md,
+    marginTop: spacing.lg,
+    backgroundColor: colors.surface,
+  },
+  previewHeader: {
+    fontSize: fontSize.xs,
+    fontFamily: fontMono,
+    letterSpacing: 2,
+    marginBottom: spacing.sm,
+  },
+  previewBarTrack: {
+    height: 6,
+    backgroundColor: colors.surfaceLight,
+    marginBottom: spacing.sm,
+  },
+  previewBarFill: {
+    height: '100%',
+  },
+  previewText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+
+  // Confirm
+  confirmCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    padding: spacing.md,
     marginBottom: spacing.lg,
+  },
+  confirmRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceLight,
+  },
+  confirmKey: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    letterSpacing: 2,
+  },
+  confirmVal: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.textPrimary,
     fontFamily: fontMono,
   },
-  scanBody: {
+  confirmColorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  confirmColorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+  },
+  confirmNarration: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
-  },
-  scanTiers: {
-    marginTop: spacing.xl,
-    gap: spacing.md,
-  },
-  tierRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 0,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-  },
-  tierDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: spacing.md,
-  },
-  tierInfo: {
-    flex: 1,
-  },
-  tierName: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    letterSpacing: 1,
-    fontFamily: fontMono,
-  },
-  tierDesc: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  scanBtn: {
-    marginTop: spacing.xl,
-    alignSelf: 'center',
-    width: 200,
-  },
-
-  // ─── Avatar ───
-  avatarPrompt: {
-    fontSize: fontSize.xl,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-    fontFamily: fontMono,
-  },
-  avatarHint: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-  },
-  avatarRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  avatarCard: {
-    borderWidth: 2,
-    borderColor: colors.surfaceLight,
-    borderRadius: 0,
-    overflow: 'hidden',
-    width: 140,
-    height: 200,
-  },
-  avatarCardSelected: {
-    borderColor: colors.neonGreen,
-    borderWidth: 3,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarBtn: {
-    marginTop: spacing.xl,
-    alignSelf: 'center',
-    width: 200,
-  },
-
-  // ─── Go ───
-  goAvatar: {
-    width: 100,
-    height: 140,
-    borderRadius: 0,
-    alignSelf: 'center',
+    fontStyle: 'italic',
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.neonGreen + '40',
-  },
-  goName: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.neonGreen,
-    textAlign: 'center',
-    fontFamily: fontMono,
-  },
-  goArchetype: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    letterSpacing: 2,
-    fontFamily: fontMono,
-  },
-  goDivider: {
-    height: 1,
-    backgroundColor: colors.surfaceLight,
-    width: '60%',
-    alignSelf: 'center',
-    marginVertical: spacing.xl,
-  },
-  goText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 26,
-  },
-  goKicker: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
-  },
-  goBtn: {
-    alignSelf: 'center',
-    width: 240,
-    marginBottom: spacing.xl,
   },
 });
