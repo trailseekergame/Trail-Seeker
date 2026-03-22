@@ -85,17 +85,17 @@ function TrailStackNavigator() {
       <TrailStack.Screen
         name="DailyPlan"
         component={DailyPlanScreen}
-        options={{ title: 'Camp' }}
+        options={{ title: 'Waystation' }}
       />
       <TrailStack.Screen
         name="MissionSelect"
         component={MissionSelectScreen}
-        options={{ title: 'Mission Board' }}
+        options={{ title: 'Job Board' }}
       />
       <TrailStack.Screen
         name="ScanMain"
         component={ScanScreen}
-        options={{ title: 'Scanning' }}
+        options={{ title: 'Field Op' }}
       />
       <TrailStack.Screen
         name="TrailMain"
@@ -112,12 +112,12 @@ function SettlementStackNavigator() {
       <SettlementStack.Screen
         name="SettlementMain"
         component={SettlementScreen}
-        options={{ title: 'Settlement' }}
+        options={{ title: 'The Post' }}
       />
       <SettlementStack.Screen
         name="Wardrobe"
         component={WardrobeScreen}
-        options={{ title: 'Equipment' }}
+        options={{ title: 'Loadout' }}
       />
     </SettlementStack.Navigator>
   );
@@ -146,7 +146,7 @@ function ArcadeStackNavigator() {
       <ArcadeStack.Screen
         name="ArcadeMain"
         component={ArcadeScreen}
-        options={{ title: 'Arcade' }}
+        options={{ title: 'Scrap-Boy' }}
       />
       <ArcadeStack.Screen
         name="MiniGame"
@@ -186,7 +186,7 @@ function MainTabs() {
         component={TrailStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="map-marker-path" label="Trail" focused={focused} />
+            <TabIcon icon="map-marker-path" label="Runs" focused={focused} />
           ),
         }}
       />
@@ -195,7 +195,7 @@ function MainTabs() {
         component={SettlementStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="home-group" label="Camp" focused={focused} />
+            <TabIcon icon="home-group" label="Post" focused={focused} />
           ),
         }}
       />
@@ -204,7 +204,7 @@ function MainTabs() {
         component={CodexStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="book-open-variant" label="Codex" focused={focused} />
+            <TabIcon icon="book-open-variant" label="Intel" focused={focused} />
           ),
         }}
       />
@@ -213,7 +213,7 @@ function MainTabs() {
         component={ArcadeStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="gamepad-variant" label="Arcade" focused={focused} />
+            <TabIcon icon="gamepad-variant" label="Scrap-Boy" focused={focused} />
           ),
         }}
       />

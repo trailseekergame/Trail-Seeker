@@ -103,7 +103,7 @@ export default function MissionSelectScreen() {
                   {available && !isCompleted && (
                     <View style={styles.missionCta}>
                       <NeonButton
-                        title="Deploy"
+                        title="Roll out"
                         onPress={() => handleSelectMission(mapId)}
                         variant="primary"
                         size="sm"
@@ -113,7 +113,7 @@ export default function MissionSelectScreen() {
                   {available && isCompleted && (
                     <View style={styles.missionCta}>
                       <NeonButton
-                        title="Run Again"
+                        title="Run it again"
                         onPress={() => handleSelectMission(mapId)}
                         variant="secondary"
                         size="sm"

@@ -136,13 +136,13 @@ export default function SettlementScreen({ navigation }: any) {
     <ScreenWrapper>
       <FeedbackToast toast={toast} />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.header}>Settlement</Text>
+        <Text style={styles.header}>The Post</Text>
         <Text style={styles.subtitle}>
-          Off-grid waystation. Refit, trade, and get back out before the signal window closes.
+          Off-grid waystation. Refit, barter, and get back out before the window shuts.
         </Text>
 
         {/* Resources Overview */}
-        <Card title="Resources" icon="backpack">
+        <Card title="Haul" icon="backpack">
           <View style={styles.resourceGrid}>
             <View style={styles.resourceItem}>
               <MaterialCommunityIcons name="cog" size={28} color={colors.scrap} style={{ marginBottom: 4 }} />
@@ -163,7 +163,7 @@ export default function SettlementScreen({ navigation }: any) {
               <Text style={[styles.resourceValue, { color: colors.specialLoot }]}>
                 {state.resources.specialLoot.length}
               </Text>
-              <Text style={styles.resourceLabel}>Rare Finds</Text>
+              <Text style={styles.resourceLabel}>Salvage</Text>
             </View>
           </View>
 
@@ -186,7 +186,7 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Health Status + Quick Actions */}
-        <Card title="Status" icon="heart-pulse">
+        <Card title="Condition" icon="heart-pulse">
           <HealthBar value={state.playerHealth} max={100} label="Player Health" />
           {state.playerHealth < 100 && (
             <NeonButton
@@ -217,9 +217,9 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Trade */}
-        <Card title="Trade Post" icon="swap-horizontal">
+        <Card title="Barter" icon="swap-horizontal">
           <Text style={styles.tradeDesc}>
-            Fixed rates. Not generous, but better than nothing.
+            Fixed rates. Not generous, but it\'s what the post offers.
           </Text>
           {TRADE_OPTIONS.map((trade) => (
             <NeonButton
@@ -234,9 +234,9 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Repair */}
-        <Card title="Repair Bay" icon="wrench">
+        <Card title="Repair Bench" icon="wrench">
           <Text style={styles.tradeDesc}>
-            Spend {REPAIR_COST} scrap to repair your rover (+15 condition).
+            Burn {REPAIR_COST} scrap to patch the rover (+15 condition).
           </Text>
           <NeonButton
             title={`Repair Rover (${REPAIR_COST} Scrap)`}
@@ -248,9 +248,9 @@ export default function SettlementScreen({ navigation }: any) {
         </Card>
 
         {/* Notifications */}
-        <Card title="Notifications" icon="bell-outline">
+        <Card title="Comms" icon="bell-outline">
           <Text style={styles.tradeDesc}>
-            Daily reminders to claim your Seeker Scans and protect your streak.
+            Daily pings to claim your scans and keep the streak alive.
           </Text>
           {notifPrefs && (
             <>
@@ -344,9 +344,9 @@ export default function SettlementScreen({ navigation }: any) {
           />
         </Card>
         {/* Feedback */}
-        <Card title="Feedback" icon="email-outline">
+        <Card title="Dead Drop" icon="email-outline">
           <Text style={styles.tradeDesc}>
-            Found a bug or have an idea? Let us know.
+            Found a bug or got a thought? Drop it here.
           </Text>
           <NeonButton
             title="Send Feedback"

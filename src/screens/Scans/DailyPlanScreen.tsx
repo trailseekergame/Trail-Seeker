@@ -143,7 +143,7 @@ export default function DailyPlanScreen() {
           </View>
 
           <Text style={styles.headerSubtext}>
-            {rareBoost > 0 ? `Signal clarity +${Math.round(rareBoost * 100)}% from consecutive ops` : 'Show up tomorrow. Consecutive runs sharpen the reads.'}
+            {rareBoost > 0 ? `Signal clarity +${Math.round(rareBoost * 100)}% from consecutive ops.` : 'Show up tomorrow. Streak sharpens the reads.'}
           </Text>
           {/* Streak progress dots */}
           <View style={styles.streakDots}>
@@ -166,14 +166,14 @@ export default function DailyPlanScreen() {
         {/* ─── Onboarding: camp intro ─── */}
         <CoachMark
           id={COACH.CAMP_INTRO}
-          text="This is your camp. Use Scans to search sectors for Scrap and Supplies. Scrap repairs your rover; Supplies heal you. Pick a mission when you're ready."
+          text="This is your waystation. Use scans to sweep sectors for scrap and supplies. Scrap patches the rover; supplies patch you. Hit the job board when you're ready."
           delay={800}
         />
 
         {/* ─── Onboarding: return to camp damaged ─── */}
         <CoachMark
           id={COACH.CAMP_HEAL}
-          text="You took some hits out there. Scroll down to Status — spend Supplies to heal and Scrap to repair before your next run."
+          text="Took some hits out there. Head to the Post — burn supplies to patch yourself and scrap to fix the rover before the next run."
           visible={state.playerHealth < 100 || state.roverHealth < 100}
           delay={600}
         />
@@ -189,8 +189,8 @@ export default function DailyPlanScreen() {
           <View style={styles.scanCardTop}>
             <Text style={styles.scanNumber}>{ss.scansRemaining}</Text>
             <View style={styles.scanLabelCol}>
-              <Text style={styles.scanLabel}>Scans</Text>
-              <Text style={styles.scanLabelSub}>Before the signal resets</Text>
+              <Text style={styles.scanLabel}>Seeker Scans</Text>
+              <Text style={styles.scanLabelSub}>Before the window closes</Text>
             </View>
           </View>
           {breakdownNote && (
@@ -262,11 +262,11 @@ export default function DailyPlanScreen() {
         {/* ─── 3. GEAR LOADOUT ─── */}
         <View style={styles.gearSection}>
           <View style={styles.gearSectionHeader}>
-            <Text style={styles.sectionTitle}>GEAR LOADOUT</Text>
+            <Text style={styles.sectionTitle}>RIG</Text>
             {ss.gearLockedToday ? (
-              <Text style={styles.lockedBadge}>LOCKED IN FIELD</Text>
+              <Text style={styles.lockedBadge}>LOCKED — IN THE FIELD</Text>
             ) : (
-              <Text style={styles.tapHint}>Tap to toggle · {ss.activeGearSlots.length}/3</Text>
+              <Text style={styles.tapHint}>Tap to slot · {ss.activeGearSlots.length}/3</Text>
             )}
           </View>
 
@@ -324,7 +324,7 @@ export default function DailyPlanScreen() {
           {/* Coach: gear matters */}
           <CoachMark
             id={COACH.GEAR_MATTERS}
-            text="Tap gear to equip (up to 3). Your loadout shapes every scan. Once you deploy, gear locks for the session."
+            text="Tap gear to slot it (up to 3). Your rig shapes every read. Once you deploy, it locks for the run."
             visible={ss.sessionResults.length === 0}
             delay={1000}
           />
@@ -383,7 +383,7 @@ export default function DailyPlanScreen() {
         {/* ─── 5. MISSION BOARD CTA ─── */}
         <View style={styles.ctaContainer}>
           <NeonButton
-            title="Mission Board"
+            title="Job Board"
             onPress={() => nav.navigate('MissionSelect')}
             size="lg"
             icon="map-marker-path"
@@ -391,11 +391,11 @@ export default function DailyPlanScreen() {
           />
           <Text style={styles.ctaSubtext}>
             {ss.scansRemaining > 0
-              ? 'Pick a sector and spend your scans.'
-              : 'Window\'s closed. Signal resets at dawn.'}
+              ? 'Pick a job. Burn your scans.'
+              : 'Window\'s shut. Signal resets at dawn.'}
           </Text>
           {ss.activeGearSlots.length === 0 && ss.gearInventory.length > 0 && (
-            <Text style={styles.warningText}>Tip: Tap your gear above to equip it for bonus effects.</Text>
+            <Text style={styles.warningText}>Slot your gear above before you head out.</Text>
           )}
         </View>
       </ScrollView>
