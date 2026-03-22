@@ -12,9 +12,9 @@ export default function ArcadeScreen({ navigation }: any) {
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.header}>Scrap-Boy</Text>
+        <Text style={styles.header}>Arcade</Text>
         <Text style={styles.subtitle}>
-          Downtime between runs. Stay sharp, pull some scrap on the side.
+          Downtime between runs. Keep sharp, pull some scrap on the side.
         </Text>
 
         {/* Trail Flier */}
@@ -34,7 +34,7 @@ export default function ArcadeScreen({ navigation }: any) {
             </View>
           </View>
           <NeonButton
-            title="Boot up Trail Flier"
+            title="Play Trail Flier"
             onPress={() => navigation.navigate('MiniGame')}
             variant="primary"
             icon="play"
@@ -61,7 +61,7 @@ export default function ArcadeScreen({ navigation }: any) {
             </View>
           </View>
           <NeonButton
-            title="Boot up Trail Standoff"
+            title="Play Trail Standoff"
             onPress={() => navigation.navigate('RPSDuel')}
             variant="primary"
             icon="sword-cross"
@@ -72,7 +72,7 @@ export default function ArcadeScreen({ navigation }: any) {
         <Card title="Leaderboard" icon="trophy">
           {state.leaderboard.length === 0 ? (
             <Text style={styles.emptyText}>
-              Board\'s empty. Boot up Trail Flier to post a score.
+              No scores yet. Play Trail Flier to get on the board.
             </Text>
           ) : (
             <View>
@@ -93,7 +93,7 @@ export default function ArcadeScreen({ navigation }: any) {
         {/* Rewards Info */}
         <Card title="Payouts" icon="cog">
           <Text style={styles.gameDesc}>
-            Time on the Scrap-Boy pays out:
+            Time in the sim pays out:
           </Text>
           <View style={styles.rewardsList}>
             <Text style={styles.rewardItem}>• Play a round: +1 Scrap</Text>

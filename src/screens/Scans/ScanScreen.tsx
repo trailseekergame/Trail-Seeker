@@ -581,7 +581,7 @@ export default function ScanScreen({ route }: any) {
             <Text style={styles.briefingSubtitle}>{mapDef.subtitle}</Text>
             <Text style={styles.briefingText}>{briefing}</Text>
             <NeonButton
-              title="Start the sweep"
+              title="Begin scan"
               onPress={() => setShowBriefing(false)}
               variant="primary"
               size="lg"
@@ -1061,7 +1061,7 @@ export default function ScanScreen({ route }: any) {
                   {(lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0) && (
                     <CoachMark
                       id={COACH.FIRST_REWARD}
-                      text="Good pull. Scrap and supplies keep you running between jobs. Some tiles drop gear too."
+                      text="Resources found. Scrap and Supplies keep you alive between runs. Some tiles also drop gear."
                       delay={300}
                     />
                   )}
@@ -1098,7 +1098,7 @@ export default function ScanScreen({ route }: any) {
                     {/* Onboarding: first damage */}
                     <CoachMark
                       id={COACH.FIRST_DAMAGE}
-                      text="That one cost you. Risky scans and bad tiles deal damage. Scout reads are safer if you need to play it cool."
+                      text="That scan cost you. Risky scan types and hazardous tiles deal HP or Rover damage. Scout scans are safer."
                       delay={200}
                     />
                     <View style={styles.damageRow}>
@@ -1285,7 +1285,7 @@ export default function ScanScreen({ route }: any) {
               {allTilesCleared ? '' : getReturnHook(ss)}
             </Text>
             <NeonButton
-              title={allTilesCleared ? 'Return to camp' : 'Return to waystation'}
+              title={allTilesCleared ? 'Return to camp' : 'Return to camp'}
               onPress={allTilesCleared ? handleMapComplete : handleDismissSessionEnd}
               variant="primary"
               size="lg"
@@ -1310,11 +1310,11 @@ export default function ScanScreen({ route }: any) {
             <View style={styles.sessionEndDivider} />
             <Text style={styles.sessionEndSummary}>
               {failReason === 'hp_zero'
-                ? 'Pushed too hard. Signal\'s gone and so is your footing. Dragged back to the post — lost a day, kept partial haul.'
-                : 'Rover\'s busted. Limping back on fumes. Burn some scrap at the bench before the next run.'}
+                ? 'You pushed too hard. The signal\'s gone and so is your footing. Forced return to camp — lost a day, kept partial loot.'
+                : 'The rover\'s done. Limping back to camp on fumes. Repair it with Scrap before the next run.'}
             </Text>
             <NeonButton
-              title="Limp back to the post"
+              title="Limp back to camp"
               onPress={() => {
                 setShowFailedMission(false);
                 // Increment day as penalty for HP zero
