@@ -972,8 +972,8 @@ export default function ScanScreen({ route }: any) {
                     {display.banner}
                   </Text>
 
-                  {/* Upgraded badge (Gambit skill check success) */}
-                  {displayOutcome && displayOutcome !== lastResult.outcome && (
+                  {/* Upgraded badge — only when Gambit skill check SUCCEEDED and tier actually went UP */}
+                  {displayOutcome && displayOutcome !== lastResult.outcome && displayOutcome !== 'whiff' && (
                     <View style={styles.upgradedBadge}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <MaterialCommunityIcons name="arrow-up-bold" size={12} color={colors.neonGreen} />
@@ -982,15 +982,15 @@ export default function ScanScreen({ route }: any) {
                     </View>
                   )}
 
-                  {/* Loot with rarity label */}
-                  {lastResult.lootName && (
+                  {/* Loot with rarity label — hide on whiff (failed Gambit shows no loot) */}
+                  {lastResult.lootName && effectiveOutcome !== 'whiff' && (
                     <Text style={[styles.resultLoot, { color: display.color }]}>
                       {effectiveOutcome.charAt(0).toUpperCase() + effectiveOutcome.slice(1)}: {lastResult.lootName}
                     </Text>
                   )}
 
-                  {/* Field note */}
-                  {lastResult.fieldNote && (
+                  {/* Field note — hide on whiff (would show stale text from pre-skill-check outcome) */}
+                  {lastResult.fieldNote && effectiveOutcome !== 'whiff' && (
                     <Text style={styles.fieldNote}>{lastResult.fieldNote}</Text>
                   )}
 
@@ -1034,8 +1034,8 @@ export default function ScanScreen({ route }: any) {
                     </View>
                   )}
 
-                  {/* Resource awards */}
-                  {(lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0 || lastResult.intelAwarded > 0) && (
+                  {/* Resource awards — hide on whiff so dead-signal result is clean */}
+                  {effectiveOutcome !== 'whiff' && (lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0 || lastResult.intelAwarded > 0) && (
                     <View style={styles.rewardRow}>
                       {lastResult.scrapAwarded > 0 && (
                         <View style={styles.rewardChip}>
@@ -1073,8 +1073,8 @@ export default function ScanScreen({ route }: any) {
                     />
                   )}
 
-                  {/* Gear drop */}
-                  {lastResult.gearDrop && (
+                  {/* Gear drop — hide on whiff */}
+                  {lastResult.gearDrop && effectiveOutcome !== 'whiff' && (
                     <View style={[
                       styles.gearDropRow,
                       lastResult.gearDropItem?.quality === 'ultra' && { borderColor: colors.neonPurple + '60', backgroundColor: colors.neonPurple + '15' },

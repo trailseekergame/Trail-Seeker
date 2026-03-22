@@ -216,6 +216,37 @@ export default function SettlementScreen({ navigation }: any) {
           )}
         </Card>
 
+        {/* Equipment — prominent position after status */}
+        <Card
+          title="Equipment"
+          icon="cog"
+          onPress={() => navigation.navigate('Wardrobe')}
+          accentColor={colors.neonCyan}
+        >
+          <Text style={styles.tradeDesc}>
+            Your rig. What you're running determines what you can pull from the field.
+          </Text>
+          <View style={styles.equippedPreview}>
+            {state.seekerScans.activeGearSlots.map((slotId) => {
+              const gear = state.seekerScans.gearInventory.find(g => g.slotId === slotId);
+              return gear ? (
+                <View key={slotId} style={styles.equippedItem}>
+                  <View style={styles.equippedSlotRow}>
+                    <MaterialCommunityIcons name={gear.icon as any} size={14} color={colors.neonPurple} style={{ marginRight: 4 }} />
+                    <Text style={styles.equippedSlot}>{gear.name}</Text>
+                  </View>
+                </View>
+              ) : null;
+            })}
+          </View>
+          <NeonButton
+            title="Open Equipment"
+            onPress={() => navigation.navigate('Wardrobe')}
+            variant="ghost"
+            size="sm"
+          />
+        </Card>
+
         {/* Trade */}
         <Card title="Trade Post" icon="swap-horizontal">
           <Text style={styles.tradeDesc}>
@@ -299,36 +330,6 @@ export default function SettlementScreen({ navigation }: any) {
           </Card>
         )}
 
-        {/* Equipment */}
-        <Card
-          title="Equipment"
-          icon="cog"
-          onPress={() => navigation.navigate('Wardrobe')}
-          accentColor={colors.neonCyan}
-        >
-          <Text style={styles.tradeDesc}>
-            Your rig. What you're running determines what you can pull from the field.
-          </Text>
-          <View style={styles.equippedPreview}>
-            {state.seekerScans.activeGearSlots.map((slotId) => {
-              const gear = state.seekerScans.gearInventory.find(g => g.slotId === slotId);
-              return gear ? (
-                <View key={slotId} style={styles.equippedItem}>
-                  <View style={styles.equippedSlotRow}>
-                    <MaterialCommunityIcons name={gear.icon as any} size={14} color={colors.neonPurple} style={{ marginRight: 4 }} />
-                    <Text style={styles.equippedSlot}>{gear.name}</Text>
-                  </View>
-                </View>
-              ) : null;
-            })}
-          </View>
-          <NeonButton
-            title="Open Equipment"
-            onPress={() => navigation.navigate('Wardrobe')}
-            variant="ghost"
-            size="sm"
-          />
-        </Card>
         {/* Feedback */}
         <Card title="Feedback" icon="email-outline">
           <Text style={styles.tradeDesc}>
