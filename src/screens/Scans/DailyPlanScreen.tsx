@@ -99,7 +99,7 @@ export default function DailyPlanScreen() {
         <View style={styles.campOverlay} />
       </ImageBackground>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* ─── 1. HEADER: Day + Streak ─── */}
+        {/* ─── 1. HEADER: Avatar + Status + Streak ─── */}
         <View style={styles.header}>
           <Image
             source={AVATARS[state.avatarId].image}
@@ -109,6 +109,28 @@ export default function DailyPlanScreen() {
           <Text style={styles.headerTitle}>
             Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
           </Text>
+
+          {/* Status strip: HP + Rover + Resources */}
+          <View style={styles.statusStrip}>
+            <View style={styles.statusItem}>
+              <MaterialCommunityIcons name="heart-pulse" size={14} color={state.playerHealth > 30 ? colors.neonGreen : colors.neonRed} />
+              <Text style={[styles.statusValue, { color: state.playerHealth > 30 ? colors.neonGreen : colors.neonRed }]}>{state.playerHealth}</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <MaterialCommunityIcons name="car-side" size={14} color={state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber} />
+              <Text style={[styles.statusValue, { color: state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber }]}>{state.roverHealth}</Text>
+            </View>
+            <View style={styles.statusDivider} />
+            <View style={styles.statusItem}>
+              <MaterialCommunityIcons name="cog" size={14} color={colors.scrap} />
+              <Text style={[styles.statusValue, { color: colors.scrap }]}>{state.resources.scrap}</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <MaterialCommunityIcons name="package-variant" size={14} color={colors.supplies} />
+              <Text style={[styles.statusValue, { color: colors.supplies }]}>{state.resources.supplies}</Text>
+            </View>
+          </View>
+
           <Text style={styles.headerSubtext}>
             {rareBoost > 0 ? `Signal clarity +${Math.round(rareBoost * 100)}% from consecutive ops` : 'Show up tomorrow. Consecutive runs sharpen the reads.'}
           </Text>
@@ -150,50 +172,75 @@ export default function DailyPlanScreen() {
           )}
         </View>
 
-        {/* ─── 3. ACTIVE GEAR STRIP ─── */}
+        {/* ─── 3. GEAR LOADOUT ─── */}
         <View style={styles.gearSection}>
           <View style={styles.gearSectionHeader}>
-            <Text style={styles.sectionTitle}>ACTIVE GEAR</Text>
+            <Text style={styles.sectionTitle}>GEAR LOADOUT</Text>
             {ss.gearLockedToday ? (
-              <Text style={styles.lockedBadge}>LOCKED</Text>
+              <Text style={styles.lockedBadge}>LOCKED IN FIELD</Text>
             ) : (
-              <Text style={styles.tapHint}>{ss.activeGearSlots.length}/3</Text>
+              <Text style={styles.tapHint}>Tap to toggle · {ss.activeGearSlots.length}/3</Text>
             )}
           </View>
 
-          {/* Active gear — compact strip */}
-          {activeGearItems.length > 0 && (
-            <View style={styles.activeStrip}>
-              {activeGearItems.map((gear) => (
-                <View key={gear.slotId} style={styles.activeGearCard}>
-                  <MaterialCommunityIcons name={gear.icon as any} size={28} color={colors.neonGreen} style={{ marginBottom: spacing.xs }} />
-                  <Text style={styles.activeGearName}>{gear.name}</Text>
-                  <Text style={styles.activeGearEffect}>
+          {/* All gear — tappable to equip/unequip */}
+          <View style={styles.gearGrid}>
+            {ss.gearInventory.map((gear) => {
+              const isActive = ss.activeGearSlots.includes(gear.slotId);
+              const canToggle = !ss.gearLockedToday;
+              const atMax = ss.activeGearSlots.length >= 3 && !isActive;
+
+              return (
+                <TouchableOpacity
+                  key={gear.slotId}
+                  style={[
+                    styles.gearSlotCard,
+                    isActive && styles.gearSlotActive,
+                    !canToggle && styles.gearSlotLocked,
+                  ]}
+                  onPress={() => {
+                    if (!canToggle) return;
+                    if (isActive) {
+                      dispatch({
+                        type: 'SET_ACTIVE_GEAR',
+                        payload: ss.activeGearSlots.filter(s => s !== gear.slotId),
+                      });
+                    } else if (!atMax) {
+                      dispatch({
+                        type: 'SET_ACTIVE_GEAR',
+                        payload: [...ss.activeGearSlots, gear.slotId],
+                      });
+                    }
+                  }}
+                  activeOpacity={canToggle ? 0.7 : 1}
+                  disabled={!canToggle || (atMax && !isActive)}
+                >
+                  <MaterialCommunityIcons
+                    name={gear.icon as any}
+                    size={22}
+                    color={isActive ? colors.neonGreen : colors.textMuted}
+                  />
+                  <Text style={[styles.gearSlotName, isActive && { color: colors.textPrimary }]}>
+                    {gear.name}
+                  </Text>
+                  <Text style={[styles.gearSlotEffect, isActive && { color: colors.neonGreen }]}>
                     {GEAR_SHORT[gear.slotId]}
                   </Text>
-                </View>
-              ))}
-            </View>
-          )}
+                  {isActive && (
+                    <View style={styles.gearEquippedDot} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
           {/* Coach: gear matters */}
           <CoachMark
             id={COACH.GEAR_MATTERS}
-            text="Your gear shapes every scan. Different loadouts change what you find and how often signals hit. Check Equipment to see stats."
+            text="Tap gear to equip (up to 3). Your loadout shapes every scan. Once you deploy, gear locks for the session."
             visible={ss.sessionResults.length === 0}
             delay={1000}
           />
-
-          {/* Link to full Equipment screen */}
-          {!ss.gearLockedToday && (
-            <TouchableOpacity
-              style={styles.manageGearLink}
-              onPress={() => nav.getParent()?.navigate('SettlementTab', { screen: 'Wardrobe' })}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.manageGearText}>Equipment →</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* ─── 4. SECTOR PREVIEW ─── */}
@@ -313,6 +360,33 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  statusStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    backgroundColor: colors.surface + 'CC',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+  },
+  statusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statusValue: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+  },
+  statusDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: colors.surfaceLight,
   },
   streakDots: {
     flexDirection: 'row',
@@ -434,41 +508,51 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textMuted,
   },
-  activeStrip: {
+  gearGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  activeGearCard: {
-    flex: 1,
-    backgroundColor: colors.surfaceHighlight,
+  gearSlotCard: {
+    width: '31%',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.neonGreen + '40',
+    borderColor: colors.surfaceLight,
     padding: spacing.sm,
     alignItems: 'center',
+    position: 'relative',
+    minHeight: 80,
+    justifyContent: 'center',
   },
-  activeGearName: {
-    fontSize: fontSize.xs,
-    color: colors.textPrimary,
+  gearSlotActive: {
+    borderColor: colors.neonGreen + '60',
+    backgroundColor: colors.neonGreen + '08',
+  },
+  gearSlotLocked: {
+    opacity: 0.6,
+  },
+  gearSlotName: {
+    fontSize: 10,
+    color: colors.textMuted,
     fontWeight: '600',
     textAlign: 'center',
+    marginTop: 4,
   },
-  activeGearEffect: {
-    fontSize: 10,
-    color: colors.neonGreen,
+  gearSlotEffect: {
+    fontSize: 9,
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 2,
-    lineHeight: 14,
   },
-  manageGearLink: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  manageGearText: {
-    fontSize: fontSize.sm,
-    color: colors.neonCyan,
-    fontWeight: '600',
+  gearEquippedDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.neonGreen,
   },
 
   // ─── 4. Sector ───

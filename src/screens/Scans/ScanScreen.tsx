@@ -16,6 +16,7 @@ import CoachMark, { COACH, hasBeenShown } from '../../components/common/CoachMar
 import AudioManager from '../../services/audioManager';
 import MicroEvent, { rollMicroEvent, MicroEventData, MicroEventEffect } from '../../components/scans/MicroEvent';
 import { MAP_DEFS, MapId } from '../../data/sectorMaps';
+import { saveGameState } from '../../services/storage';
 
 // ─── Constants ───
 
@@ -459,6 +460,8 @@ export default function ScanScreen({ route }: any) {
 
   const handleDismissSessionEnd = () => {
     setShowSessionEnd(false);
+    // Explicit save on mission return (belt-and-suspenders with auto-save)
+    saveGameState(state);
     nav.goBack();
   };
 
@@ -480,6 +483,8 @@ export default function ScanScreen({ route }: any) {
 
     // Return to camp
     dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
+    // Explicit save on map completion
+    setTimeout(() => saveGameState(state), 100);
     nav.goBack();
   };
 
@@ -1116,6 +1121,8 @@ export default function ScanScreen({ route }: any) {
                   dispatch({ type: 'HEAL', payload: 20 });
                 }
                 dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
+                // Explicit save on failed mission
+                setTimeout(() => saveGameState(state), 100);
                 nav.goBack();
               }}
               variant="primary"
