@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 
 interface Props {
   title?: string;
@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
+    fontFamily: fontMono,
   },
   subtitle: {
     fontSize: fontSize.sm,

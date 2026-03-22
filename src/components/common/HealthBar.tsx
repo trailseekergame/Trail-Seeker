@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 
 interface Props {
   value: number;
@@ -50,10 +50,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+    fontFamily: fontMono,
   },
   value: {
     fontSize: fontSize.sm,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
   track: {
     height: 8,

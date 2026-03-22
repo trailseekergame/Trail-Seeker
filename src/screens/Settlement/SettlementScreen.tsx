@@ -7,7 +7,7 @@ import NeonButton from '../../components/common/NeonButton';
 import HealthBar from '../../components/common/HealthBar';
 import FeedbackToast, { ToastData } from '../../components/common/FeedbackToast';
 import { useGame } from '../../context/GameContext';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import {
   loadNotificationPrefs,
   saveNotificationPrefs,
@@ -233,20 +233,6 @@ export default function SettlementScreen({ navigation }: any) {
           ))}
         </Card>
 
-        {/* Repair */}
-        <Card title="Repair Bay" icon="wrench">
-          <Text style={styles.tradeDesc}>
-            Spend {REPAIR_COST} scrap to repair your rover (+15 condition).
-          </Text>
-          <NeonButton
-            title={`Repair Rover (${REPAIR_COST} Scrap)`}
-            onPress={handleRepair}
-            variant="primary"
-            disabled={state.resources.scrap < REPAIR_COST || state.roverHealth >= 100}
-            style={styles.repairButton}
-          />
-        </Card>
-
         {/* Notifications */}
         <Card title="Notifications" icon="bell-outline">
           <Text style={styles.tradeDesc}>
@@ -366,11 +352,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 4,
+    fontFamily: fontMono,
+    letterSpacing: 2,
   },
   subtitle: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginBottom: spacing.md,
+    fontFamily: fontMono,
   },
   resourceGrid: {
     flexDirection: 'row',
@@ -392,11 +381,13 @@ const styles = StyleSheet.create({
   resourceValue: {
     fontSize: fontSize.xl,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   resourceLabel: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: 2,
+    fontFamily: fontMono,
   },
   lootSection: {
     marginTop: spacing.md,
@@ -408,6 +399,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.specialLoot,
     marginVertical: 2,
+    fontFamily: fontMono,
   },
   tradeDesc: {
     fontSize: fontSize.sm,
@@ -441,6 +433,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.neonPurple,
     textTransform: 'capitalize',
+    fontFamily: fontMono,
   },
   settingRow: {
     flexDirection: 'row',
@@ -454,10 +447,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textPrimary,
     fontWeight: '500',
+    fontFamily: fontMono,
   },
   settingHint: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: spacing.sm,
+    fontFamily: fontMono,
   },
 });

@@ -5,7 +5,7 @@ import { useGame } from '../../context/GameContext';
 import { ALL_GEAR_ITEMS } from '../../data/gearItems';
 import cosmeticItems from '../../data/cosmetics';
 // Cosmetic purchases use off-chain profile $SKR balance
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId, GearItem, CosmeticItem, CosmeticSlot, EquippedCosmetics } from '../../types';
@@ -58,6 +58,7 @@ const QUALITY_COLORS: Record<string, string> = {
   standard: colors.textSecondary,
   enhanced: colors.neonCyan,
   perfected: colors.neonGreen,
+  ultra: colors.neonPurple,
 };
 
 // ─── Cosmetic constants ───
@@ -359,10 +360,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 2,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   sectionHint: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
   sectionDesc: {
     fontSize: fontSize.sm,
@@ -376,6 +379,7 @@ const styles = StyleSheet.create({
     color: colors.neonRed,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
 
   // ─── Gear cards ───
@@ -383,9 +387,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
     padding: spacing.md,
@@ -397,7 +401,7 @@ const styles = StyleSheet.create({
   gearCardLeft: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     backgroundColor: colors.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -416,6 +420,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '600',
     color: colors.textPrimary,
+    fontFamily: fontMono,
   },
   gearNameActive: {
     color: colors.neonGreen,
@@ -424,17 +429,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   gearStatLine: {
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     marginTop: 2,
+    fontFamily: fontMono,
   },
   gearQuality: {
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 1,
     marginTop: 2,
+    fontFamily: fontMono,
   },
   gearCardRight: {
     width: 36,
@@ -445,7 +453,7 @@ const styles = StyleSheet.create({
   equippedDot: {
     width: 30,
     height: 30,
-    borderRadius: borderRadius.full,
+    borderRadius: 0,
     backgroundColor: colors.neonGreen + '20',
     borderWidth: 2,
     borderColor: colors.neonGreen,
@@ -457,13 +465,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.neonGreen,
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   unequippedDot: {
     width: 30,
     height: 30,
-    borderRadius: borderRadius.full,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
   },
 
   // ─── Pathfinder ───
@@ -471,9 +480,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     padding: spacing.md,
@@ -488,6 +497,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: '700',
     marginBottom: spacing.sm,
+    fontFamily: fontMono,
   },
   pathfinderDots: {
     flexDirection: 'row',
@@ -497,9 +507,9 @@ const styles = StyleSheet.create({
   pathfinderDot: {
     width: 18,
     height: 18,
-    borderRadius: borderRadius.full,
+    borderRadius: 0,
     borderWidth: 2,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
   },
   pathfinderDotFilled: {
     borderColor: colors.neonCyan,
@@ -508,18 +518,21 @@ const styles = StyleSheet.create({
   pathfinderCount: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
   pathfinderActiveText: {
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   pathfinderActiveDesc: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: spacing.xs,
     textAlign: 'center',
+    fontFamily: fontMono,
   },
 
   // ─── Divider ───
@@ -541,9 +554,9 @@ const styles = StyleSheet.create({
   cosmeticTab: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
     backgroundColor: colors.surface,
   },
   cosmeticTabActive: {
@@ -553,6 +566,7 @@ const styles = StyleSheet.create({
   cosmeticTabText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
   cosmeticTabTextActive: {
     color: colors.neonPurple,
@@ -562,9 +576,9 @@ const styles = StyleSheet.create({
   // ─── Cosmetic cards ───
   cosmeticCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     borderLeftWidth: 3,
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
@@ -585,16 +599,18 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '600',
     color: colors.textPrimary,
+    fontFamily: fontMono,
   },
   cosmeticRarity: {
     fontSize: fontSize.xs,
     fontWeight: '700',
     letterSpacing: 1,
     marginTop: 2,
+    fontFamily: fontMono,
   },
   cosmeticBadge: {
     backgroundColor: colors.neonGreen + '20',
-    borderRadius: borderRadius.sm,
+    borderRadius: 0,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
@@ -603,6 +619,7 @@ const styles = StyleSheet.create({
     color: colors.neonGreen,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   cosmeticDesc: {
     fontSize: fontSize.sm,
@@ -637,9 +654,9 @@ const styles = StyleSheet.create({
   },
   popupCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.xl,
     width: '100%',
     maxWidth: 300,
@@ -649,12 +666,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     color: colors.textPrimary,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   popupQuality: {
     fontSize: fontSize.xs,
     fontWeight: '700',
     letterSpacing: 2,
     marginTop: spacing.xs,
+    fontFamily: fontMono,
   },
   popupDivider: {
     height: 1,
@@ -668,6 +687,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: '600',
     marginBottom: spacing.sm,
+    fontFamily: fontMono,
   },
   popupStatLine: {
     fontSize: fontSize.md,
@@ -675,6 +695,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: spacing.sm,
+    fontFamily: fontMono,
   },
   popupShortDesc: {
     fontSize: fontSize.sm,
