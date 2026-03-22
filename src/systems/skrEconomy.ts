@@ -1,30 +1,39 @@
-import { ActiveBoost, BoostEffect, GameState, MapId } from '../types';
+import { ActiveBoost, BoostEffect, GameState } from '../types';
 
 /**
  * $SKR Economy — Separate integration layer.
  *
- * Earning: milestones only (map clears, chapter completion, weekly goals).
- * Spending: convenience boosts + cosmetics at camp.
- * Fairness: all base progression is free; $SKR = speed/style, not power.
+ * DESIGN PRINCIPLES:
+ * - $SKR feels rare and meaningful, not a constant drip
+ * - Earned only from milestones (chapter clears, weekly goals), never per-tile/scan
+ * - Only two spend categories at launch: extra scans + cosmetics
+ * - Base progression is 100% free; $SKR = convenience + style
+ * - All values in this file can be rebalanced without touching core game code
  *
- * This file is intentionally self-contained so $SKR values can be
- * rebalanced without touching core mission, tile, or scan code.
+ * PACING RECOMMENDATIONS (tune later):
+ * - Active player earns ~25-40 $SKR in their first week from early milestones
+ * - Chapter 1 completion (both maps) nets 150 $SKR total (big one-time payout)
+ * - After first-week milestones dry up, weekly goal is the recurring source
+ * - Extra scan pack: 15 $SKR → player can afford ~2 packs per week initially
+ * - Early cosmetics: 20-50 $SKR → takes 1-3 weeks to afford depending on rarity
+ * - This pacing means $SKR is always a deliberate choice, never spent casually
  */
 
-// ─── Milestone Definitions ───
+// ═══════════════════════════════════════════════════════
+// MILESTONES — the ONLY way to earn $SKR
+// ═══════════════════════════════════════════════════════
 
 export interface SkrMilestone {
   id: string;
   name: string;
   description: string;
-  reward: number; // $SKR amount
-  oneTime: boolean; // true = can only be claimed once per account
-  /** Check function: given state, is this milestone met? */
+  reward: number;
+  oneTime: boolean;
   check: (state: GameState) => boolean;
 }
 
 export const SKR_MILESTONES: SkrMilestone[] = [
-  // ─── Map completion milestones (one-time) ───
+  // ─── Chapter milestones (one-time, big payouts) ───
   {
     id: 'clear_broken_overpass',
     name: 'Overpass Stripped',
@@ -52,35 +61,14 @@ export const SKR_MILESTONES: SkrMilestone[] = [
       s.completedMapIds.includes('relay_field'),
   },
 
-  // ─── Streak milestones (one-time) ───
-  {
-    id: 'streak_3',
-    name: '3-Day Streak',
-    description: 'Maintain a 3-day login streak.',
-    reward: 10,
-    oneTime: true,
-    check: (s) => s.seekerScans.streakDay >= 3,
-  },
+  // ─── Weekly-style goals (one-time for now, recurring later) ───
   {
     id: 'streak_7',
     name: 'Full Week',
     description: 'Maintain a 7-day login streak.',
-    reward: 30,
+    reward: 20,
     oneTime: true,
     check: (s) => s.seekerScans.streakDay >= 7,
-  },
-
-  // ─── Progression milestones (one-time) ───
-  {
-    id: 'first_rare',
-    name: 'First Good Pull',
-    description: 'Find your first Rare or better item.',
-    reward: 10,
-    oneTime: true,
-    check: (s) =>
-      s.seekerScans.sessionResults.some(r =>
-        ['rare', 'legendary', 'component'].includes(r.outcome)
-      ) || s.resources.specialLoot.length > 0,
   },
   {
     id: 'scrap_100',
@@ -90,27 +78,38 @@ export const SKR_MILESTONES: SkrMilestone[] = [
     oneTime: true,
     check: (s) => s.totalScrapEarned >= 100,
   },
-  {
-    id: 'intel_10',
-    name: 'Data Hoarder',
-    description: 'Collect 10 Intel/Data.',
-    reward: 15,
-    oneTime: true,
-    check: (s) => s.intelCollected >= 10,
-  },
 ];
 
 /**
- * Check all milestones and return newly completed ones (not yet claimed).
- * Call this after mission return, map completion, and daily login.
+ * Pacing math for a typical active player (first 2 weeks):
+ *
+ * Week 1 (building toward Broken Overpass clear):
+ *   - streak_7:             20 $SKR  (end of week 1)
+ *   - scrap_100:            15 $SKR  (around day 4-5)
+ *   - clear_broken_overpass: 25 $SKR  (around day 7)
+ *   Total week 1:           ~60 $SKR
+ *
+ * Week 2 (working Relay Field):
+ *   - clear_relay_field:    50 $SKR  (around day 12-14)
+ *   - chapter_1_complete:   75 $SKR  (same moment)
+ *   Total week 2:           ~125 $SKR
+ *
+ * After chapter 1:  ~185 $SKR lifetime, milestones mostly exhausted.
+ * Future: add weekly recurring goals (e.g., "Complete 5 runs this week: 10 $SKR")
+ * to provide a slow drip post-chapter without inflating early.
  */
+
 export function checkMilestones(state: GameState): SkrMilestone[] {
   return SKR_MILESTONES.filter(
     m => m.check(state) && !state.skrMilestonesCompleted.includes(m.id)
   );
 }
 
-// ─── Shop Items ───
+// ═══════════════════════════════════════════════════════
+// SHOP — only 2 categories: Extra Scans + Cosmetics
+// ═══════════════════════════════════════════════════════
+
+export type ShopCategory = 'scans' | 'cosmetic';
 
 export interface SkrShopItem {
   id: string;
@@ -118,16 +117,38 @@ export interface SkrShopItem {
   description: string;
   cost: number;
   icon: string;
-  boost: Omit<ActiveBoost, 'id'>;
+  category: ShopCategory;
+  /** For scan boosts — the boost to apply */
+  boost?: Omit<ActiveBoost, 'id'>;
+  /** For cosmetics — the cosmetic ID to unlock */
+  cosmeticId?: string;
 }
 
+/**
+ * PRICING RECOMMENDATIONS:
+ *
+ * Extra scans:
+ *   15 $SKR for +2 scans (one run). A week-1 player can afford
+ *   ~2-4 of these total from early milestones. Helpful but not
+ *   mandatory — base 4-7 scans/day is enough to make progress.
+ *
+ * Cosmetics:
+ *   20-50 $SKR range. Takes 1-3 weeks to afford at current earn rate.
+ *   Purely visual. Example pricing tiers:
+ *     Common skin: 20 $SKR (~1 week)
+ *     Uncommon skin: 35 $SKR (~1.5 weeks)
+ *     Rare decoration: 50 $SKR (~2 weeks)
+ */
+
 export const SKR_SHOP: SkrShopItem[] = [
+  // ─── Extra Scans (the one gameplay-adjacent spend) ───
   {
-    id: 'boost_extra_scans',
+    id: 'extra_scans_2',
     name: 'Extended Window',
     description: '+2 bonus scans on your next run.',
     cost: 15,
     icon: 'radar',
+    category: 'scans',
     boost: {
       name: 'Extended Window',
       effect: 'extra_scans',
@@ -135,48 +156,49 @@ export const SKR_SHOP: SkrShopItem[] = [
       expiresAfterRun: true,
     },
   },
+
+  // ─── Cosmetics (purely visual, no gameplay effect) ───
   {
-    id: 'boost_resource_rate',
-    name: 'Scavenger\'s Eye',
-    description: '+25% Scrap and Supplies from scans for one run.',
+    id: 'skin_ghost_coat',
+    name: 'Ghost Coat',
+    description: 'A pale duster that catches the dust light. Purely cosmetic.',
     cost: 20,
-    icon: 'magnify-plus',
-    boost: {
-      name: 'Scavenger\'s Eye',
-      effect: 'resource_find_rate',
-      value: 25,
-      expiresAfterRun: true,
-    },
+    icon: 'hanger',
+    category: 'cosmetic',
+    cosmeticId: 'cos-ghost-coat',
   },
   {
-    id: 'boost_reduced_damage',
-    name: 'Field Plating',
-    description: '-30% Health and Rover damage for one run.',
-    cost: 20,
-    icon: 'shield-check',
-    boost: {
-      name: 'Field Plating',
-      effect: 'reduced_damage',
-      value: 30,
-      expiresAfterRun: true,
-    },
+    id: 'skin_signal_visor',
+    name: 'Signal Visor',
+    description: 'Tinted optics with a faint scanner glow. Cosmetic only.',
+    cost: 25,
+    icon: 'sunglasses',
+    category: 'cosmetic',
+    cosmeticId: 'cos-signal-visor',
   },
   {
-    id: 'boost_cheap_repair',
-    name: 'Salvage Discount',
-    description: '-50% repair and heal costs at camp (one use).',
-    cost: 10,
-    icon: 'wrench',
-    boost: {
-      name: 'Salvage Discount',
-      effect: 'reduced_repair_cost',
-      value: 50,
-      expiresAfterRun: false, // stays until used
-    },
+    id: 'decor_salvage_flag',
+    name: 'Salvage Flag',
+    description: 'A tattered banner for your camp. Shows you\'ve been out there.',
+    cost: 30,
+    icon: 'flag-variant',
+    category: 'cosmetic',
+    cosmeticId: 'cos-salvage-flag',
+  },
+  {
+    id: 'skin_rust_rover',
+    name: 'Rust Stripe Rover',
+    description: 'Burnt orange racing stripe on your rover. Style points only.',
+    cost: 35,
+    icon: 'car-sports',
+    category: 'cosmetic',
+    cosmeticId: 'cos-rust-rover',
   },
 ];
 
-// ─── Boost Helpers ───
+// ═══════════════════════════════════════════════════════
+// BOOST HELPERS
+// ═══════════════════════════════════════════════════════
 
 /** Get the total value of a specific boost effect from active boosts */
 export function getBoostValue(boosts: ActiveBoost[], effect: BoostEffect): number {
@@ -186,20 +208,14 @@ export function getBoostValue(boosts: ActiveBoost[], effect: BoostEffect): numbe
 }
 
 /** Apply resource_find_rate boost: scale up scrap/supplies */
-export function applyResourceBoost(
-  base: number,
-  boosts: ActiveBoost[],
-): number {
+export function applyResourceBoost(base: number, boosts: ActiveBoost[]): number {
   const pct = getBoostValue(boosts, 'resource_find_rate');
   if (pct <= 0) return base;
   return Math.round(base * (1 + pct / 100));
 }
 
 /** Apply reduced_damage boost: scale down damage */
-export function applyDamageReduction(
-  base: number,
-  boosts: ActiveBoost[],
-): number {
+export function applyDamageReduction(base: number, boosts: ActiveBoost[]): number {
   const pct = getBoostValue(boosts, 'reduced_damage');
   if (pct <= 0) return base;
   return Math.max(0, Math.round(base * (1 - pct / 100)));
@@ -210,7 +226,7 @@ export function getExtraScansFromBoost(boosts: ActiveBoost[]): number {
   return getBoostValue(boosts, 'extra_scans');
 }
 
-/** Get repair/heal cost multiplier (e.g., 0.5 for 50% discount) */
+/** Get repair/heal cost multiplier */
 export function getRepairCostMultiplier(boosts: ActiveBoost[]): number {
   const pct = getBoostValue(boosts, 'reduced_repair_cost');
   if (pct <= 0) return 1;

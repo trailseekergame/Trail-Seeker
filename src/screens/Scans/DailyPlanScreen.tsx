@@ -14,7 +14,7 @@ import { AVATARS } from '../../data/avatars';
 import { MAP_DEFS } from '../../data/sectorMaps';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
-import { SKR_SHOP, SkrShopItem, getExtraScansFromBoost } from '../../systems/skrEconomy';
+import { SKR_SHOP, SkrShopItem, getExtraScansFromBoost, ShopCategory } from '../../systems/skrEconomy';
 import CoachMark, { COACH } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
 import { ActiveBoost } from '../../types';
@@ -191,15 +191,20 @@ export default function DailyPlanScreen() {
                 <MaterialCommunityIcons name="hexagon-outline" size={16} color={colors.neonPurple} />
                 <Text style={styles.skrTitle}>{state.skrBalance} $SKR</Text>
               </View>
-              {state.activeBoosts.length > 0 && (
-                <Text style={styles.skrActiveCount}>{state.activeBoosts.length} active</Text>
-              )}
             </View>
 
             <View style={styles.skrShopGrid}>
               {SKR_SHOP.map((item) => {
-                const owned = state.activeBoosts.some(b => b.name === item.boost.name);
+                // Determine owned state based on item category
+                const isBoost = item.category === 'scans' && item.boost;
+                const isCosmetic = item.category === 'cosmetic' && item.cosmeticId;
+                const owned = isBoost
+                  ? state.activeBoosts.some(b => b.name === item.boost!.name)
+                  : isCosmetic
+                  ? state.unlockedCosmeticIds.includes(item.cosmeticId!)
+                  : false;
                 const canAfford = state.skrBalance >= item.cost;
+
                 return (
                   <TouchableOpacity
                     key={item.id}
@@ -209,7 +214,11 @@ export default function DailyPlanScreen() {
                     onPress={() => {
                       if (owned || !canAfford) return;
                       dispatch({ type: 'SPEND_SKR', payload: item.cost });
-                      dispatch({ type: 'ADD_BOOST', payload: { id: item.id, ...item.boost } });
+                      if (isBoost && item.boost) {
+                        dispatch({ type: 'ADD_BOOST', payload: { id: item.id, ...item.boost } });
+                      } else if (isCosmetic && item.cosmeticId) {
+                        dispatch({ type: 'UNLOCK_COSMETIC', payload: item.cosmeticId });
+                      }
                     }}
                   >
                     <MaterialCommunityIcons
@@ -222,7 +231,7 @@ export default function DailyPlanScreen() {
                     </Text>
                     <Text style={styles.skrShopDesc} numberOfLines={2}>{item.description}</Text>
                     {owned ? (
-                      <Text style={styles.skrShopOwned}>ACTIVE</Text>
+                      <Text style={styles.skrShopOwned}>{isCosmetic ? 'OWNED' : 'ACTIVE'}</Text>
                     ) : (
                       <Text style={[styles.skrShopCost, !canAfford && { color: colors.textMuted }]}>
                         {item.cost} $SKR
