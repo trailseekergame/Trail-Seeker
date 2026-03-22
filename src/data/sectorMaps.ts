@@ -1,5 +1,5 @@
 import { SectorTile, Sector, TileFlavor } from '../types';
-import { BROKEN_OVERPASS_TILES, AuthoredTileDef } from './authoredTiles';
+import { BROKEN_OVERPASS_TILES, RELAY_FIELD_TILES, AuthoredTileDef } from './authoredTiles';
 
 /**
  * Map definitions for the early-game loop.
@@ -161,6 +161,8 @@ export function generateSectorForMap(mapId: MapId): Sector {
   // ─── Stamp authored tile flavors ───
   if (mapId === 'broken_overpass') {
     assignAuthoredFlavors(tiles, BROKEN_OVERPASS_TILES, 5);
+  } else if (mapId === 'relay_field') {
+    assignAuthoredFlavors(tiles, RELAY_FIELD_TILES, 5);
   }
 
   return {

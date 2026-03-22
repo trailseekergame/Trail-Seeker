@@ -1,6 +1,6 @@
 import gameBalance from '../config/gameBalance.json';
 import { ScanType, ScanOutcome, ScanResult, GearSlotId, GearItem, SeekerScanState, TileFlavor } from '../types';
-import { ULTRA_DROPS } from '../data/gearItems';
+import { ULTRA_DROPS, RELAY_FIELD_DROPS } from '../data/gearItems';
 
 // ─── Read config ───
 const config = gameBalance;
@@ -341,6 +341,21 @@ export function computeScanRewards(
   }
 
   return { scrapAwarded, suppliesAwarded, intelAwarded: 0, playerDamage, roverDamage, scrapValue };
+}
+
+/**
+ * Roll for enhanced gear drop on Relay Field.
+ * 5% chance on anomaly/resource/boss tiles.
+ * Only fires when mapId is 'relay_field'.
+ */
+export function rollEnhancedDrop(
+  mapId: string,
+  tileType: string,
+): GearItem | undefined {
+  if (mapId !== 'relay_field') return undefined;
+  if (tileType !== 'anomaly' && tileType !== 'resource' && tileType !== 'boss') return undefined;
+  if (Math.random() > 0.05) return undefined; // 5%
+  return RELAY_FIELD_DROPS[Math.floor(Math.random() * RELAY_FIELD_DROPS.length)];
 }
 
 /**

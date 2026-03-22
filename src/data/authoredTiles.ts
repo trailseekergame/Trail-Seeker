@@ -3,6 +3,9 @@ import {
   GEAR_PADDED_JACKET,
   GEAR_SCAVENGER_SATCHEL,
   GEAR_SIGNAL_SCANNER,
+  GEAR_DUSTWALKER_LENS_PLUS,
+  GEAR_DRIFTER_VEST_PLUS,
+  GEAR_STEADY_GRIPS_PLUS,
 } from './gearItems';
 
 /**
@@ -249,4 +252,231 @@ export const BROKEN_OVERPASS_TILES: AuthoredTileDef[] = [
   ABANDONED_CHECKPOINT,
   OVERGROWN_OFF_RAMP,
   STRIPPED_SERVICE_VAN,
+];
+
+// ═══════════════════════════════════════════════════════
+// RELAY FIELD — harder risk, better rewards, enhanced drops
+// ═══════════════════════════════════════════════════════
+
+const CRACKED_DISH_ARRAY: AuthoredTileDef = {
+  flavor: {
+    name: 'Cracked Dish Array',
+    desc: 'A massive satellite dish lies split in two, its receiver housing still intact and humming faintly.',
+    icon: 'satellite-variant',
+    scrapRange: [4, 7],
+    suppliesRange: [1, 2],
+    intelRange: [2, 3],
+    whiffPlayerDamage: [3, 5],
+    whiffRoverDamage: [2, 4],
+    successDamageChance: 0.2,
+    successPlayerDamage: [2, 3],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [3, 5],
+    successNotes: [
+      'The receiver housing cracked open. Data cores, signal amplifiers, and a sealed module inside.',
+      'You pulled three intact relay boards from the dish mount. Pre-collapse military grade.',
+      'The hum was residual power. You drained the capacitors into salvageable cells.',
+    ],
+    whiffNotes: [
+      'The dish groaned and shifted. A support cable snapped — you took the hit.',
+      'Interference from the residual power scrambled your scanner. Walked away hurting.',
+    ],
+    riskLabel: 'risky',
+  },
+  validTypes: ['resource', 'anomaly', 'unknown'],
+  durability: 2,
+};
+
+const SEALED_BUNKER_HATCH: AuthoredTileDef = {
+  gearDropItem: GEAR_DRIFTER_VEST_PLUS,
+  flavor: {
+    name: 'Sealed Bunker Hatch',
+    desc: 'A reinforced hatch set into the ground beneath overgrown concrete. The lock is corroded but the seal held.',
+    icon: 'door-closed-lock',
+    scrapRange: [5, 9],
+    suppliesRange: [3, 5],
+    intelRange: [1, 2],
+    gearDropName: 'Drifter Vest+',
+    gearDropDesc: 'Plated reinforcement. Extra scan charge and better loot quality.',
+    gearDropChance: 0.10,
+    whiffPlayerDamage: [4, 6],
+    whiffRoverDamage: [0, 2],
+    successDamageChance: 0.15,
+    successPlayerDamage: [2, 4],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [4, 6],
+    successNotes: [
+      'The hatch gave way. Below: sealed supply crates, a med station, and military-grade gear.',
+      'Someone stocked this bunker for the long haul. You\'re taking everything that fits.',
+      'An emergency cache. Rations, tools, ammo crates converted to scrap, and a plated vest rig.',
+    ],
+    whiffNotes: [
+      'The hatch mechanism fired a corroded bolt. You caught shrapnel prying it open.',
+      'Sealed too tight. You bruised yourself and burned a scan for a locked door.',
+    ],
+    riskLabel: 'risky',
+  },
+  validTypes: ['resource', 'anomaly', 'unknown'],
+  durability: 2,
+};
+
+const DEAD_SIGNAL_TOWER: AuthoredTileDef = {
+  gearDropItem: GEAR_DUSTWALKER_LENS_PLUS,
+  flavor: {
+    name: 'Dead Signal Tower',
+    desc: 'A relay tower with its power lines cut. The control booth at the base looks untouched.',
+    icon: 'antenna',
+    scrapRange: [3, 6],
+    suppliesRange: [0, 2],
+    intelRange: [3, 4],
+    gearDropName: 'Dustwalker Lens+',
+    gearDropDesc: 'Tuned filters and a wider band. Rare signals come through cleaner.',
+    gearDropChance: 0.10,
+    whiffPlayerDamage: [2, 4],
+    whiffRoverDamage: [2, 3],
+    successDamageChance: 0.25,
+    successPlayerDamage: [1, 3],
+    successRoverDamage: [1, 2],
+    scrapValueRange: [3, 5],
+    successNotes: [
+      'The booth had broadcast logs, encryption keys, and a tuned optics module still in its case.',
+      'You downloaded weeks of Directorate signal traffic. Intel goldmine — and a lens upgrade.',
+      'Tower control systems, intact. The data alone is worth the climb.',
+    ],
+    whiffNotes: [
+      'The tower base was booby-trapped. Old Directorate countermeasure — it clipped both of you.',
+      'Static discharge from the dead lines. Your scanner fried mid-read.',
+    ],
+    riskLabel: 'risky',
+  },
+  validTypes: ['anomaly', 'resource', 'unknown'],
+  durability: 2,
+};
+
+const BURIED_DATA_VAULT: AuthoredTileDef = {
+  flavor: {
+    name: 'Buried Data Vault',
+    desc: 'Exposed by erosion — a pre-collapse data center entrance, half-buried in loose soil and roots.',
+    icon: 'database',
+    scrapRange: [2, 4],
+    suppliesRange: [1, 3],
+    intelRange: [4, 5],
+    whiffPlayerDamage: [3, 5],
+    whiffRoverDamage: [1, 3],
+    successDamageChance: 0.3,
+    successPlayerDamage: [2, 4],
+    successRoverDamage: [0, 2],
+    scrapValueRange: [2, 4],
+    successNotes: [
+      'Server racks, still cold. You pulled drives, memory modules, and a full backup archive.',
+      'The vault\'s climate control kept everything pristine. This data is worth more than scrap.',
+      'Encryption keys, deployment logs, asset manifests. The Directorate\'s own records.',
+    ],
+    whiffNotes: [
+      'The entrance collapsed as you entered. Dug out, bruised, with nothing to show.',
+      'Vault flooded at some point. The drives are corroded paste. And you twisted your ankle.',
+    ],
+    riskLabel: 'dangerous',
+  },
+  validTypes: ['anomaly', 'unknown'],
+  durability: 3,
+};
+
+const PATROL_WRECK: AuthoredTileDef = {
+  flavor: {
+    name: 'Directorate Patrol Wreck',
+    desc: 'An armored Directorate patrol vehicle, burned out but structurally intact. The cargo bay door is jammed open.',
+    icon: 'car-estate',
+    scrapRange: [6, 10],
+    suppliesRange: [2, 4],
+    whiffPlayerDamage: [3, 6],
+    whiffRoverDamage: [3, 5],
+    successDamageChance: 0.3,
+    successPlayerDamage: [2, 4],
+    successRoverDamage: [2, 3],
+    scrapValueRange: [4, 7],
+    successNotes: [
+      'Military scrap — armor plating, optics, a cracked but usable power cell. Heavy haul.',
+      'The cargo bay had sealed weapon crates. No weapons, but the components are premium.',
+      'You stripped the patrol vehicle to the frame. Best scrap run in weeks.',
+    ],
+    whiffNotes: [
+      'The wreck was still hot. Chemical burns on your hands, shrapnel hit the rover.',
+      'Munitions cooked off when you opened the wrong panel. Both of you took it.',
+    ],
+    riskLabel: 'dangerous',
+  },
+  validTypes: ['resource', 'anomaly', 'unknown'],
+  durability: 2,
+};
+
+const OVERGROWN_CONTROL_ROOM: AuthoredTileDef = {
+  gearDropItem: GEAR_STEADY_GRIPS_PLUS,
+  flavor: {
+    name: 'Overgrown Control Room',
+    desc: 'Vines thread through shattered windows into a relay control room. Monitors flicker with phantom signals.',
+    icon: 'monitor-dashboard',
+    scrapRange: [3, 5],
+    suppliesRange: [2, 3],
+    intelRange: [2, 3],
+    gearDropName: 'Steady Grips+',
+    gearDropDesc: 'Stabilized dampeners. Whiff rate drops noticeably.',
+    gearDropChance: 0.10,
+    whiffPlayerDamage: [2, 3],
+    whiffRoverDamage: [0, 1],
+    successDamageChance: 0.1,
+    successPlayerDamage: [1, 2],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [2, 4],
+    successNotes: [
+      'The monitors were running diagnostics on loop. You pulled the boards and a pair of stabilized grips.',
+      'Control systems, signal routing hardware, and a log of every frequency this array ever tracked.',
+      'Workstation drawers: repair tools, a grip stabilizer, and sealed data chips.',
+    ],
+    whiffNotes: [
+      'Glass underfoot. You stepped wrong and the vines pulled loose cables onto you.',
+      'The phantom signals turned out to be interference. Cost you a scan and a scraped arm.',
+    ],
+    riskLabel: 'moderate',
+  },
+  validTypes: ['resource', 'unknown'],
+  durability: 1,
+};
+
+const RELAY_FIELD_SHED: AuthoredTileDef = {
+  flavor: {
+    name: 'Maintenance Shed',
+    desc: 'A corrugated metal shed near the array perimeter. Tools hang on pegboard, mostly intact.',
+    icon: 'home-variant',
+    scrapRange: [2, 4],
+    suppliesRange: [3, 5],
+    whiffPlayerDamage: [0, 1],
+    whiffRoverDamage: [0, 0],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [1, 3],
+    successNotes: [
+      'The shed was someone\'s workshop. Tools, a med kit, canned water. Quiet and clean.',
+      'Pegboard tools, a workbench with spare parts, and supplies tucked in a locker.',
+      'A maintenance worker\'s stash. Organized, practical, untouched.',
+    ],
+    whiffNotes: [
+      'Already cleaned out. At least the roof didn\'t leak on you.',
+      'Nothing but empty hooks and a dead radio. Safe, but useless.',
+    ],
+    riskLabel: 'safe',
+  },
+  validTypes: ['resource', 'unknown'],
+  durability: 1,
+};
+
+export const RELAY_FIELD_TILES: AuthoredTileDef[] = [
+  CRACKED_DISH_ARRAY,
+  SEALED_BUNKER_HATCH,
+  DEAD_SIGNAL_TOWER,
+  BURIED_DATA_VAULT,
+  PATROL_WRECK,
+  OVERGROWN_CONTROL_ROOM,
+  RELAY_FIELD_SHED,
 ];

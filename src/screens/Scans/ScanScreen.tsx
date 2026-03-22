@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Imag
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { resolveScan, getEffectiveWhiffRate, computeScanRewards, rollUltraDrop } from '../../systems/scanEngine';
-import { BROKEN_OVERPASS_TILES } from '../../data/authoredTiles';
+import { resolveScan, getEffectiveWhiffRate, computeScanRewards, rollUltraDrop, rollEnhancedDrop } from '../../systems/scanEngine';
+import { BROKEN_OVERPASS_TILES, RELAY_FIELD_TILES } from '../../data/authoredTiles';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
@@ -307,18 +307,27 @@ export default function ScanScreen({ route }: any) {
       dispatch({ type: 'DAMAGE_ROVER', payload: reducedRoverDmg });
     }
 
-    // Add gear drop to inventory (real GearItem, not just string)
+    // Add gear drop to inventory (real GearItem from authored tiles)
     if (rewards.gearDrop && selectedTile.flavor) {
-      // Find the authored tile def to get the real GearItem
-      const tileDef = BROKEN_OVERPASS_TILES.find(t => t.flavor.name === selectedTile.flavor?.name);
+      const allAuthored = [...BROKEN_OVERPASS_TILES, ...RELAY_FIELD_TILES];
+      const tileDef = allAuthored.find(t => t.flavor.name === selectedTile.flavor?.name);
       if (tileDef?.gearDropItem) {
         dispatch({ type: 'ADD_GEAR_ITEM', payload: tileDef.gearDropItem });
         result = { ...result, gearDropItem: tileDef.gearDropItem };
       }
     }
 
+    // Roll for enhanced gear drop (Relay Field, 5% on eligible tiles)
+    if (result.outcome !== 'whiff' && !result.gearDropItem) {
+      const enhancedDrop = rollEnhancedDrop(mapId, tileType);
+      if (enhancedDrop) {
+        dispatch({ type: 'ADD_GEAR_ITEM', payload: enhancedDrop });
+        result = { ...result, gearDrop: enhancedDrop.name, gearDropItem: enhancedDrop };
+      }
+    }
+
     // Roll for ultra-rare gear drop on risky tiles
-    if (result.outcome !== 'whiff') {
+    if (result.outcome !== 'whiff' && !result.gearDropItem) {
       const ultraDrop = rollUltraDrop(tileType, ss.streakDay);
       if (ultraDrop) {
         dispatch({ type: 'ADD_GEAR_ITEM', payload: ultraDrop });
