@@ -345,16 +345,16 @@ export function computeScanRewards(
 
 /**
  * Roll for ultra-rare gear drop.
- * Only triggers on anomaly/boss tiles when streak >= 5.
- * 0.5% chance per eligible scan.
+ * Only triggers on anomaly/boss tiles when streak >= 3.
+ * 1.8% chance per eligible scan (~60% chance of seeing one in 30 days).
  */
 export function rollUltraDrop(
   tileType: string,
   streakDay: number,
 ): GearItem | undefined {
-  if (streakDay < 5) return undefined;
+  if (streakDay < 3) return undefined;
   if (tileType !== 'anomaly' && tileType !== 'boss') return undefined;
-  if (Math.random() > 0.005) return undefined; // 0.5%
+  if (Math.random() > 0.018) return undefined; // 1.8%
   return ULTRA_DROPS[Math.floor(Math.random() * ULTRA_DROPS.length)];
 }
 
