@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import Card from '../../components/common/Card';
 import NeonButton from '../../components/common/NeonButton';
 import HealthBar from '../../components/common/HealthBar';
+import FeedbackToast, { ToastData } from '../../components/common/FeedbackToast';
 import { useGame } from '../../context/GameContext';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import {
@@ -57,6 +58,11 @@ export default function SettlementScreen({ navigation }: any) {
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs | null>(null);
   const [scheduledCount, setScheduledCount] = useState(0);
   const [analyticsCount, setAnalyticsCount] = useState(0);
+  const [toast, setToast] = useState<ToastData | null>(null);
+
+  const showToast = useCallback((icon: string, text: string, color: string) => {
+    setToast({ id: Date.now(), icon, text, color });
+  }, []);
 
   useEffect(() => {
     loadNotificationPrefs().then(setNotifPrefs);
@@ -88,6 +94,7 @@ export default function SettlementScreen({ navigation }: any) {
         [trade.receive.type]: trade.receive.amount,
       },
     });
+    showToast('swap-horizontal', trade.label, colors.neonCyan);
   };
 
   const handleRepair = () => {
@@ -102,6 +109,7 @@ export default function SettlementScreen({ navigation }: any) {
 
     dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: -REPAIR_COST } });
     dispatch({ type: 'REPAIR_ROVER', payload: 15 });
+    showToast('car-wrench', `+15 Rover · -${REPAIR_COST} Scrap`, colors.neonCyan);
   };
 
   const handleHeal = () => {
@@ -115,15 +123,18 @@ export default function SettlementScreen({ navigation }: any) {
     }
     dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { supplies: -HEAL_COST } });
     dispatch({ type: 'HEAL', payload: 15 });
+    showToast('heart-pulse', `+15 HP · -${HEAL_COST} Supplies`, colors.neonGreen);
   };
 
   const handleScrapItem = (item: string, index: number) => {
     dispatch({ type: 'REMOVE_SPECIAL_LOOT', payload: item });
     dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: SCRAP_PER_ITEM } });
+    showToast('recycle', `Scrapped ${item} · +${SCRAP_PER_ITEM} Scrap`, colors.scrap);
   };
 
   return (
     <ScreenWrapper>
+      <FeedbackToast toast={toast} />
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>Settlement</Text>
         <Text style={styles.subtitle}>

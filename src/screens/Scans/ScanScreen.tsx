@@ -577,10 +577,12 @@ export default function ScanScreen({ route }: any) {
           <Text style={styles.scansRemaining}>
             <Text style={styles.scansNumber}>{ss.scansRemaining}</Text> scans
           </Text>
-          <View style={styles.scanTypeIcons}>
-            <View style={[styles.scanTypeDot, { backgroundColor: SCAN_COLORS.scout }]} />
-            <View style={[styles.scanTypeDot, { backgroundColor: SCAN_COLORS.seeker }]} />
-            <View style={[styles.scanTypeDot, { backgroundColor: SCAN_COLORS.gambit }]} />
+          {/* HP + Rover mini status */}
+          <View style={styles.topBarStatus}>
+            <MaterialCommunityIcons name="heart-pulse" size={11} color={state.playerHealth > 30 ? colors.neonGreen : colors.neonRed} />
+            <Text style={[styles.topBarStatusVal, { color: state.playerHealth > 30 ? colors.neonGreen : colors.neonRed }]}>{state.playerHealth}</Text>
+            <MaterialCommunityIcons name="car-side" size={11} color={state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber} style={{ marginLeft: 6 }} />
+            <Text style={[styles.topBarStatusVal, { color: state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber }]}>{state.roverHealth}</Text>
           </View>
         </View>
       </View>
@@ -1162,6 +1164,43 @@ export default function ScanScreen({ route }: any) {
               </View>
             </View>
 
+            {/* Run resource summary */}
+            {(() => {
+              const allResults = [...ss.sessionResults, ...(lastResult ? [lastResult] : [])];
+              const totalScrap = allResults.reduce((s, r) => s + r.scrapAwarded, 0);
+              const totalSupplies = allResults.reduce((s, r) => s + r.suppliesAwarded, 0);
+              const totalHpDmg = allResults.reduce((s, r) => s + r.playerDamage, 0);
+              const totalRovDmg = allResults.reduce((s, r) => s + r.roverDamage, 0);
+              return (
+                <View style={styles.runSummaryRow}>
+                  {totalScrap > 0 && (
+                    <View style={styles.runSummaryChip}>
+                      <MaterialCommunityIcons name="cog" size={12} color={colors.scrap} />
+                      <Text style={[styles.runSummaryText, { color: colors.scrap }]}>+{totalScrap}</Text>
+                    </View>
+                  )}
+                  {totalSupplies > 0 && (
+                    <View style={styles.runSummaryChip}>
+                      <MaterialCommunityIcons name="package-variant" size={12} color={colors.supplies} />
+                      <Text style={[styles.runSummaryText, { color: colors.supplies }]}>+{totalSupplies}</Text>
+                    </View>
+                  )}
+                  {totalHpDmg > 0 && (
+                    <View style={styles.runSummaryChip}>
+                      <MaterialCommunityIcons name="heart-broken" size={12} color={colors.neonRed} />
+                      <Text style={[styles.runSummaryText, { color: colors.neonRed }]}>-{totalHpDmg}</Text>
+                    </View>
+                  )}
+                  {totalRovDmg > 0 && (
+                    <View style={styles.runSummaryChip}>
+                      <MaterialCommunityIcons name="car-wrench" size={12} color={colors.neonAmber} />
+                      <Text style={[styles.runSummaryText, { color: colors.neonAmber }]}>-{totalRovDmg}</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
+
             {/* Map unlock notification */}
             {allTilesCleared && mapDef.unlocksMap && (
               <View style={styles.unlockRow}>
@@ -1297,6 +1336,16 @@ const styles = StyleSheet.create({
   },
   topBarLeft: {},
   topBarRight: { alignItems: 'flex-end' },
+  topBarStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 2,
+  },
+  topBarStatusVal: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
   sectorName: {
     fontSize: fontSize.md,
     color: colors.textPrimary,
@@ -1872,6 +1921,30 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     fontWeight: '600',
+  },
+
+  // ─── Run Summary ───
+  runSummaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  runSummaryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  runSummaryText: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
   },
 
   // ─── SKR Earned ───
