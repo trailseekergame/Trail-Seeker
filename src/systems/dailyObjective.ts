@@ -93,27 +93,27 @@ export function getSessionSummary(
 
   // Headline stat
   if (rares >= 2) {
-    parts.push(`${rares} buried caches pulled from the static.`);
+    parts.push(`${rares} rare+ pulls. The sector gave up something real today.`);
   } else if (rares === 1) {
     const rareResult = results.find(r => ['rare', 'legendary', 'component'].includes(r.outcome));
     if (rareResult?.outcome === 'legendary') {
-      parts.push('Pre-collapse tech. The real thing.');
+      parts.push('Pre-collapse tech recovered. Worth every scan you burned.');
     } else if (rareResult?.outcome === 'component') {
-      parts.push('Relic fragment recovered. The Pathfinder gets closer.');
+      parts.push('Relic fragment secured. The Pathfinder module is closer.');
     } else {
-      parts.push('Found something worth keeping in the wreckage.');
+      parts.push('Pulled something real from the wreckage.');
     }
   } else if (whiffs > total / 2) {
-    parts.push('Rough day. More dead air than signal.');
+    parts.push('Rough run. More dead air than signal. It happens.');
   } else {
-    parts.push(`${total} scans. ${tilesGained} tiles of ground covered.`);
+    parts.push(`${tilesGained} tiles of ground covered. Slow and steady.`);
   }
 
   // Kicker
-  if (whiffs === 0) {
-    parts.push('Clean run. No dead signals.');
+  if (whiffs === 0 && total >= 3) {
+    parts.push('Clean sweep. Not a single dead signal.');
   } else if (whiffs >= 3) {
-    parts.push('The static was thick today.');
+    parts.push('The static hit hard today. Better luck tomorrow.');
   }
 
   return parts.join(' ');
@@ -130,31 +130,31 @@ export function getReturnHook(ss: SeekerScanState): string {
   const hasComponents = ss.pathfinderComponents > 0 && !ss.pathfinderUnlocked;
   const componentsNeeded = 4 - ss.pathfinderComponents;
 
-  // Near sector complete
+  // Near sector complete — completion pull
   if (pct >= 0.7 && !ss.currentSector.completed) {
-    return `${totalTiles - tilesCleared} tiles left in ${ss.currentSector.name}. Almost stripped clean.`;
+    return `${totalTiles - tilesCleared} tiles left. One more session strips ${ss.currentSector.name} clean.`;
   }
 
-  // Pathfinder progress
+  // Pathfinder progress — collectible pull
   if (hasComponents && componentsNeeded <= 2) {
-    return `${componentsNeeded} relic fragment${componentsNeeded > 1 ? 's' : ''} from unlocking the Pathfinder. Run Gambits tomorrow.`;
+    return `${componentsNeeded} fragment${componentsNeeded > 1 ? 's' : ''} from unlocking the Pathfinder. Gambits drop them.`;
   }
 
-  // Streak building
+  // Streak building — loss aversion
   if (ss.streakDay < 3) {
-    return 'Come back tomorrow. The streak is just starting to sharpen.';
+    return 'Streak is fragile. Show up tomorrow and the reads get sharper.';
   }
 
-  // High streak
+  // High streak — loss aversion, strong
   if (ss.streakDay >= 5) {
-    return `Day ${ss.streakDay} streak. Miss tomorrow and the rig cools off.`;
+    return `Day ${ss.streakDay} streak. Miss tomorrow and it resets to zero.`;
   }
 
-  // Mid-sector
+  // Mid-sector — curiosity pull
   if (pct >= 0.3 && pct < 0.7) {
-    return `${ss.currentSector.name} is ${Math.round(pct * 100)}% mapped. Deeper signals are waiting.`;
+    return `${Math.round(pct * 100)}% mapped. The deeper tiles hit different.`;
   }
 
-  // Default
-  return 'Signal resets at dawn. The sector isn\'t going anywhere.';
+  // Default — simple pull
+  return 'Signal resets at dawn. What you don\'t scan, someone else will.';
 }

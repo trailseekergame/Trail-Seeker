@@ -396,7 +396,9 @@ export default function DailyPlanScreen() {
           <Text style={styles.ctaSubtext}>
             {ss.scansRemaining > 0
               ? 'Pick a sector and spend your scans.'
-              : 'Window\'s closed. Signal resets at dawn.'}
+              : ss.streakDay >= 1
+              ? `Window closed. Day ${ss.streakDay} streak locked in — don't lose it tomorrow.`
+              : 'Window closed. Signal resets at dawn.'}
           </Text>
           {ss.activeGearSlots.length === 0 && ss.gearInventory.length > 0 && (
             <Text style={styles.warningText}>Tip: Tap your gear above to equip it for bonus effects.</Text>

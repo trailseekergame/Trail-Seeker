@@ -53,15 +53,15 @@ const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: str
 
 // ─── Resolving animation durations ───
 const RESOLVE_DURATION: Record<ScanType, number> = {
-  scout: 1500,
-  seeker: 1800,
-  gambit: 2500,
+  scout: 1800,
+  seeker: 2400,
+  gambit: 3200,
 };
 
 const RESOLVE_PHRASES: Record<ScanType, string[]> = {
-  scout: ['Pinging sector...', 'Signal acquired'],
-  seeker: ['Scanning deeper...', 'Locking frequency...', 'Processing'],
-  gambit: ['Rolling the dice...', 'Surge detected...', 'Signal volatile!'],
+  scout: ['Pinging sector...', 'Reading signal...', 'Lock.'],
+  seeker: ['Punching through noise...', 'Signal shifting...', 'Locking...', 'Hold.'],
+  gambit: ['Burning the scan...', 'Frequency spiking...', 'Interference heavy...', 'Brace.'],
 };
 
 // ─── Loot tier upgrade map for Gambit skill check success ───
@@ -1171,7 +1171,7 @@ export default function ScanScreen({ route }: any) {
                       />
                     ) : (
                       <NeonButton
-                        title={`Continue • ${remainingAfterLast} scans left`}
+                        title={remainingAfterLast === 1 ? 'Last scan — make it count' : `Push deeper • ${remainingAfterLast} left`}
                         onPress={handleNextScan}
                         variant="secondary"
                         size="lg"
@@ -1197,7 +1197,7 @@ export default function ScanScreen({ route }: any) {
         <View style={styles.overlay}>
           <View style={styles.sessionEndCard}>
             <Text style={styles.sessionEndLabel}>
-              {allTilesCleared ? 'SECTOR CLEARED' : 'JOB DONE'}
+              {allTilesCleared ? 'SECTOR CLEARED' : 'SIGNAL WINDOW CLOSED'}
             </Text>
             <View style={styles.sessionEndDivider} />
             <Text style={styles.sessionEndSummary}>
@@ -1288,9 +1288,12 @@ export default function ScanScreen({ route }: any) {
               </View>
             )}
 
-            <Text style={styles.sessionEndHook}>
-              {allTilesCleared ? '' : getReturnHook(ss)}
-            </Text>
+            {!allTilesCleared && (
+              <View style={styles.returnHookBox}>
+                <MaterialCommunityIcons name="clock-outline" size={14} color={colors.neonAmber} />
+                <Text style={styles.returnHookText}>{getReturnHook(ss)}</Text>
+              </View>
+            )}
             <NeonButton
               title={allTilesCleared ? 'Return to camp' : 'Return to camp'}
               onPress={allTilesCleared ? handleMapComplete : handleDismissSessionEnd}
@@ -1891,6 +1894,24 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     marginBottom: spacing.lg,
+    lineHeight: 20,
+  },
+  returnHookBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.neonAmber + '10',
+    borderWidth: 1,
+    borderColor: colors.neonAmber + '30',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  returnHookText: {
+    fontSize: fontSize.sm,
+    color: colors.neonAmber,
+    fontFamily: fontMono,
+    flex: 1,
     lineHeight: 20,
   },
 
