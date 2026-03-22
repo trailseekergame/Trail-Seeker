@@ -41,8 +41,8 @@ const MUSIC_ASSETS: Record<string, any> = {
 // ─── Constants ───
 
 const SETTINGS_KEY = '@trail_seeker_audio_settings';
-const SFX_VOLUME = 0.6;
-const MUSIC_VOLUME = 0.15;
+const SFX_VOLUME = 0.85;
+const MUSIC_VOLUME = 0.25;
 const CROSSFADE_MS = 500;
 
 // ─── Types ───
@@ -97,9 +97,15 @@ class AudioManagerClass {
   // ─── SFX ───
 
   async playSfx(name: string): Promise<void> {
-    if (!Audio) return;
+    if (!Audio) {
+      if (__DEV__) console.log(`[Audio] SFX skipped (no expo-av): ${name}`);
+      return;
+    }
     if (!this.settings.sfxEnabled) return;
-    if (!SFX_ASSETS[name]) return;
+    if (!SFX_ASSETS[name]) {
+      if (__DEV__) console.warn(`[Audio] Unknown SFX: ${name}`);
+      return;
+    }
 
     try {
       // Try cached sound first
@@ -108,6 +114,7 @@ class AudioManagerClass {
         try {
           await sound.setPositionAsync(0);
           await sound.playAsync();
+          if (__DEV__) console.log(`[Audio] SFX played (cached): ${name}`);
           return;
         } catch (_) {
           // Cached sound broken — reload
@@ -121,8 +128,9 @@ class AudioManagerClass {
         { volume: SFX_VOLUME, shouldPlay: true }
       );
       this.sfxCache.set(name, newSound);
-    } catch (_) {
-      // SFX play failed — silent fallback
+      if (__DEV__) console.log(`[Audio] SFX played (loaded): ${name}`);
+    } catch (e) {
+      if (__DEV__) console.warn(`[Audio] SFX failed: ${name}`, e);
     }
   }
 
@@ -195,7 +203,10 @@ class AudioManagerClass {
   // ─── Haptics ───
 
   async vibrate(style: 'light' | 'medium' | 'heavy' = 'medium'): Promise<void> {
-    if (!Haptics) return;
+    if (!Haptics) {
+      if (__DEV__) console.log(`[Haptics] skipped (no expo-haptics): ${style}`);
+      return;
+    }
     if (!this.settings.vibrationEnabled) return;
     try {
       const map = {
@@ -204,8 +215,9 @@ class AudioManagerClass {
         heavy: Haptics.ImpactFeedbackStyle.Heavy,
       };
       await Haptics.impactAsync(map[style]);
-    } catch (_) {
-      // Haptics not available
+      if (__DEV__) console.log(`[Haptics] fired: ${style}`);
+    } catch (e) {
+      if (__DEV__) console.warn(`[Haptics] failed: ${style}`, e);
     }
   }
 
