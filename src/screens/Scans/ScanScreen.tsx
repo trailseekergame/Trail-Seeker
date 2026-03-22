@@ -257,10 +257,18 @@ export default function ScanScreen({ route }: any) {
       dispatch({ type: 'CLEAR_BOOSTED_SCAN' });
     }
 
-    // Compute resource rewards + damage based on tile type
+    // Compute resource rewards + damage based on tile type + authored flavor
     const tileType = selectedTile.type === 'cleared' ? 'unknown' : selectedTile.type;
-    const rewards = computeScanRewards(result.outcome, result.scanType, tileType);
+    const rewards = computeScanRewards(result.outcome, result.scanType, tileType, selectedTile.flavor);
     result = { ...result, ...rewards };
+
+    // Override field note with authored flavor text if present
+    if (selectedTile.flavor) {
+      const notes = result.outcome === 'whiff' ? selectedTile.flavor.whiffNotes : selectedTile.flavor.successNotes;
+      if (notes.length > 0) {
+        result = { ...result, fieldNote: notes[Math.floor(Math.random() * notes.length)] };
+      }
+    }
 
     dispatch({ type: 'USE_SCAN', payload: result });
 
@@ -644,7 +652,7 @@ export default function ScanScreen({ route }: any) {
                   >
                     {(isCleared || scannable) && (
                       <MaterialCommunityIcons
-                        name={(isCleared ? TILE_ICONS.cleared : TILE_ICONS[tile.type]) as any}
+                        name={(isCleared ? TILE_ICONS.cleared : (tile.flavor?.icon || TILE_ICONS[tile.type])) as any}
                         size={18}
                         color={
                           isCleared ? colors.textMuted :
@@ -752,23 +760,54 @@ export default function ScanScreen({ route }: any) {
             </Text>
             <View style={styles.confirmTileRow}>
               <MaterialCommunityIcons
-                name={(selectedTile?.type === 'boss' ? 'skull' :
-                       selectedTile?.type === 'anomaly' ? 'alert-rhombus' :
-                       selectedTile?.type === 'resource' ? 'diamond-stone' :
-                       'help') as any}
+                name={(selectedTile?.flavor?.icon ||
+                       (selectedTile?.type === 'boss' ? 'skull' :
+                        selectedTile?.type === 'anomaly' ? 'alert-rhombus' :
+                        selectedTile?.type === 'resource' ? 'diamond-stone' :
+                        'help')) as any}
                 size={18}
-                color={selectedTile?.type === 'boss' ? colors.neonRed :
-                       selectedTile?.type === 'anomaly' ? colors.neonAmber :
-                       selectedTile?.type === 'resource' ? colors.neonCyan :
-                       colors.textSecondary}
+                color={selectedTile?.flavor
+                  ? (selectedTile.flavor.riskLabel === 'dangerous' ? colors.neonRed :
+                     selectedTile.flavor.riskLabel === 'risky' ? colors.neonAmber :
+                     selectedTile.flavor.riskLabel === 'moderate' ? colors.neonCyan :
+                     colors.neonGreen)
+                  : (selectedTile?.type === 'boss' ? colors.neonRed :
+                     selectedTile?.type === 'anomaly' ? colors.neonAmber :
+                     selectedTile?.type === 'resource' ? colors.neonCyan :
+                     colors.textSecondary)}
               />
               <Text style={styles.confirmTile}>
-                {selectedTile?.type === 'boss' ? 'Boss Tile' :
-                 selectedTile?.type === 'anomaly' ? 'Anomaly' :
-                 selectedTile?.type === 'resource' ? 'Resource' :
-                 'Unknown'}
+                {selectedTile?.flavor?.name ||
+                 (selectedTile?.type === 'boss' ? 'Boss Tile' :
+                  selectedTile?.type === 'anomaly' ? 'Anomaly' :
+                  selectedTile?.type === 'resource' ? 'Resource' :
+                  'Unknown')}
               </Text>
             </View>
+            {selectedTile?.flavor && (
+              <Text style={styles.confirmFlavorDesc}>{selectedTile.flavor.desc}</Text>
+            )}
+            {selectedTile?.flavor && (
+              <View style={[
+                styles.riskBadge,
+                { borderColor:
+                    selectedTile.flavor.riskLabel === 'dangerous' ? colors.neonRed :
+                    selectedTile.flavor.riskLabel === 'risky' ? colors.neonAmber :
+                    selectedTile.flavor.riskLabel === 'moderate' ? colors.neonCyan :
+                    colors.neonGreen },
+              ]}>
+                <Text style={[
+                  styles.riskBadgeText,
+                  { color:
+                      selectedTile.flavor.riskLabel === 'dangerous' ? colors.neonRed :
+                      selectedTile.flavor.riskLabel === 'risky' ? colors.neonAmber :
+                      selectedTile.flavor.riskLabel === 'moderate' ? colors.neonCyan :
+                      colors.neonGreen },
+                ]}>
+                  {selectedTile.flavor.riskLabel.toUpperCase()}
+                </Text>
+              </View>
+            )}
             <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
               {Math.round(whiffRates[selectedScan] * 100)}% miss chance
             </Text>
@@ -1394,6 +1433,26 @@ const styles = StyleSheet.create({
   confirmTile: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
+  },
+  confirmFlavorDesc: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: spacing.sm,
+    lineHeight: 20,
+  },
+  riskBadge: {
+    borderWidth: 1,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    marginBottom: spacing.sm,
+  },
+  riskBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 2,
   },
   confirmWhiff: {
     fontSize: fontSize.sm,

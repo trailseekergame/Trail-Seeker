@@ -316,6 +316,30 @@ export interface GearItem {
   icon: string;
 }
 
+/** Authored tile flavor — overrides generic tile behavior with specific content */
+export interface TileFlavor {
+  name: string;         // e.g. "Overturned Cargo Truck"
+  desc: string;         // Short description shown before scanning
+  icon: string;         // MaterialCommunityIcons name
+  // Reward overrides (replace generic rolls)
+  scrapRange: [number, number];
+  suppliesRange: [number, number];
+  // Damage risk on whiff
+  whiffPlayerDamage: [number, number];
+  whiffRoverDamage: [number, number];
+  // Damage risk on success (hazard tiles only, 0 for safe tiles)
+  successDamageChance: number; // 0-1
+  successPlayerDamage: [number, number];
+  successRoverDamage: [number, number];
+  // Scrap value of loot found here
+  scrapValueRange: [number, number];
+  // Flavor text pools
+  successNotes: string[];
+  whiffNotes: string[];
+  // Risk label shown in confirm popup
+  riskLabel: 'safe' | 'moderate' | 'risky' | 'dangerous';
+}
+
 export interface SectorTile {
   id: string;
   row: number;
@@ -325,6 +349,7 @@ export interface SectorTile {
   adjacentTo: string[];
   durability: number;    // hits remaining (1 = normal, 2-3 = hardened)
   maxDurability: number; // original durability for display
+  flavor?: TileFlavor;   // Authored tile content (optional)
 }
 
 export interface Sector {

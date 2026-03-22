@@ -1,5 +1,5 @@
 import gameBalance from '../config/gameBalance.json';
-import { ScanType, ScanOutcome, ScanResult, GearSlotId, GearItem, SeekerScanState } from '../types';
+import { ScanType, ScanOutcome, ScanResult, GearSlotId, GearItem, SeekerScanState, TileFlavor } from '../types';
 
 // ─── Read config ───
 const config = gameBalance;
@@ -281,7 +281,14 @@ export function computeScanRewards(
   outcome: ScanOutcome,
   scanType: ScanType,
   tileType: string,
+  tileFlavor?: TileFlavor,
 ): ScanRewards {
+  // ─── Authored tile: use flavor-specific ranges ───
+  if (tileFlavor) {
+    return computeFlavoredRewards(outcome, scanType, tileFlavor);
+  }
+
+  // ─── Generic tile: use standard tables ───
   const scrapAwarded = rollRange(SCRAP_BY_OUTCOME[outcome] || [0, 0]);
   const suppliesAwarded = rollRange(SUPPLIES_BY_OUTCOME[outcome] || [0, 0]);
   const scrapValue = rollRange(SCRAP_VALUE_BY_OUTCOME[outcome] || [0, 0]);
@@ -295,19 +302,16 @@ export function computeScanRewards(
       playerDamage = rollRange(GAMBIT_WHIFF_PLAYER_DAMAGE);
       roverDamage = rollRange(GAMBIT_WHIFF_ROVER_DAMAGE);
     } else if (scanType === 'seeker') {
-      // 50% chance of light damage on seeker whiff
       if (Math.random() < 0.5) {
         playerDamage = rollRange(WHIFF_PLAYER_DAMAGE);
       } else {
         roverDamage = rollRange(WHIFF_ROVER_DAMAGE);
       }
     }
-    // Scout whiffs are safe — no damage
   }
 
   // Anomaly / boss tile hazard damage (even on success)
   if (tileType === 'anomaly' && outcome !== 'whiff') {
-    // 40% chance of anomaly backlash
     if (Math.random() < 0.4) {
       const dmg = rollRange(ANOMALY_DAMAGE);
       if (Math.random() < 0.5) {
@@ -318,10 +322,50 @@ export function computeScanRewards(
     }
   }
   if (tileType === 'boss') {
-    // Boss always hits
     const dmg = rollRange(BOSS_DAMAGE);
     playerDamage += Math.ceil(dmg * 0.6);
     roverDamage += Math.ceil(dmg * 0.4);
+  }
+
+  return { scrapAwarded, suppliesAwarded, playerDamage, roverDamage, scrapValue };
+}
+
+/** Compute rewards using authored tile flavor ranges */
+function computeFlavoredRewards(
+  outcome: ScanOutcome,
+  scanType: ScanType,
+  f: TileFlavor,
+): ScanRewards {
+  if (outcome === 'whiff') {
+    // Whiff: no rewards, flavor-specific damage
+    let playerDamage = rollRange(f.whiffPlayerDamage);
+    let roverDamage = rollRange(f.whiffRoverDamage);
+    // Gambit whiffs amplify authored damage by 50%
+    if (scanType === 'gambit') {
+      playerDamage = Math.ceil(playerDamage * 1.5);
+      roverDamage = Math.ceil(roverDamage * 1.5);
+    }
+    return {
+      scrapAwarded: 0,
+      suppliesAwarded: 0,
+      playerDamage,
+      roverDamage,
+      scrapValue: 0,
+    };
+  }
+
+  // Success: use flavor reward ranges
+  const scrapAwarded = rollRange(f.scrapRange);
+  const suppliesAwarded = rollRange(f.suppliesRange);
+  const scrapValue = rollRange(f.scrapValueRange);
+
+  let playerDamage = 0;
+  let roverDamage = 0;
+
+  // Success hazard damage (risky/dangerous tiles)
+  if (f.successDamageChance > 0 && Math.random() < f.successDamageChance) {
+    playerDamage = rollRange(f.successPlayerDamage);
+    roverDamage = rollRange(f.successRoverDamage);
   }
 
   return { scrapAwarded, suppliesAwarded, playerDamage, roverDamage, scrapValue };

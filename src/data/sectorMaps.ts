@@ -1,4 +1,5 @@
-import { SectorTile, Sector } from '../types';
+import { SectorTile, Sector, TileFlavor } from '../types';
+import { BROKEN_OVERPASS_TILES, AuthoredTileDef } from './authoredTiles';
 
 /**
  * Map definitions for the early-game loop.
@@ -94,6 +95,12 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
 /** Ordered list of mission maps (excludes camp) */
 export const MISSION_MAPS: MapId[] = ['broken_overpass', 'relay_field'];
 
+/** Pick N random items from an array without replacement */
+function pickN<T>(arr: T[], n: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
 /** Generate a sector for a given map */
 export function generateSectorForMap(mapId: MapId): Sector {
   const mapDef = MAP_DEFS[mapId];
@@ -151,6 +158,11 @@ export function generateSectorForMap(mapId: MapId): Sector {
     }
   }
 
+  // ─── Stamp authored tile flavors ───
+  if (mapId === 'broken_overpass') {
+    assignAuthoredFlavors(tiles, BROKEN_OVERPASS_TILES, 5);
+  }
+
   return {
     id: `sector-${mapId}`,
     name: `${mapDef.name} — ${mapDef.subtitle}`,
@@ -158,4 +170,34 @@ export function generateSectorForMap(mapId: MapId): Sector {
     gridSize,
     completed: false,
   };
+}
+
+/**
+ * Assign authored flavors to eligible tiles.
+ * Picks `count` random authored defs and assigns each to a random
+ * eligible tile that doesn't already have a flavor.
+ */
+function assignAuthoredFlavors(
+  tiles: SectorTile[],
+  defs: AuthoredTileDef[],
+  count: number,
+) {
+  const selected = pickN(defs, Math.min(count, defs.length));
+
+  for (const def of selected) {
+    // Find eligible tiles: not cleared, not boss, matching type, no existing flavor
+    const eligible = tiles.filter(
+      t => !t.cleared && t.type !== 'boss' && !t.flavor && def.validTypes.includes(t.type)
+    );
+    if (eligible.length === 0) continue;
+
+    const target = eligible[Math.floor(Math.random() * eligible.length)];
+    target.flavor = def.flavor;
+
+    // Override durability if the authored def specifies it
+    if (def.durability !== undefined) {
+      target.durability = def.durability;
+      target.maxDurability = def.durability;
+    }
+  }
 }
