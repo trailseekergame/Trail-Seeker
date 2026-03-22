@@ -226,35 +226,42 @@ export function resolveScan(
 
 // ─── Phase 1: Risk & Resource tables ───
 
+/**
+ * Balance tuned via 2000-player simulation (sim_playtest_v3.py).
+ * Target: ~7 HP + ~5 rover damage/session, 10-11 scrap/session,
+ * 3-4 supplies/session, ~2 supply surplus/day after healing.
+ * Wipeouts < 5% over chapter 1. "A little heat, not frustrating."
+ */
+
 /** Scrap awarded per loot tier */
 const SCRAP_BY_OUTCOME: Record<string, [number, number]> = {
   whiff: [0, 0],
-  common: [2, 4],
-  uncommon: [3, 6],
-  rare: [5, 10],
-  legendary: [10, 18],
+  common: [1, 2],
+  uncommon: [2, 3],
+  rare: [3, 6],
+  legendary: [6, 12],
   component: [0, 0],
 };
 
-/** Supplies awarded per loot tier (less common than scrap) */
+/** Supplies awarded per loot tier */
 const SUPPLIES_BY_OUTCOME: Record<string, [number, number]> = {
   whiff: [0, 0],
-  common: [0, 2],
-  uncommon: [1, 3],
-  rare: [2, 5],
-  legendary: [4, 8],
-  component: [1, 2],
+  common: [0, 1],
+  uncommon: [0, 1],
+  rare: [1, 3],
+  legendary: [2, 5],
+  component: [0, 1],
 };
 
-/** Small damage on whiffs and risky scans. [min, max] HP or rover */
-const WHIFF_PLAYER_DAMAGE: [number, number] = [2, 5];
-const WHIFF_ROVER_DAMAGE: [number, number] = [1, 4];
-const GAMBIT_WHIFF_PLAYER_DAMAGE: [number, number] = [4, 8];
-const GAMBIT_WHIFF_ROVER_DAMAGE: [number, number] = [3, 6];
-/** Anomaly tiles always deal a little extra damage even on success */
-const ANOMALY_DAMAGE: [number, number] = [2, 4];
+/** Whiff damage — teaches risk */
+const WHIFF_PLAYER_DAMAGE: [number, number] = [3, 7];
+const WHIFF_ROVER_DAMAGE: [number, number] = [2, 5];
+const GAMBIT_WHIFF_PLAYER_DAMAGE: [number, number] = [6, 10];
+const GAMBIT_WHIFF_ROVER_DAMAGE: [number, number] = [4, 8];
+/** Anomaly tiles: 50% chance of hazard damage on success */
+const ANOMALY_DAMAGE: [number, number] = [2, 5];
 /** Boss tiles hit harder */
-const BOSS_DAMAGE: [number, number] = [5, 10];
+const BOSS_DAMAGE: [number, number] = [8, 14];
 
 /** Scrap value when scrapping loot items */
 const SCRAP_VALUE_BY_OUTCOME: Record<string, [number, number]> = {
@@ -316,7 +323,7 @@ export function computeScanRewards(
 
   // Anomaly / boss tile hazard damage (even on success)
   if (tileType === 'anomaly' && outcome !== 'whiff') {
-    if (Math.random() < 0.4) {
+    if (Math.random() < 0.5) {
       const dmg = rollRange(ANOMALY_DAMAGE);
       if (Math.random() < 0.5) {
         playerDamage += dmg;
