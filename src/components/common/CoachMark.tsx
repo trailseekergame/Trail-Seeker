@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     borderColor: colors.neonAmber + '30',
     borderLeftWidth: 3,
     borderLeftColor: colors.neonAmber,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     padding: spacing.sm,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
@@ -121,5 +121,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.textMuted,
     marginTop: 4,
+    fontFamily: 'monospace',
   },
 });

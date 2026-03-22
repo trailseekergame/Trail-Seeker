@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, spacing, fontSize } from '../../theme';
+import { colors, spacing, fontSize, fontMono } from '../../theme';
 import { useGame } from '../../context/GameContext';
 import { getStreakRareBoost } from '../../systems/scanEngine';
 
@@ -102,6 +102,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: fontSize.lg,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   label: {
     fontSize: 9,
@@ -109,6 +110,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    fontFamily: fontMono,
   },
   infoRow: {
     flexDirection: 'row',
@@ -121,10 +123,12 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
   gearText: {
     fontSize: fontSize.xs,
     color: colors.neonGreen,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
 });

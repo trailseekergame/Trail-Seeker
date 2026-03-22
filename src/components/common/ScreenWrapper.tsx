@@ -14,7 +14,6 @@ export default function ScreenWrapper({ children, padded = true }: Props) {
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <View style={[styles.container, padded && styles.padded]}>
         {children}
-        <View style={styles.scanlineOverlay} pointerEvents="none" />
       </View>
     </SafeAreaView>
   );
@@ -31,9 +30,5 @@ const styles = StyleSheet.create({
   },
   padded: {
     paddingHorizontal: 16,
-  },
-  scanlineOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.terminalGlow,
   },
 });

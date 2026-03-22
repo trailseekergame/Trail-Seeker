@@ -42,8 +42,13 @@ function SettingsButton() {
 
 const screenOptions = {
   headerStyle: { backgroundColor: colors.background },
-  headerTintColor: colors.textPrimary,
-  headerTitleStyle: { fontWeight: '600' as const, letterSpacing: 1 },
+  headerTintColor: colors.neonGreen,
+  headerTitleStyle: {
+    fontWeight: '600' as const,
+    letterSpacing: 2,
+    fontFamily: 'monospace' as const,
+    fontSize: 14,
+  },
   headerShadowVisible: false,
   contentStyle: { backgroundColor: colors.background },
   headerRight: () => <SettingsButton />,
@@ -73,8 +78,8 @@ const tabIconStyles = StyleSheet.create({
   container: { alignItems: 'center', justifyContent: 'center', paddingTop: 4, minWidth: 60 },
   icon: { fontSize: 22 },
   iconActive: { fontSize: 24 },
-  label: { fontSize: 11, color: colors.tabInactive, marginTop: 2, textAlign: 'center' },
-  labelActive: { color: colors.tabActive, fontWeight: '600' },
+  label: { fontSize: 10, color: colors.tabInactive, marginTop: 2, textAlign: 'center', fontFamily: 'monospace' as const, letterSpacing: 1 },
+  labelActive: { color: colors.tabActive, fontWeight: '700' },
 });
 
 // ─── Stack Navigators ───
@@ -170,9 +175,9 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBg,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 2,
+          backgroundColor: colors.background,
+          borderTopColor: colors.panelBorder,
+          borderTopWidth: 1.5,
           height: 56,
           paddingBottom: 8,
         },
@@ -254,8 +259,8 @@ export default function AppNavigator() {
               options={{
                 presentation: 'modal',
                 headerShown: true,
-                headerStyle: { backgroundColor: colors.surface },
-                headerTintColor: colors.textPrimary,
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.neonGreen,
                 headerShadowVisible: false,
                 title: '',
               }}

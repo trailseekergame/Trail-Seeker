@@ -6,7 +6,7 @@ import AudioManager from '../../services/audioManager';
 import { useGame } from '../../context/GameContext';
 import { AVATARS } from '../../data/avatars';
 import { AvatarId } from '../../types';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 
 export default function SettingsScreen() {
   const { state, dispatch } = useGame();
@@ -133,6 +133,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xxl,
     fontWeight: '700',
     color: colors.textPrimary,
+    fontFamily: fontMono,
+    letterSpacing: 2,
   },
   subtitle: {
     fontSize: fontSize.sm,
@@ -141,9 +143,9 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
@@ -153,6 +155,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: '700',
     marginBottom: spacing.md,
+    fontFamily: fontMono,
   },
   settingRow: {
     flexDirection: 'row',
@@ -171,6 +174,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textPrimary,
     fontWeight: '500',
+    fontFamily: fontMono,
   },
   // ─── Avatar ───
   avatarRow: {
@@ -182,7 +186,7 @@ const styles = StyleSheet.create({
   avatarCard: {
     borderWidth: 2,
     borderColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     overflow: 'hidden',
     width: 72,
     height: 100,
@@ -208,5 +212,6 @@ const styles = StyleSheet.create({
   version: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
 });

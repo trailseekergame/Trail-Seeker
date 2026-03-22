@@ -13,7 +13,7 @@ import { useGame } from '../../context/GameContext';
 import { MAP_DEFS, MISSION_MAPS, generateSectorForMap, MapId } from '../../data/sectorMaps';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import AudioManager from '../../services/audioManager';
 
 export default function MissionSelectScreen() {
@@ -153,20 +153,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 4,
+    fontFamily: fontMono,
+    letterSpacing: 2,
   },
   subtitle: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginBottom: spacing.lg,
+    fontFamily: fontMono,
   },
 
   // ─── Mission Card ───
   missionCard: {
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     overflow: 'hidden',
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
   },
   missionCardLocked: {
     opacity: 0.5,
@@ -176,7 +179,7 @@ const styles = StyleSheet.create({
     minHeight: 180,
   },
   missionBgImage: {
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
   },
   missionOverlay: {
     flex: 1,
@@ -195,12 +198,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: '700',
     color: colors.textPrimary,
+    fontFamily: fontMono,
+    letterSpacing: 1,
   },
   missionSubtitle: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     letterSpacing: 1,
     marginTop: 2,
+    fontFamily: fontMono,
   },
   missionDesc: {
     fontSize: fontSize.sm,
@@ -219,7 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonGreen + '20',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: colors.neonGreen + '40',
   },
@@ -228,6 +234,7 @@ const styles = StyleSheet.create({
     color: colors.neonGreen,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   lockedBadge: {
     flexDirection: 'row',
@@ -236,7 +243,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceHighlight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
   },
@@ -245,11 +252,13 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   lockReason: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     fontStyle: 'italic',
     marginTop: spacing.sm,
+    fontFamily: fontMono,
   },
 });

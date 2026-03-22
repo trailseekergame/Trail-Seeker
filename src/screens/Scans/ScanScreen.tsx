@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
 import { resolveScan, getEffectiveWhiffRate, computeScanRewards, rollUltraDrop, rollEnhancedDrop } from '../../systems/scanEngine';
 import { BROKEN_OVERPASS_TILES, RELAY_FIELD_TILES } from '../../data/authoredTiles';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import SkillCheck from '../../components/trail/SkillCheck';
@@ -441,14 +441,21 @@ export default function ScanScreen({ route }: any) {
   // ─── Gambit skill check result handler ───
   const handleGambitSkillCheck = (success: boolean) => {
     setShowSkillCheck(false);
-    // Gambit always plays gambit_win for non-whiff outcomes
-    AudioManager.playSfx('gambit_win');
-    AudioManager.vibrate(success ? 'heavy' : 'light');
-    if (success && lastResult) {
-      const upgraded = TIER_UPGRADE[lastResult.outcome];
-      if (upgraded) {
-        setDisplayOutcome(upgraded);
+    if (success) {
+      // Skill check passed — upgrade loot tier
+      AudioManager.playSfx('gambit_win');
+      AudioManager.vibrate('heavy');
+      if (lastResult) {
+        const upgraded = TIER_UPGRADE[lastResult.outcome];
+        if (upgraded) {
+          setDisplayOutcome(upgraded);
+        }
       }
+    } else {
+      // Skill check failed — downgrade to whiff
+      AudioManager.playSfx('gambit_whiff');
+      AudioManager.vibrate('medium');
+      setDisplayOutcome('whiff');
     }
     setShowResult(true);
   };
@@ -1357,9 +1364,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.neonCyan + '40',
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.xl,
     alignItems: 'center',
   },
@@ -1580,9 +1587,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.xl,
     alignItems: 'center',
   },
@@ -1632,6 +1639,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '600',
     marginBottom: spacing.lg,
+    fontFamily: fontMono,
   },
   confirmButtons: {
     flexDirection: 'row',
@@ -1647,16 +1655,16 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.xl,
     alignItems: 'center',
   },
   resultTypeBadge: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
+    borderRadius: 0,
     borderWidth: 1,
     marginBottom: spacing.md,
   },
@@ -1674,11 +1682,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: spacing.sm,
     textAlign: 'center',
+    fontFamily: fontMono,
   },
   resultLoot: {
     fontSize: fontSize.md,
     fontWeight: '600',
     marginBottom: spacing.sm,
+    fontFamily: fontMono,
   },
   resultProgressRow: {
     backgroundColor: colors.surfaceHighlight,
@@ -1691,6 +1701,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
   fieldNote: {
     fontSize: fontSize.sm,
@@ -1699,6 +1710,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: spacing.sm,
     lineHeight: 20,
+    fontFamily: fontMono,
   },
   tileWeakenedRow: {
     flexDirection: 'row',
@@ -1714,6 +1726,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonAmber,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
   whiffHint: {
     fontSize: fontSize.sm,
@@ -1746,7 +1759,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neonGreen + '20',
     borderWidth: 1,
     borderColor: colors.neonGreen,
-    borderRadius: borderRadius.sm,
+    borderRadius: 0,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     marginBottom: spacing.sm,
@@ -1773,7 +1786,7 @@ const styles = StyleSheet.create({
   resolvingIcon: {
     width: 64,
     height: 64,
-    borderRadius: 4,
+    borderRadius: 0,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1797,9 +1810,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.neonRed + '60',
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.neonRed + '40',
     padding: spacing.xl,
     alignItems: 'center',
   },
@@ -1822,9 +1835,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.xl,
     alignItems: 'center',
   },
@@ -1833,6 +1846,7 @@ const styles = StyleSheet.create({
     color: colors.neonAmber,
     fontWeight: '700',
     letterSpacing: 3,
+    fontFamily: fontMono,
   },
   sessionEndDivider: {
     height: 1,
@@ -1846,6 +1860,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: spacing.lg,
+    fontFamily: fontMono,
   },
   sessionEndStats: {
     flexDirection: 'row',
@@ -1901,6 +1916,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
 
   // ─── Resource Rewards & Damage ───
@@ -1923,6 +1939,7 @@ const styles = StyleSheet.create({
   rewardChipText: {
     fontSize: fontSize.xs,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   damageRow: {
     flexDirection: 'row',
@@ -1944,6 +1961,7 @@ const styles = StyleSheet.create({
   damageChipText: {
     fontSize: fontSize.xs,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   gearDropRow: {
     flexDirection: 'row',
@@ -1961,6 +1979,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonAmber,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   gearDropDesc: {
     fontSize: fontSize.xs,
@@ -1985,6 +2004,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
 
   // ─── Run Summary ───
@@ -2009,6 +2029,7 @@ const styles = StyleSheet.create({
   runSummaryText: {
     fontSize: fontSize.sm,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
 
   // ─── SKR Earned ───
@@ -2027,6 +2048,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.neonPurple,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   skrMilestoneText: {
     fontSize: fontSize.xs,

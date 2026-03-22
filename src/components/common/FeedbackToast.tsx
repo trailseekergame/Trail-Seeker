@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface + 'F0',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     borderWidth: 1,
     zIndex: 100,
     elevation: 10,
@@ -76,5 +76,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: fontSize.sm,
     fontWeight: '700',
+    fontFamily: 'monospace',
   },
 });

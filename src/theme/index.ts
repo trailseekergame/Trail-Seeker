@@ -48,10 +48,18 @@ export const colors = {
   tabActive: '#00FFAA',
   tabInactive: '#5A6577',
 
+  // Panel borders — visible hardware frame feel
+  panelBorder: '#1E3828',
+  panelBorderLight: '#2A4A35',
+  panelGlow: 'rgba(0, 232, 156, 0.12)',
+
   // Overlay
   overlay: 'rgba(8, 11, 16, 0.9)',
   overlayLight: 'rgba(8, 11, 16, 0.65)',
 };
+
+/** Platform monospace — used for all terminal/readout text */
+export const fontMono = 'monospace';
 
 export const spacing = {
   xs: 4,
@@ -111,5 +119,5 @@ export const shadows = {
   },
 };
 
-const theme = { colors, spacing, fontSize, fontWeight, borderRadius, shadows };
+const theme = { colors, spacing, fontSize, fontWeight, borderRadius, shadows, fontMono };
 export default theme;

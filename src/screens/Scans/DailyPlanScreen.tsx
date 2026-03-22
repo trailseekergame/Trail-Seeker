@@ -6,7 +6,7 @@ import { useGame } from '../../context/GameContext';
 import { computeDailyScans, getStreakRareBoost } from '../../systems/scanEngine';
 import { ALL_GEAR_ITEMS, DEFAULT_ACTIVE_GEAR } from '../../data/gearItems';
 import { generateTestSector } from '../../data/testSector';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
@@ -441,11 +441,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     color: colors.textPrimary,
     fontWeight: '600',
+    fontFamily: fontMono,
+    letterSpacing: 1,
   },
   headerDayNum: {
     fontSize: fontSize.xxl,
     color: colors.neonGreen,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   headerSubtext: {
     fontSize: fontSize.sm,
@@ -458,12 +461,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
-    backgroundColor: colors.surface + 'CC',
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
   },
   statusItem: {
     flexDirection: 'row',
@@ -487,15 +490,15 @@ const styles = StyleSheet.create({
   streakDot: {
     width: 30,
     height: 30,
-    borderRadius: 4,
+    borderRadius: 2,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   streakDotActive: {
     borderColor: colors.neonGreen,
-    backgroundColor: colors.neonGreen + '15',
+    backgroundColor: colors.neonGreen + '20',
   },
   streakDotText: {
     fontSize: fontSize.xs,
@@ -510,9 +513,9 @@ const styles = StyleSheet.create({
   // ─── 1b. Objective ───
   objectiveCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.neonAmber + '30',
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     borderLeftWidth: 3,
     borderLeftColor: colors.neonAmber,
     padding: spacing.md,
@@ -523,19 +526,21 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '700',
     color: colors.textPrimary,
+    fontFamily: fontMono,
   },
   objectiveContext: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginTop: 4,
     lineHeight: 20,
+    fontFamily: fontMono,
   },
 
   scanCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.lg,
     marginTop: spacing.md,
     marginHorizontal: spacing.md,
@@ -550,6 +555,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginRight: spacing.md,
     lineHeight: 56,
+    fontFamily: fontMono,
   },
   scanLabelCol: {
     flex: 1,
@@ -558,10 +564,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.textPrimary,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
   scanLabelSub: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
   scanNote: {
     fontSize: fontSize.sm,
@@ -570,6 +578,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.surfaceLight,
     paddingTop: spacing.sm,
+    fontFamily: fontMono,
   },
 
   // ─── 3. Gear ───
@@ -593,6 +602,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '700',
     color: colors.neonPurple,
+    fontFamily: fontMono,
   },
   skrActiveCount: {
     fontSize: fontSize.xs,
@@ -607,9 +617,9 @@ const styles = StyleSheet.create({
   skrShopCard: {
     width: '48%',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: colors.neonPurple + '30',
+    borderColor: colors.panelBorder,
     padding: spacing.sm,
     alignItems: 'center',
     minHeight: 100,
@@ -625,6 +635,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
     marginTop: 4,
+    fontFamily: fontMono,
   },
   skrShopDesc: {
     fontSize: 9,
@@ -638,6 +649,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.neonPurple,
     marginTop: 4,
+    fontFamily: fontMono,
   },
   skrShopOwned: {
     fontSize: fontSize.xs,
@@ -662,16 +674,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 2,
     fontWeight: '600',
+    fontFamily: fontMono,
   },
   lockedBadge: {
     fontSize: fontSize.xs,
     color: colors.neonRed,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   tapHint: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontFamily: fontMono,
   },
   gearGrid: {
     flexDirection: 'row',
@@ -681,9 +696,9 @@ const styles = StyleSheet.create({
   gearSlotCard: {
     width: '31%',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
     padding: spacing.sm,
     alignItems: 'center',
     position: 'relative',
@@ -691,7 +706,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   gearSlotActive: {
-    borderColor: colors.neonGreen + '60',
+    borderColor: colors.neonGreen + '80',
+    borderWidth: 1.5,
     backgroundColor: colors.neonGreen + '08',
   },
   gearSlotLocked: {
@@ -703,12 +719,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     marginTop: 4,
+    fontFamily: fontMono,
   },
   gearSlotEffect: {
     fontSize: 9,
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: 2,
+    fontFamily: fontMono,
   },
   gearEquippedDot: {
     position: 'absolute',
@@ -723,9 +741,9 @@ const styles = StyleSheet.create({
   // ─── 4. Sector ───
   sectorCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.md,
     marginTop: spacing.lg,
     marginHorizontal: spacing.md,
@@ -735,22 +753,24 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '600',
     marginBottom: spacing.sm,
+    fontFamily: fontMono,
   },
   sectorBar: {
     height: 6,
     backgroundColor: colors.surfaceLight,
-    borderRadius: 2,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   sectorBarFill: {
     height: '100%',
     backgroundColor: colors.neonGreen,
-    borderRadius: 2,
+    borderRadius: 0,
   },
   sectorProgress: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: spacing.xs,
+    fontFamily: fontMono,
   },
   sectorReward: {
     fontSize: fontSize.sm,
@@ -763,9 +783,9 @@ const styles = StyleSheet.create({
   // ─── 4b. Pathfinder ───
   pathfinderCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderRadius: 0,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     padding: spacing.md,
     marginTop: spacing.md,
     marginHorizontal: spacing.md,
@@ -781,6 +801,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: '700',
     marginBottom: spacing.xs,
+    fontFamily: fontMono,
   },
   pathfinderDesc: {
     fontSize: fontSize.xs,

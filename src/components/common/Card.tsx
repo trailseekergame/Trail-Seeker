@@ -58,11 +58,11 @@ export default function Card({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     padding: spacing.md,
     marginVertical: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
   },
   header: {
     flexDirection: 'row',

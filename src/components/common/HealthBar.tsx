@@ -58,13 +58,13 @@ const styles = StyleSheet.create({
   track: {
     height: 8,
     backgroundColor: colors.surface,
-    borderRadius: 2,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 0,
   },
 });

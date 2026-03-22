@@ -16,7 +16,7 @@ import { useGame } from '../context/GameContext';
 import { archetypes, lastLostOptions } from '../data/backstory';
 import { AVATARS } from '../data/avatars';
 import { AvatarId } from '../types';
-import { colors, spacing, fontSize, borderRadius } from '../theme';
+import { colors, spacing, fontSize, borderRadius, fontMono } from '../theme';
 import AudioManager from '../services/audioManager';
 
 type Step = 'wake' | 'avatar' | 'identity' | 'scans' | 'go';
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   progressDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: 2,
     backgroundColor: colors.surfaceLight,
   },
   progressDotActive: {
@@ -361,6 +361,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: spacing.sm,
     marginTop: spacing.md,
+    fontFamily: fontMono,
   },
   sectionHint: {
     fontSize: fontSize.sm,
@@ -370,17 +371,18 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
+    borderColor: colors.panelBorder,
+    borderRadius: 0,
     padding: spacing.md,
     fontSize: fontSize.lg,
     color: colors.textPrimary,
+    fontFamily: fontMono,
   },
   optionCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
+    borderColor: colors.panelBorder,
+    borderRadius: 0,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -393,6 +395,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 4,
+    fontFamily: fontMono,
   },
   optionDesc: {
     fontSize: fontSize.sm,
@@ -424,6 +427,7 @@ const styles = StyleSheet.create({
     color: colors.neonCyan,
     textAlign: 'center',
     marginBottom: spacing.lg,
+    fontFamily: fontMono,
   },
   scanBody: {
     fontSize: fontSize.md,
@@ -439,10 +443,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.surfaceLight,
+    borderColor: colors.panelBorder,
   },
   tierDot: {
     width: 12,
@@ -457,6 +461,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: fontMono,
   },
   tierDesc: {
     fontSize: fontSize.sm,
@@ -476,6 +481,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: spacing.xs,
+    fontFamily: fontMono,
   },
   avatarHint: {
     fontSize: fontSize.sm,
@@ -491,7 +497,7 @@ const styles = StyleSheet.create({
   avatarCard: {
     borderWidth: 2,
     borderColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     overflow: 'hidden',
     width: 140,
     height: 200,
@@ -514,7 +520,7 @@ const styles = StyleSheet.create({
   goAvatar: {
     width: 100,
     height: 140,
-    borderRadius: borderRadius.md,
+    borderRadius: 0,
     alignSelf: 'center',
     marginBottom: spacing.md,
     borderWidth: 1,
@@ -525,13 +531,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.neonGreen,
     textAlign: 'center',
+    fontFamily: fontMono,
   },
   goArchetype: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xs,
-    letterSpacing: 1,
+    letterSpacing: 2,
+    fontFamily: fontMono,
   },
   goDivider: {
     height: 1,

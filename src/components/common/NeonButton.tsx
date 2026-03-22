@@ -105,8 +105,8 @@ export default function NeonButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderWidth: 1,
-    borderRadius: 2,
+    borderWidth: 1.5,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -117,7 +117,8 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '700',
-    letterSpacing: 2,
+    letterSpacing: 3,
     textTransform: 'uppercase',
+    fontFamily: 'monospace',
   },
 });
