@@ -2,9 +2,8 @@ import { TileFlavor, TileType } from '../types';
 
 /**
  * Authored tile flavors for Broken Overpass.
- * Each one replaces a generic tile with specific content, rewards, and risk.
- * Assigned during sector generation — the tile type (resource/anomaly/unknown)
- * still drives the grid visuals; the flavor overrides rewards and text.
+ * 7 hand-crafted tiles layered on top of existing generation.
+ * Each has specific rewards, damage, flavor text, and optional gear drops.
  */
 
 export interface AuthoredTileDef {
@@ -15,87 +14,31 @@ export interface AuthoredTileDef {
   durability?: number;
 }
 
-// ─── SAFE STASH TILES (2) ───
-// Low risk, modest Supplies, teach new players that scanning pays off.
-
-const COLLAPSED_SUPPLY_CACHE: AuthoredTileDef = {
+// ─── Tile 1: Jackknifed Semi ───
+const JACKKNIFED_SEMI: AuthoredTileDef = {
   flavor: {
-    name: 'Collapsed Supply Cache',
-    desc: 'A Directorate supply crate pinned under rebar. Looks intact.',
-    icon: 'package-variant-closed',
-    scrapRange: [1, 3],
-    suppliesRange: [3, 6],
-    whiffPlayerDamage: [0, 0],
-    whiffRoverDamage: [0, 1],
-    successDamageChance: 0,
-    successPlayerDamage: [0, 0],
-    successRoverDamage: [0, 0],
-    scrapValueRange: [1, 2],
-    successNotes: [
-      'Crate popped clean. Rations, filters, a med kit. Nothing flashy — everything useful.',
-      'Standard Directorate field supplies. They won\'t miss these.',
-      'Sealed tight. The war didn\'t touch what\'s inside.',
-    ],
-    whiffNotes: [
-      'The crate\'s empty. Someone got here first.',
-      'Crushed flat. Nothing salvageable.',
-    ],
-    riskLabel: 'safe',
-  },
-  validTypes: ['resource', 'unknown'],
-};
-
-const ABANDONED_CAMPSITE: AuthoredTileDef = {
-  flavor: {
-    name: 'Abandoned Campsite',
-    desc: 'A drifter\'s camp under the overpass. Bedroll, fire pit, scattered cans.',
-    icon: 'campfire',
-    scrapRange: [1, 2],
-    suppliesRange: [2, 5],
-    whiffPlayerDamage: [0, 0],
+    name: 'Jackknifed Semi',
+    desc: 'A rusted semi-truck lies across two lanes, its trailer split open and spilling crates into the grass below the overpass.',
+    icon: 'truck',
+    scrapRange: [3, 4],
+    suppliesRange: [2, 3],
+    gearDropName: 'Padded Jacket',
+    gearDropDesc: '+small reduction to Health damage from scans',
+    gearDropChance: 0.12,
+    whiffPlayerDamage: [1, 1],
     whiffRoverDamage: [0, 0],
     successDamageChance: 0,
     successPlayerDamage: [0, 0],
     successRoverDamage: [0, 0],
-    scrapValueRange: [1, 1],
+    scrapValueRange: [1, 3],
     successNotes: [
-      'Whoever camped here left in a hurry. Food, water, a half-charged battery.',
-      'The fire\'s cold but the supplies are warm. Someone\'s loss, your gain.',
-      'A stash hidden under the bedroll. Smart drifter.',
+      'The cargo bay was packed tight. Scrap, rations, sealed crates — good haul.',
+      'You climbed in through the split trailer. Most of it\'s crushed, but the back rows held.',
+      'Crates of industrial supplies, still banded. The wreck preserved everything.',
     ],
     whiffNotes: [
-      'Picked clean. Not even crumbs.',
-      'Just ash and empty cans. The trail moves on.',
-    ],
-    riskLabel: 'safe',
-  },
-  validTypes: ['resource', 'unknown'],
-};
-
-// ─── MODERATE TILES (3) ───
-// Balanced risk/reward, core of the experience.
-
-const OVERTURNED_CARGO_TRUCK: AuthoredTileDef = {
-  flavor: {
-    name: 'Overturned Cargo Truck',
-    desc: 'A convoy hauler flipped on its side. The rear doors are bent open.',
-    icon: 'truck',
-    scrapRange: [4, 8],
-    suppliesRange: [1, 3],
-    whiffPlayerDamage: [2, 4],
-    whiffRoverDamage: [1, 3],
-    successDamageChance: 0.2,
-    successPlayerDamage: [1, 3],
-    successRoverDamage: [0, 0],
-    scrapValueRange: [2, 4],
-    successNotes: [
-      'The cargo bay still had bolted crates. Plated bearings, wire spools, a signal booster.',
-      'Industrial salvage. Heavy, but it spends.',
-      'Most of it\'s crushed but the rear compartment held. Good haul.',
-    ],
-    whiffNotes: [
-      'The frame shifted when you climbed in. Nothing inside but rust.',
-      'Structurally gone. The scanner pinged echoes, not cargo.',
+      'You slip on loose metal climbing in. Banged your knee, found nothing.',
+      'The cargo shifted when you pulled a crate. Empty boxes all the way down.',
     ],
     riskLabel: 'moderate',
   },
@@ -103,55 +46,123 @@ const OVERTURNED_CARGO_TRUCK: AuthoredTileDef = {
   durability: 1,
 };
 
-const CRACKED_ASPHALT_VENT: AuthoredTileDef = {
+// ─── Tile 2: Collapsed On-Ramp ───
+const COLLAPSED_ON_RAMP: AuthoredTileDef = {
   flavor: {
-    name: 'Cracked Asphalt Vent',
-    desc: 'Heat shimmer rising from a fissure in the road. Something\'s down there.',
-    icon: 'waves',
-    scrapRange: [3, 6],
-    suppliesRange: [0, 2],
-    whiffPlayerDamage: [3, 5],
-    whiffRoverDamage: [0, 2],
-    successDamageChance: 0.3,
-    successPlayerDamage: [2, 4],
+    name: 'Collapsed On-Ramp',
+    desc: 'A crumbled on-ramp drops into a tangle of rebar and broken concrete, with a few abandoned cars barely hanging on.',
+    icon: 'road-variant',
+    scrapRange: [4, 5],
+    suppliesRange: [0, 1],
+    whiffPlayerDamage: [0, 0],
+    whiffRoverDamage: [2, 2],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
     successRoverDamage: [0, 0],
-    scrapValueRange: [2, 5],
+    scrapValueRange: [2, 3],
     successNotes: [
-      'The vent opens into a buried maintenance tunnel. Pre-collapse tech, still sealed.',
-      'Hot air, loose soil, and a data chip wedged in the rubble.',
-      'The heat almost got you but the signal was real. Good pull from the underside.',
+      'You strip usable metal and wiring before the edge gives way. Clean extraction.',
+      'Rebar, plating, and a half-intact axle. The ramp\'s loss is your gain.',
+      'Three cars on the edge. You pulled parts from two before the concrete groaned.',
     ],
     whiffNotes: [
-      'The vent goes nowhere. Just hot air and methane.',
-      'You burned a scan on geology. The heat scrambled the read.',
+      'A section collapses while you\'re working. Falling debris clips the rover.',
+      'The edge crumbles before you get deep enough. Chassis took a hit from loose concrete.',
     ],
     riskLabel: 'moderate',
   },
-  validTypes: ['anomaly', 'unknown'],
-  durability: 2,
+  validTypes: ['resource', 'anomaly', 'unknown'],
+  durability: 1,
 };
 
-const DIRECTORATE_CHECKPOINT: AuthoredTileDef = {
+// ─── Tile 3: Roadside Cache ───
+const ROADSIDE_CACHE: AuthoredTileDef = {
   flavor: {
-    name: 'Directorate Checkpoint',
-    desc: 'An abandoned security post. Blast shields up, scanner turret offline.',
-    icon: 'shield-alert',
-    scrapRange: [3, 7],
-    suppliesRange: [1, 3],
-    whiffPlayerDamage: [2, 5],
-    whiffRoverDamage: [2, 4],
-    successDamageChance: 0.25,
-    successPlayerDamage: [1, 3],
-    successRoverDamage: [1, 2],
-    scrapValueRange: [3, 5],
+    name: 'Roadside Cache',
+    desc: 'Someone once stashed supplies beneath a roadside barrier, marked only by a faded symbol.',
+    icon: 'treasure-chest',
+    scrapRange: [1, 2],
+    suppliesRange: [3, 4],
+    gearDropName: 'Scavenger Satchel',
+    gearDropDesc: '+small increase to Supplies found',
+    gearDropChance: 0.12,
+    whiffPlayerDamage: [1, 1],
+    whiffRoverDamage: [0, 0],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [1, 2],
     successNotes: [
-      'The turret\'s dead but the armory locker wasn\'t. Military-grade components.',
-      'Security footage corrupted. But the supply room? Untouched.',
-      'Directorate-issue gear. They build to last — which means it\'s worth something.',
+      'The cache pops open. Rations, a water purifier, and a wound kit. Someone was prepared.',
+      'Hidden under the barrier: vacuum-sealed supplies. Still good.',
+      'A drifter\'s stash. They packed smart — everything you need, nothing you don\'t.',
     ],
     whiffNotes: [
-      'The checkpoint had an automated purge. Everything wiped before you got in.',
-      'Blast doors sealed when you tripped something. Walk away.',
+      'The cache was rigged with a noise trap. You stumble back, startled, minor cuts.',
+      'Pried it open to find... dirt. The real stash was already taken.',
+    ],
+    riskLabel: 'safe',
+  },
+  validTypes: ['resource', 'unknown'],
+  durability: 1,
+};
+
+// ─── Tile 4: Overpass Campfire Remains ───
+const OVERPASS_CAMPFIRE: AuthoredTileDef = {
+  flavor: {
+    name: 'Overpass Campfire Remains',
+    desc: 'Blackened fire rings and scattered bedrolls mark where another group once camped on the overpass.',
+    icon: 'campfire',
+    scrapRange: [0, 1],
+    suppliesRange: [2, 3],
+    intelRange: [1, 1],
+    whiffPlayerDamage: [1, 1],
+    whiffRoverDamage: [0, 0],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [0, 1],
+    successNotes: [
+      'You sift through the ashes and packs. Supplies, scratched directions, radio frequencies.',
+      'The bedrolls are gone but someone left notes. Coordinates, signal bands, patrol timings.',
+      'A half-burned journal under the fire ring. Intel on Directorate routes.',
+    ],
+    whiffNotes: [
+      'You inhale ash and step on a half-buried nail. Nothing worth the trouble.',
+      'Just cold embers and empty cans. Whoever was here took everything useful.',
+    ],
+    riskLabel: 'safe',
+  },
+  validTypes: ['resource', 'unknown'],
+  durability: 1,
+};
+
+// ─── Tile 5: Abandoned Checkpoint ───
+const ABANDONED_CHECKPOINT: AuthoredTileDef = {
+  flavor: {
+    name: 'Abandoned Checkpoint',
+    desc: 'Concrete barriers, rusted signs, and an overturned security booth choke the road, hinting at an old evacuation checkpoint.',
+    icon: 'shield-alert',
+    scrapRange: [2, 3],
+    suppliesRange: [0, 1],
+    intelRange: [2, 2],
+    gearDropName: 'Signal Scanner',
+    gearDropDesc: '+small increase to scan success',
+    gearDropChance: 0.10,
+    whiffPlayerDamage: [1, 1],
+    whiffRoverDamage: [1, 1],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [2, 3],
+    successNotes: [
+      'The security booth had powered components and old ID logs. Directorate broadcast codes.',
+      'You squeeze past the barricades and find maps, radio logs, and a working scanner module.',
+      'Evacuation records, patrol schedules, and a sealed component case. Intel goldmine.',
+    ],
+    whiffNotes: [
+      'A loose barricade collapses while you squeeze through. Takes you and the rover both.',
+      'The booth was already stripped. The barricade shift caught you on the way out.',
     ],
     riskLabel: 'moderate',
   },
@@ -159,75 +170,73 @@ const DIRECTORATE_CHECKPOINT: AuthoredTileDef = {
   durability: 2,
 };
 
-// ─── JACKPOT / HIGH-RISK TILES (2) ───
-// Big Scrap payoff or rare loot, but real damage potential.
-
-const BURIED_ROVER_WRECK: AuthoredTileDef = {
+// ─── Tile 6: Overgrown Off-Ramp ───
+const OVERGROWN_OFF_RAMP: AuthoredTileDef = {
   flavor: {
-    name: 'Buried Rover Wreck',
-    desc: 'Half a rover sticking out of the rubble. The engine housing looks intact.',
-    icon: 'car-wrench',
-    scrapRange: [8, 14],
-    suppliesRange: [0, 2],
-    whiffPlayerDamage: [4, 7],
-    whiffRoverDamage: [3, 6],
-    successDamageChance: 0.4,
-    successPlayerDamage: [2, 5],
-    successRoverDamage: [2, 4],
-    scrapValueRange: [5, 8],
+    name: 'Overgrown Off-Ramp',
+    desc: 'Vines and saplings claw at a half-collapsed off-ramp, hiding something metallic below.',
+    icon: 'tree',
+    scrapRange: [2, 3],
+    suppliesRange: [1, 2],
+    intelRange: [1, 1],
+    whiffPlayerDamage: [2, 2],
+    whiffRoverDamage: [0, 0],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [1, 2],
     successNotes: [
-      'The engine core is worth a week\'s scrap alone. Heavy extraction but it\'s yours.',
-      'You pulled the drive train, the nav unit, and a spare fuel cell. Jackpot.',
-      'This rover was running black-market upgrades. Premium components.',
+      'You push through the foliage and find scrap, a med pouch, and — relay towers on the horizon. Logged their bearings.',
+      'Under the vines: a buried vehicle and a clear sightline east. The relay field is visible from here.',
+      'Salvageable parts and a vantage point. You spot distant antennas and mark the heading.',
     ],
     whiffNotes: [
-      'The rubble shifted. The whole wreck sank deeper. You barely got out.',
-      'The engine was cracked — coolant leak ate the internals. Nothing to pull.',
-      'Something moved in the wreck. You backed off before finding out what.',
+      'You tangle in vines and slide down loose gravel. Scrapes and a twisted ankle.',
+      'The foliage hides a drop. You catch yourself, but not cleanly.',
     ],
-    riskLabel: 'risky',
+    riskLabel: 'moderate',
   },
   validTypes: ['resource', 'anomaly', 'unknown'],
-  durability: 2,
+  durability: 1,
 };
 
-const COLLAPSED_OVERPASS_SPAN: AuthoredTileDef = {
+// ─── Tile 7: Stripped Service Van (Safest tile) ───
+const STRIPPED_SERVICE_VAN: AuthoredTileDef = {
   flavor: {
-    name: 'Collapsed Span',
-    desc: 'The entire overpass section pancaked. Deep scans show signal pockets underneath.',
-    icon: 'bridge',
-    scrapRange: [10, 18],
-    suppliesRange: [1, 4],
-    whiffPlayerDamage: [5, 8],
-    whiffRoverDamage: [4, 7],
-    successDamageChance: 0.5,
-    successPlayerDamage: [3, 6],
-    successRoverDamage: [2, 5],
-    scrapValueRange: [6, 10],
+    name: 'Stripped Service Van',
+    desc: 'A small service van sits on the shoulder, doors open, mostly stripped but still organized inside.',
+    icon: 'van-utility',
+    scrapRange: [1, 2],
+    suppliesRange: [2, 3],
+    whiffPlayerDamage: [0, 0],
+    whiffRoverDamage: [0, 0],
+    successDamageChance: 0,
+    successPlayerDamage: [0, 0],
+    successRoverDamage: [0, 0],
+    scrapValueRange: [1, 1],
     successNotes: [
-      'Under the rubble: a sealed pre-collapse vault. The scanner couldn\'t believe it either.',
-      'Three layers of concrete and you found a military cache. This changes the week.',
-      'The structural collapse preserved what was underneath. Sealed compartments, untouched.',
+      'Another scavenger left in a hurry — not from a fight. Their loss, your supplies.',
+      'Organized compartments, half-emptied. Enough left to make it worth stopping.',
+      'Tools, a first-aid kit, and canned rations. The van was someone\'s mobile base.',
     ],
     whiffNotes: [
-      'The whole section groaned and shifted. You ran before it came down again.',
-      'Concrete dust everywhere. The scanner fried from the interference.',
-      'Deep scan was right about the pockets — they were just air.',
+      'Already picked clean. At least nothing went wrong.',
+      'Empty shelves, empty toolbox. Someone was thorough. No harm done.',
     ],
-    riskLabel: 'dangerous',
+    riskLabel: 'safe',
   },
-  validTypes: ['anomaly', 'unknown'],
-  durability: 3,
+  validTypes: ['resource', 'unknown'],
+  durability: 1,
 };
 
 // ─── Export ───
 
 export const BROKEN_OVERPASS_TILES: AuthoredTileDef[] = [
-  COLLAPSED_SUPPLY_CACHE,
-  ABANDONED_CAMPSITE,
-  OVERTURNED_CARGO_TRUCK,
-  CRACKED_ASPHALT_VENT,
-  DIRECTORATE_CHECKPOINT,
-  BURIED_ROVER_WRECK,
-  COLLAPSED_OVERPASS_SPAN,
+  JACKKNIFED_SEMI,
+  COLLAPSED_ON_RAMP,
+  ROADSIDE_CACHE,
+  OVERPASS_CAMPFIRE,
+  ABANDONED_CHECKPOINT,
+  OVERGROWN_OFF_RAMP,
+  STRIPPED_SERVICE_VAN,
 ];

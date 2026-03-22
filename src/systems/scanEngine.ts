@@ -98,6 +98,7 @@ export function resolveScan(
       opticsProc: false,
       scrapAwarded: 0,
       suppliesAwarded: 0,
+      intelAwarded: 0,
       playerDamage: 0,
       roverDamage: 0,
       scrapValue: 0,
@@ -216,6 +217,7 @@ export function resolveScan(
     // Rewards/damage filled in by caller after tile type is known
     scrapAwarded: 0,
     suppliesAwarded: 0,
+    intelAwarded: 0,
     playerDamage: 0,
     roverDamage: 0,
     scrapValue: 0,
@@ -271,9 +273,11 @@ function rollRange(range: [number, number]): number {
 export interface ScanRewards {
   scrapAwarded: number;
   suppliesAwarded: number;
+  intelAwarded: number;
   playerDamage: number;
   roverDamage: number;
   scrapValue: number;
+  gearDrop?: string;
 }
 
 /** Compute resource rewards and damage for a scan result */
@@ -327,7 +331,7 @@ export function computeScanRewards(
     roverDamage += Math.ceil(dmg * 0.4);
   }
 
-  return { scrapAwarded, suppliesAwarded, playerDamage, roverDamage, scrapValue };
+  return { scrapAwarded, suppliesAwarded, intelAwarded: 0, playerDamage, roverDamage, scrapValue };
 }
 
 /** Compute rewards using authored tile flavor ranges */
@@ -337,10 +341,8 @@ function computeFlavoredRewards(
   f: TileFlavor,
 ): ScanRewards {
   if (outcome === 'whiff') {
-    // Whiff: no rewards, flavor-specific damage
     let playerDamage = rollRange(f.whiffPlayerDamage);
     let roverDamage = rollRange(f.whiffRoverDamage);
-    // Gambit whiffs amplify authored damage by 50%
     if (scanType === 'gambit') {
       playerDamage = Math.ceil(playerDamage * 1.5);
       roverDamage = Math.ceil(roverDamage * 1.5);
@@ -348,6 +350,7 @@ function computeFlavoredRewards(
     return {
       scrapAwarded: 0,
       suppliesAwarded: 0,
+      intelAwarded: 0,
       playerDamage,
       roverDamage,
       scrapValue: 0,
@@ -357,18 +360,24 @@ function computeFlavoredRewards(
   // Success: use flavor reward ranges
   const scrapAwarded = rollRange(f.scrapRange);
   const suppliesAwarded = rollRange(f.suppliesRange);
+  const intelAwarded = f.intelRange ? rollRange(f.intelRange) : 0;
   const scrapValue = rollRange(f.scrapValueRange);
 
   let playerDamage = 0;
   let roverDamage = 0;
 
-  // Success hazard damage (risky/dangerous tiles)
   if (f.successDamageChance > 0 && Math.random() < f.successDamageChance) {
     playerDamage = rollRange(f.successPlayerDamage);
     roverDamage = rollRange(f.successRoverDamage);
   }
 
-  return { scrapAwarded, suppliesAwarded, playerDamage, roverDamage, scrapValue };
+  // Roll for starter gear drop
+  let gearDrop: string | undefined;
+  if (f.gearDropName && f.gearDropChance && Math.random() < f.gearDropChance) {
+    gearDrop = f.gearDropName;
+  }
+
+  return { scrapAwarded, suppliesAwarded, intelAwarded, playerDamage, roverDamage, scrapValue, gearDrop };
 }
 
 function pickRandom<T>(arr: T[]): T {

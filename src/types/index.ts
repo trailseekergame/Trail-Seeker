@@ -318,12 +318,17 @@ export interface GearItem {
 
 /** Authored tile flavor — overrides generic tile behavior with specific content */
 export interface TileFlavor {
-  name: string;         // e.g. "Overturned Cargo Truck"
+  name: string;         // e.g. "Jackknifed Semi"
   desc: string;         // Short description shown before scanning
   icon: string;         // MaterialCommunityIcons name
   // Reward overrides (replace generic rolls)
   scrapRange: [number, number];
   suppliesRange: [number, number];
+  intelRange?: [number, number]; // Intel/Data awarded on success
+  // Optional starter gear drop
+  gearDropName?: string;   // Name of gear item (e.g. "Padded Jacket")
+  gearDropDesc?: string;   // Short bonus description
+  gearDropChance?: number; // 0-1 probability on success
   // Damage risk on whiff
   whiffPlayerDamage: [number, number];
   whiffRoverDamage: [number, number];
@@ -375,9 +380,11 @@ export interface ScanResult {
   // Phase 1: risk & resources
   scrapAwarded: number;
   suppliesAwarded: number;
+  intelAwarded: number;   // Intel/Data points found
   playerDamage: number;   // HP damage taken this scan
   roverDamage: number;    // Rover condition damage this scan
   scrapValue: number;     // How much scrap the loot item is worth if scrapped
+  gearDrop?: string;      // Name of gear item found (authored tiles only)
 }
 
 export interface SeekerScanState {

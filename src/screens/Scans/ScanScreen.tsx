@@ -291,6 +291,11 @@ export default function ScanScreen({ route }: any) {
       dispatch({ type: 'DAMAGE_ROVER', payload: rewards.roverDamage });
     }
 
+    // Add gear drop to inventory if found
+    if (rewards.gearDrop) {
+      dispatch({ type: 'ADD_SPECIAL_LOOT', payload: rewards.gearDrop });
+    }
+
     // Handle durability: damage tile instead of clearing directly
     lastScannedTileRef.current = selectedTile.id;
     if (result.outcome !== 'whiff') {
@@ -961,7 +966,7 @@ export default function ScanScreen({ route }: any) {
                   )}
 
                   {/* Resource awards */}
-                  {(lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0) && (
+                  {(lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0 || lastResult.intelAwarded > 0) && (
                     <View style={styles.rewardRow}>
                       {lastResult.scrapAwarded > 0 && (
                         <View style={styles.rewardChip}>
@@ -975,12 +980,26 @@ export default function ScanScreen({ route }: any) {
                           <Text style={[styles.rewardChipText, { color: colors.supplies }]}>+{lastResult.suppliesAwarded}</Text>
                         </View>
                       )}
+                      {lastResult.intelAwarded > 0 && (
+                        <View style={styles.rewardChip}>
+                          <MaterialCommunityIcons name="database" size={12} color={colors.neonCyan} />
+                          <Text style={[styles.rewardChipText, { color: colors.neonCyan }]}>+{lastResult.intelAwarded} Intel</Text>
+                        </View>
+                      )}
                       {lastResult.scrapValue > 0 && lastResult.lootName && (
                         <View style={styles.rewardChip}>
                           <MaterialCommunityIcons name="recycle" size={12} color={colors.textMuted} />
                           <Text style={[styles.rewardChipText, { color: colors.textMuted }]}>Scrap: {lastResult.scrapValue}</Text>
                         </View>
                       )}
+                    </View>
+                  )}
+
+                  {/* Gear drop */}
+                  {lastResult.gearDrop && (
+                    <View style={styles.gearDropRow}>
+                      <MaterialCommunityIcons name="trophy" size={16} color={colors.neonAmber} />
+                      <Text style={styles.gearDropText}>Found: {lastResult.gearDrop}</Text>
                     </View>
                   )}
 
@@ -1769,6 +1788,23 @@ const styles = StyleSheet.create({
   },
   damageChipText: {
     fontSize: fontSize.xs,
+    fontWeight: '700',
+  },
+  gearDropRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.neonAmber + '15',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neonAmber + '30',
+    marginBottom: spacing.sm,
+  },
+  gearDropText: {
+    fontSize: fontSize.sm,
+    color: colors.neonAmber,
     fontWeight: '700',
   },
 
