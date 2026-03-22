@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/common/ScreenWrapper';
@@ -13,16 +14,19 @@ import NeonButton from '../components/common/NeonButton';
 import TypewriterText from '../components/common/TypewriterText';
 import { useGame } from '../context/GameContext';
 import { archetypes, lastLostOptions } from '../data/backstory';
+import { AVATARS } from '../data/avatars';
+import { AvatarId } from '../types';
 import { colors, spacing, fontSize, borderRadius } from '../theme';
 
-type Step = 'wake' | 'identity' | 'scans' | 'go';
+type Step = 'wake' | 'avatar' | 'identity' | 'scans' | 'go';
 
-const STEPS: Step[] = ['wake', 'identity', 'scans', 'go'];
+const STEPS: Step[] = ['wake', 'avatar', 'identity', 'scans', 'go'];
 
 export default function OnboardingScreen() {
   const { dispatch } = useGame();
   const [step, setStep] = useState<Step>('wake');
   const [playerName, setPlayerName] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>('operator_a');
   const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
   const [selectedLost, setSelectedLost] = useState<string | null>(null);
   const [wakeTextDone, setWakeTextDone] = useState(false);
@@ -30,6 +34,7 @@ export default function OnboardingScreen() {
 
   const handleComplete = () => {
     dispatch({ type: 'SET_PLAYER_NAME', payload: playerName || 'Drifter' });
+    dispatch({ type: 'SET_AVATAR', payload: selectedAvatar });
 
     const archetype = archetypes.find((a) => a.id === selectedArchetype);
     const lost = lastLostOptions.find((l) => l.id === selectedLost);
@@ -73,7 +78,7 @@ export default function OnboardingScreen() {
       {wakeTextDone && (
         <NeonButton
           title="Get up."
-          onPress={() => setStep('identity')}
+          onPress={() => setStep('avatar')}
           variant="primary"
           size="lg"
           style={styles.wakeBtn}
@@ -82,7 +87,43 @@ export default function OnboardingScreen() {
     </View>
   );
 
-  // ─── STEP 2: IDENTITY (name + archetype + lost — one screen) ───
+  // ─── STEP 2: AVATAR SELECTION ───
+  const renderAvatar = () => (
+    <View style={styles.centerContent}>
+      <Text style={styles.avatarPrompt}>Choose your operator.</Text>
+      <Text style={styles.avatarHint}>Cosmetic only. Change anytime in Settings.</Text>
+
+      <View style={styles.avatarRow}>
+        {(Object.keys(AVATARS) as AvatarId[]).map((id) => (
+          <TouchableOpacity
+            key={id}
+            onPress={() => setSelectedAvatar(id)}
+            style={[
+              styles.avatarCard,
+              selectedAvatar === id && styles.avatarCardSelected,
+            ]}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={AVATARS[id].image}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <NeonButton
+        title="This one."
+        onPress={() => setStep('identity')}
+        variant="primary"
+        size="lg"
+        style={styles.avatarBtn}
+      />
+    </View>
+  );
+
+  // ─── STEP 3: IDENTITY (name + archetype + lost — one screen) ───
   const renderIdentity = () => (
     <ScrollView style={styles.scrollFlex} showsVerticalScrollIndicator={false}>
       <Text style={styles.sectionLabel}>TRAIL NAME</Text>
@@ -196,6 +237,11 @@ export default function OnboardingScreen() {
 
     return (
       <View style={styles.centerContent}>
+        <Image
+          source={AVATARS[selectedAvatar].image}
+          style={styles.goAvatar}
+          resizeMode="cover"
+        />
         <Text style={styles.goName}>{playerName || 'Drifter'}</Text>
         {archetype && (
           <Text style={styles.goArchetype}>{archetype.label}</Text>
@@ -242,6 +288,7 @@ export default function OnboardingScreen() {
       </View>
 
       {step === 'wake' && renderWake()}
+      {step === 'avatar' && renderAvatar()}
       {step === 'identity' && renderIdentity()}
       {step === 'scans' && renderScans()}
       {step === 'go' && renderGo()}
@@ -419,7 +466,57 @@ const styles = StyleSheet.create({
     width: 200,
   },
 
+  // ─── Avatar ───
+  avatarPrompt: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  avatarHint: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  avatarCard: {
+    borderWidth: 2,
+    borderColor: colors.surfaceLight,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    width: 140,
+    height: 200,
+  },
+  avatarCardSelected: {
+    borderColor: colors.neonGreen,
+    borderWidth: 3,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarBtn: {
+    marginTop: spacing.xl,
+    alignSelf: 'center',
+    width: 200,
+  },
+
   // ─── Go ───
+  goAvatar: {
+    width: 100,
+    height: 140,
+    borderRadius: borderRadius.md,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+  },
   goName: {
     fontSize: 32,
     fontWeight: '700',

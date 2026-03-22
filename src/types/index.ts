@@ -182,9 +182,12 @@ export interface LeaderboardEntry {
 // ─── Game State ───
 export type TrailOverReason = 'hp_zero' | 'run_complete';
 
+export type AvatarId = 'operator_a' | 'operator_b';
+
 export interface GameState {
   // Player identity
   playerName: string;
+  avatarId: AvatarId;
   backstory: PlayerBackstory | null;
   onboardingComplete: boolean;
   trailOver: boolean;
@@ -231,6 +234,7 @@ export interface GameState {
 
 export const INITIAL_GAME_STATE: GameState = {
   playerName: 'Drifter',
+  avatarId: 'operator_a',
   backstory: null,
   onboardingComplete: false,
   trailOver: false,

@@ -42,7 +42,7 @@ export default function TypewriterText({ text, speed = 30, onComplete, style }: 
     setDisplayedCount(text.length);
     if (!completedRef.current) {
       completedRef.current = true;
-      onComplete?.();
+      setTimeout(() => onComplete?.(), 0);
     }
   };
 

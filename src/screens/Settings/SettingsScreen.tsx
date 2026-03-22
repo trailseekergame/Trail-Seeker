@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import AudioManager from '../../services/audioManager';
+import { useGame } from '../../context/GameContext';
+import { AVATARS } from '../../data/avatars';
+import { AvatarId } from '../../types';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 export default function SettingsScreen() {
+  const { state, dispatch } = useGame();
   const [sfxEnabled, setSfxEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
@@ -84,6 +88,32 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* ─── OPERATOR ─── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>OPERATOR</Text>
+
+          <View style={styles.avatarRow}>
+            {(Object.keys(AVATARS) as AvatarId[]).map((id) => (
+              <TouchableOpacity
+                key={id}
+                onPress={() => dispatch({ type: 'SET_AVATAR', payload: id })}
+                style={[
+                  styles.avatarCard,
+                  state.avatarId === id && styles.avatarCardSelected,
+                ]}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={AVATARS[id].image}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.avatarHint}>Cosmetic only. No gameplay effect.</Text>
+        </View>
+
         <View style={styles.footer}>
           <Text style={styles.version}>v0.1.0</Text>
         </View>
@@ -141,6 +171,35 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textPrimary,
     fontWeight: '500',
+  },
+  // ─── Avatar ───
+  avatarRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  avatarCard: {
+    borderWidth: 2,
+    borderColor: colors.surfaceLight,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    width: 72,
+    height: 100,
+  },
+  avatarCardSelected: {
+    borderColor: colors.neonGreen,
+    borderWidth: 3,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   footer: {
     alignItems: 'center',

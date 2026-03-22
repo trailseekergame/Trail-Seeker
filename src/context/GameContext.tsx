@@ -15,6 +15,7 @@ import {
   GearSlotId,
   Sector,
   ScanResult,
+  AvatarId,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 import { ALL_GEAR_ITEMS } from '../data/gearItems';
@@ -29,6 +30,7 @@ type GameAction =
   | { type: 'LOAD_STATE'; payload: GameState }
   | { type: 'RESET_STATE' }
   | { type: 'SET_PLAYER_NAME'; payload: string }
+  | { type: 'SET_AVATAR'; payload: AvatarId }
   | { type: 'SET_BACKSTORY'; payload: PlayerBackstory }
   | { type: 'COMPLETE_ONBOARDING' }
   | { type: 'MOVE_TO_NODE'; payload: string }
@@ -83,6 +85,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_PLAYER_NAME':
       return { ...state, playerName: action.payload };
+
+    case 'SET_AVATAR':
+      return { ...state, avatarId: action.payload };
 
     case 'SET_BACKSTORY':
       return { ...state, backstory: action.payload };

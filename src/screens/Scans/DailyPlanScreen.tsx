@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
@@ -10,6 +10,7 @@ import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
+import { AVATARS } from '../../data/avatars';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
 import CoachMark, { COACH } from '../../components/common/CoachMark';
@@ -92,6 +93,11 @@ export default function DailyPlanScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* ─── 1. HEADER: Day + Streak ─── */}
         <View style={styles.header}>
+          <Image
+            source={AVATARS[state.avatarId].image}
+            style={styles.headerAvatar}
+            resizeMode="cover"
+          />
           <Text style={styles.headerTitle}>
             Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
           </Text>
@@ -263,6 +269,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  headerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+    marginBottom: spacing.sm,
   },
   headerTitle: {
     fontSize: fontSize.xl,
