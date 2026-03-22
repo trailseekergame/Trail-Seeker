@@ -10,13 +10,14 @@ import { ActiveBoost, BoostEffect, GameState } from '../types';
  * - Base progression is 100% free; $SKR = convenience + style
  * - All values in this file can be rebalanced without touching core game code
  *
- * PACING RECOMMENDATIONS (tune later):
- * - Active player earns ~25-40 $SKR in their first week from early milestones
- * - Chapter 1 completion (both maps) nets 150 $SKR total (big one-time payout)
- * - After first-week milestones dry up, weekly goal is the recurring source
- * - Extra scan pack: 15 $SKR → player can afford ~2 packs per week initially
- * - Early cosmetics: 20-50 $SKR → takes 1-3 weeks to afford depending on rarity
- * - This pacing means $SKR is always a deliberate choice, never spent casually
+ * PACING (conservative — tighten supply for small early player base):
+ * - Milestone rewards halved from original design
+ * - Cosmetic prices doubled — they should feel rare and exclusive
+ * - Active player earns ~30 $SKR in first week, ~65 more in week 2
+ * - Total chapter 1 lifetime: ~95 $SKR (tight, forces choices)
+ * - A single cosmetic costs 40-70 $SKR — that's nearly a full chapter's earnings
+ * - Extra scans cost 20 $SKR — player gets maybe 1-2 total before chapter 1 is done
+ * - This makes every $SKR decision feel heavy. Loosen later if retention supports it.
  */
 
 // ═══════════════════════════════════════════════════════
@@ -38,7 +39,7 @@ export const SKR_MILESTONES: SkrMilestone[] = [
     id: 'clear_broken_overpass',
     name: 'Overpass Stripped',
     description: 'Complete Broken Overpass for the first time.',
-    reward: 25,
+    reward: 12,
     oneTime: true,
     check: (s) => s.completedMapIds.includes('broken_overpass'),
   },
@@ -46,7 +47,7 @@ export const SKR_MILESTONES: SkrMilestone[] = [
     id: 'clear_relay_field',
     name: 'Signal Acquired',
     description: 'Complete Relay Field for the first time.',
-    reward: 50,
+    reward: 25,
     oneTime: true,
     check: (s) => s.completedMapIds.includes('relay_field'),
   },
@@ -54,7 +55,7 @@ export const SKR_MILESTONES: SkrMilestone[] = [
     id: 'chapter_1_complete',
     name: 'Chapter 1: Running Dark',
     description: 'Clear both Broken Overpass and Relay Field.',
-    reward: 75,
+    reward: 35,
     oneTime: true,
     check: (s) =>
       s.completedMapIds.includes('broken_overpass') &&
@@ -66,7 +67,7 @@ export const SKR_MILESTONES: SkrMilestone[] = [
     id: 'streak_7',
     name: 'Full Week',
     description: 'Maintain a 7-day login streak.',
-    reward: 20,
+    reward: 10,
     oneTime: true,
     check: (s) => s.seekerScans.streakDay >= 7,
   },
@@ -74,29 +75,35 @@ export const SKR_MILESTONES: SkrMilestone[] = [
     id: 'scrap_100',
     name: 'Hundred-Scrap Club',
     description: 'Accumulate 100 total Scrap earned.',
-    reward: 15,
+    reward: 8,
     oneTime: true,
     check: (s) => s.totalScrapEarned >= 100,
   },
 ];
 
 /**
- * Pacing math for a typical active player (first 2 weeks):
+ * Pacing math (tight supply for small player base):
  *
  * Week 1 (building toward Broken Overpass clear):
- *   - streak_7:             20 $SKR  (end of week 1)
- *   - scrap_100:            15 $SKR  (around day 4-5)
- *   - clear_broken_overpass: 25 $SKR  (around day 7)
- *   Total week 1:           ~60 $SKR
+ *   - scrap_100:             8 $SKR  (around day 4-5)
+ *   - streak_7:             10 $SKR  (end of week 1)
+ *   - clear_broken_overpass: 12 $SKR  (around day 7)
+ *   Total week 1:           ~30 $SKR
+ *   Can afford: 1 scan boost (20) + 10 left over, OR save for cosmetic
  *
  * Week 2 (working Relay Field):
- *   - clear_relay_field:    50 $SKR  (around day 12-14)
- *   - chapter_1_complete:   75 $SKR  (same moment)
- *   Total week 2:           ~125 $SKR
+ *   - clear_relay_field:    25 $SKR  (around day 12-14)
+ *   - chapter_1_complete:   35 $SKR  (same moment)
+ *   Total week 2:           ~60 $SKR
  *
- * After chapter 1:  ~185 $SKR lifetime, milestones mostly exhausted.
- * Future: add weekly recurring goals (e.g., "Complete 5 runs this week: 10 $SKR")
- * to provide a slow drip post-chapter without inflating early.
+ * After chapter 1:  ~90 $SKR lifetime. Choices:
+ *   - Ghost Coat (40) + 1 scan boost (20) = 60, leaving 30
+ *   - Signal Visor (50) + save the rest
+ *   - Salvage Flag (60) uses nearly everything
+ *   - Rust Stripe Rover (70) requires saving through chapter 1 with minimal spending
+ *
+ * This is intentionally tight. Cosmetics should feel rare.
+ * Loosen milestone rewards (not cosmetic prices) if retention data supports it.
  */
 
 export function checkMilestones(state: GameState): SkrMilestone[] {
@@ -125,19 +132,18 @@ export interface SkrShopItem {
 }
 
 /**
- * PRICING RECOMMENDATIONS:
+ * PRICING (tight — cosmetics should feel rare and exclusive):
  *
  * Extra scans:
- *   15 $SKR for +2 scans (one run). A week-1 player can afford
- *   ~2-4 of these total from early milestones. Helpful but not
- *   mandatory — base 4-7 scans/day is enough to make progress.
+ *   20 $SKR for +2 scans. A chapter-1 player can afford ~1-2
+ *   total from milestones. Meaningful choice, never casual.
  *
- * Cosmetics:
- *   20-50 $SKR range. Takes 1-3 weeks to afford at current earn rate.
- *   Purely visual. Example pricing tiers:
- *     Common skin: 20 $SKR (~1 week)
- *     Uncommon skin: 35 $SKR (~1.5 weeks)
- *     Rare decoration: 50 $SKR (~2 weeks)
+ * Cosmetics (prices doubled from original — make them aspirational):
+ *   40-70 $SKR. Takes multiple weeks to afford. Each one is a flex.
+ *     Common skin: 40 $SKR (~3-4 weeks of play)
+ *     Uncommon skin: 50 $SKR (~4-5 weeks)
+ *     Rare item: 60 $SKR (~5-6 weeks)
+ *     Ultra-rare: 70 $SKR (~6+ weeks, real commitment)
  */
 
 export const SKR_SHOP: SkrShopItem[] = [
@@ -146,7 +152,7 @@ export const SKR_SHOP: SkrShopItem[] = [
     id: 'extra_scans_2',
     name: 'Extended Window',
     description: '+2 bonus scans on your next run.',
-    cost: 15,
+    cost: 20,
     icon: 'radar',
     category: 'scans',
     boost: {
@@ -157,12 +163,12 @@ export const SKR_SHOP: SkrShopItem[] = [
     },
   },
 
-  // ─── Cosmetics (purely visual, no gameplay effect) ───
+  // ─── Cosmetics (rare, aspirational — no gameplay effect) ───
   {
     id: 'skin_ghost_coat',
     name: 'Ghost Coat',
     description: 'A pale duster that catches the dust light. Purely cosmetic.',
-    cost: 20,
+    cost: 40,
     icon: 'hanger',
     category: 'cosmetic',
     cosmeticId: 'cos-ghost-coat',
@@ -171,7 +177,7 @@ export const SKR_SHOP: SkrShopItem[] = [
     id: 'skin_signal_visor',
     name: 'Signal Visor',
     description: 'Tinted optics with a faint scanner glow. Cosmetic only.',
-    cost: 25,
+    cost: 50,
     icon: 'sunglasses',
     category: 'cosmetic',
     cosmeticId: 'cos-signal-visor',
@@ -180,7 +186,7 @@ export const SKR_SHOP: SkrShopItem[] = [
     id: 'decor_salvage_flag',
     name: 'Salvage Flag',
     description: 'A tattered banner for your camp. Shows you\'ve been out there.',
-    cost: 30,
+    cost: 60,
     icon: 'flag-variant',
     category: 'cosmetic',
     cosmeticId: 'cos-salvage-flag',
@@ -189,7 +195,7 @@ export const SKR_SHOP: SkrShopItem[] = [
     id: 'skin_rust_rover',
     name: 'Rust Stripe Rover',
     description: 'Burnt orange racing stripe on your rover. Style points only.',
-    cost: 35,
+    cost: 70,
     icon: 'car-sports',
     category: 'cosmetic',
     cosmeticId: 'cos-rust-rover',
