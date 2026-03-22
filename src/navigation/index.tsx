@@ -19,6 +19,7 @@ import ArcadeScreen from '../screens/Arcade/ArcadeScreen';
 import MiniGameScreen from '../screens/Arcade/MiniGameScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import DailyPlanScreen from '../screens/Scans/DailyPlanScreen';
+import MissionSelectScreen from '../screens/Scans/MissionSelectScreen';
 import ScanScreen from '../screens/Scans/ScanScreen';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 
@@ -83,7 +84,12 @@ function TrailStackNavigator() {
       <TrailStack.Screen
         name="DailyPlan"
         component={DailyPlanScreen}
-        options={{ title: 'Seeker Scan' }}
+        options={{ title: 'Camp' }}
+      />
+      <TrailStack.Screen
+        name="MissionSelect"
+        component={MissionSelectScreen}
+        options={{ title: 'Mission Board' }}
       />
       <TrailStack.Screen
         name="ScanMain"

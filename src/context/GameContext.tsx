@@ -16,6 +16,7 @@ import {
   Sector,
   ScanResult,
   AvatarId,
+  MapId,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 import { ALL_GEAR_ITEMS } from '../data/gearItems';
@@ -72,7 +73,11 @@ type GameAction =
   | { type: 'ADD_PATHFINDER_COMPONENT' }
   | { type: 'UNLOCK_PATHFINDER' }
   | { type: 'UPDATE_SCAN_TOTAL'; payload: number }
-  | { type: 'RESET_SESSION' };
+  | { type: 'RESET_SESSION' }
+  | { type: 'SET_CURRENT_MAP'; payload: MapId }
+  | { type: 'UNLOCK_MAP'; payload: MapId }
+  | { type: 'COMPLETE_MAP'; payload: MapId }
+  | { type: 'LOAD_SECTOR_FOR_MAP'; payload: Sector };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -490,6 +495,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         seekerScans: {
           ...state.seekerScans,
+          sessionResults: [],
+          sessionStartTime: Date.now(),
+        },
+      };
+    }
+
+    case 'SET_CURRENT_MAP':
+      return { ...state, currentMapId: action.payload };
+
+    case 'UNLOCK_MAP': {
+      if (state.unlockedMapIds.includes(action.payload)) return state;
+      return { ...state, unlockedMapIds: [...state.unlockedMapIds, action.payload] };
+    }
+
+    case 'COMPLETE_MAP': {
+      if (state.completedMapIds.includes(action.payload)) return state;
+      return { ...state, completedMapIds: [...state.completedMapIds, action.payload] };
+    }
+
+    case 'LOAD_SECTOR_FOR_MAP': {
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: action.payload,
           sessionResults: [],
           sessionStartTime: Date.now(),
         },

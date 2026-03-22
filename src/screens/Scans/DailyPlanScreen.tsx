@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
@@ -11,6 +11,7 @@ import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
 import { AVATARS } from '../../data/avatars';
+import { MAP_DEFS } from '../../data/sectorMaps';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
 import CoachMark, { COACH } from '../../components/common/CoachMark';
@@ -89,7 +90,14 @@ export default function DailyPlanScreen() {
   const breakdownNote = breakdownParts.length > 0 ? breakdownParts.join(' · ') : null;
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper padded={false}>
+      <ImageBackground
+        source={MAP_DEFS.camp.background}
+        style={styles.campBg}
+        resizeMode="cover"
+      >
+        <View style={styles.campOverlay} />
+      </ImageBackground>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* ─── 1. HEADER: Day + Streak ─── */}
         <View style={styles.header}>
@@ -238,17 +246,18 @@ export default function DailyPlanScreen() {
           </View>
         )}
 
-        {/* ─── 5. PRIMARY CTA ─── */}
+        {/* ─── 5. MISSION BOARD CTA ─── */}
         <View style={styles.ctaContainer}>
           <NeonButton
-            title="Run the Job"
-            onPress={() => nav.navigate('ScanMain')}
+            title="Mission Board"
+            onPress={() => nav.navigate('MissionSelect')}
             size="lg"
+            icon="map-marker-path"
             disabled={ss.scansRemaining <= 0 || ss.activeGearSlots.length === 0}
           />
           <Text style={styles.ctaSubtext}>
             {ss.scansRemaining > 0
-              ? `Operating in ${ss.currentSector.name}`
+              ? 'Pick a sector and spend your scans.'
               : 'Window\'s closed. Signal resets at dawn.'}
           </Text>
           {ss.activeGearSlots.length === 0 && (
@@ -260,9 +269,21 @@ export default function DailyPlanScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
+  campBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 220,
+  },
+  campOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 11, 16, 0.55)',
+  },
   scroll: { flex: 1 },
-  content: { paddingBottom: spacing.xxl },
+  content: { paddingBottom: spacing.xxl, paddingHorizontal: spacing.md },
 
   // ─── 1. Header ───
   header: {

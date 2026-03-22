@@ -184,6 +184,8 @@ export type TrailOverReason = 'hp_zero' | 'run_complete';
 
 export type AvatarId = 'operator_a' | 'operator_b';
 
+export type MapId = 'camp' | 'broken_overpass' | 'relay_field';
+
 export interface GameState {
   // Player identity
   playerName: string;
@@ -230,6 +232,11 @@ export interface GameState {
 
   // Seeker Scan System
   seekerScans: SeekerScanState;
+
+  // Map progression
+  currentMapId: MapId;
+  unlockedMapIds: MapId[];
+  completedMapIds: MapId[];
 }
 
 export const INITIAL_GAME_STATE: GameState = {
@@ -289,6 +296,9 @@ export const INITIAL_GAME_STATE: GameState = {
     shieldedNextScan: false,
     boostedNextScan: false,
   },
+  currentMapId: 'camp',
+  unlockedMapIds: ['camp', 'broken_overpass'],
+  completedMapIds: [],
 };
 
 // ─── Seeker Scan System ───

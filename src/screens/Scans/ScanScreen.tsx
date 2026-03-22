@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
@@ -15,6 +15,7 @@ import { getDailyObjective, getSessionSummary, getReturnHook } from '../../syste
 import CoachMark, { COACH, hasBeenShown } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
 import MicroEvent, { rollMicroEvent, MicroEventData, MicroEventEffect } from '../../components/scans/MicroEvent';
+import { MAP_DEFS, MapId } from '../../data/sectorMaps';
 
 // ─── Constants ───
 
@@ -67,10 +68,14 @@ const TIER_UPGRADE: Partial<Record<ScanOutcome, ScanOutcome>> = {
   rare: 'legendary',
 };
 
-export default function ScanScreen() {
+export default function ScanScreen({ route }: any) {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
+  const mapId: MapId = route?.params?.mapId || state.currentMapId || 'broken_overpass';
+  const mapDef = MAP_DEFS[mapId];
+  const briefing: string | undefined = route?.params?.briefing;
+  const [showBriefing, setShowBriefing] = useState(!!briefing);
 
   const [selectedScan, setSelectedScan] = useState<ScanType>('seeker');
   const [selectedTile, setSelectedTile] = useState<SectorTile | null>(null);
@@ -418,8 +423,53 @@ export default function ScanScreen() {
     ? (lastResult.droneProc ? ss.scansRemaining : Math.max(0, ss.scansRemaining - 1))
     : ss.scansRemaining;
 
+  // ─── Handle sector full clear → map completion ───
+  const allTilesCleared = ss.currentSector.tiles.length > 0 && ss.currentSector.tiles.every(t => t.cleared);
+
+  const handleMapComplete = () => {
+    // Mark map as completed
+    dispatch({ type: 'COMPLETE_MAP', payload: mapId });
+
+    // Unlock next map if defined
+    if (mapDef.unlocksMap) {
+      dispatch({ type: 'UNLOCK_MAP', payload: mapDef.unlocksMap });
+    }
+
+    // Return to camp
+    dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
+    nav.goBack();
+  };
+
   return (
     <ScreenWrapper padded={false}>
+      {/* ─── MAP BACKGROUND ─── */}
+      <ImageBackground
+        source={mapDef.background}
+        style={styles.mapBg}
+        resizeMode="cover"
+      >
+        <View style={styles.mapBgOverlay} />
+      </ImageBackground>
+
+      {/* ─── BRIEFING MODAL ─── */}
+      <Modal visible={showBriefing} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <View style={styles.briefingCard}>
+            <MaterialCommunityIcons name={mapDef.icon as any} size={32} color={colors.neonCyan} style={{ marginBottom: spacing.sm }} />
+            <Text style={styles.briefingTitle}>{mapDef.name}</Text>
+            <Text style={styles.briefingSubtitle}>{mapDef.subtitle}</Text>
+            <Text style={styles.briefingText}>{briefing}</Text>
+            <NeonButton
+              title="Begin scan"
+              onPress={() => setShowBriefing(false)}
+              variant="primary"
+              size="lg"
+              style={{ marginTop: spacing.lg }}
+            />
+          </View>
+        </View>
+      </Modal>
+
       {/* ─── TOP BAR ─── */}
       <View style={styles.topBar}>
         <View style={styles.topBarLeft}>
@@ -894,14 +944,18 @@ export default function ScanScreen() {
       <Modal visible={showSessionEnd} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.sessionEndCard}>
-            <Text style={styles.sessionEndLabel}>JOB DONE</Text>
+            <Text style={styles.sessionEndLabel}>
+              {allTilesCleared ? 'SECTOR CLEARED' : 'JOB DONE'}
+            </Text>
             <View style={styles.sessionEndDivider} />
             <Text style={styles.sessionEndSummary}>
-              {getSessionSummary(
-                [...ss.sessionResults, ...(lastResult ? [lastResult] : [])],
-                ss.currentSector.name,
-                getDailyObjective(ss),
-              )}
+              {allTilesCleared
+                ? mapDef.debriefing
+                : getSessionSummary(
+                    [...ss.sessionResults, ...(lastResult ? [lastResult] : [])],
+                    ss.currentSector.name,
+                    getDailyObjective(ss),
+                  )}
             </Text>
             <View style={styles.sessionEndStats}>
               <View style={styles.sessionEndStat}>
@@ -923,12 +977,23 @@ export default function ScanScreen() {
                 <Text style={styles.sessionEndStatLabel}>rare+</Text>
               </View>
             </View>
+
+            {/* Map unlock notification */}
+            {allTilesCleared && mapDef.unlocksMap && (
+              <View style={styles.unlockRow}>
+                <MaterialCommunityIcons name="lock-open-variant" size={16} color={colors.neonCyan} />
+                <Text style={styles.unlockText}>
+                  New sector unlocked: {MAP_DEFS[mapDef.unlocksMap].name}
+                </Text>
+              </View>
+            )}
+
             <Text style={styles.sessionEndHook}>
-              {getReturnHook(ss)}
+              {allTilesCleared ? '' : getReturnHook(ss)}
             </Text>
             <NeonButton
-              title="Return to waystation"
-              onPress={handleDismissSessionEnd}
+              title={allTilesCleared ? 'Return to camp' : 'Return to waystation'}
+              onPress={allTilesCleared ? handleMapComplete : handleDismissSessionEnd}
               variant="primary"
               size="lg"
             />
@@ -940,6 +1005,49 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ─── Map Background ───
+  mapBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  mapBgOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 11, 16, 0.65)',
+  },
+
+  // ─── Briefing ───
+  briefingCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.neonCyan + '40',
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  briefingTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  briefingSubtitle: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    letterSpacing: 1,
+    marginTop: 2,
+    marginBottom: spacing.md,
+  },
+  briefingText: {
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+
   // ─── Top Bar ───
   topBar: {
     flexDirection: 'row',
@@ -1429,5 +1537,24 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+
+  // ─── Map Unlock ───
+  unlockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.neonCyan + '15',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neonCyan + '30',
+    marginBottom: spacing.md,
+  },
+  unlockText: {
+    fontSize: fontSize.sm,
+    color: colors.neonCyan,
+    fontWeight: '600',
   },
 });
