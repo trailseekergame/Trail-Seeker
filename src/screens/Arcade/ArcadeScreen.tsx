@@ -41,14 +41,31 @@ export default function ArcadeScreen({ navigation }: any) {
           />
         </Card>
 
-        {/* Coming Soon – Rock Paper Scissors */}
-        <Card title="Trail Standoff" icon="close" style={styles.lockedCard}>
+        {/* Trail Standoff – Rock Paper Scissors */}
+        <Card title="Trail Standoff" icon="sword-cross" accentColor={colors.neonAmber}>
           <Text style={styles.gameDesc}>
             Rock-Paper-Scissors with a wasteland twist. Challenge other drifters.
           </Text>
-          <View style={styles.comingSoon}>
-            <Text style={styles.comingSoonText}>COMING SOON</Text>
+          <View style={styles.gameStats}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.neonGreen }]}>{state.rpsWins}</Text>
+              <Text style={styles.statLabel}>Wins</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.neonRed }]}>{state.rpsLosses}</Text>
+              <Text style={styles.statLabel}>Losses</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.neonAmber }]}>{state.rpsDraws}</Text>
+              <Text style={styles.statLabel}>Draws</Text>
+            </View>
           </View>
+          <NeonButton
+            title="Play Trail Standoff"
+            onPress={() => navigation.navigate('RPSDuel')}
+            variant="primary"
+            icon="sword-cross"
+          />
         </Card>
 
         {/* Leaderboard */}

@@ -84,7 +84,10 @@ type GameAction =
   | { type: 'ADD_BOOST'; payload: ActiveBoost }
   | { type: 'CONSUME_RUN_BOOSTS' }
   | { type: 'ADD_INTEL'; payload: number }
-  | { type: 'SET_WALLET_ADDRESS'; payload: string | null };
+  | { type: 'SET_WALLET_ADDRESS'; payload: string | null }
+  | { type: 'RPS_WIN' }
+  | { type: 'RPS_LOSS' }
+  | { type: 'RPS_DRAW' };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -574,6 +577,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_WALLET_ADDRESS':
       return { ...state, connectedWalletAddress: action.payload };
+
+    case 'RPS_WIN':
+      return { ...state, rpsWins: state.rpsWins + 1 };
+    case 'RPS_LOSS':
+      return { ...state, rpsLosses: state.rpsLosses + 1 };
+    case 'RPS_DRAW':
+      return { ...state, rpsDraws: state.rpsDraws + 1 };
 
     default:
       return state;

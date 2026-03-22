@@ -247,6 +247,11 @@ export interface GameState {
 
   // Active boosts (from $SKR shop, expire after next run)
   activeBoosts: ActiveBoost[];
+
+  // RPS Duel record
+  rpsWins: number;
+  rpsLosses: number;
+  rpsDraws: number;
 }
 
 export interface ActiveBoost {
@@ -329,6 +334,9 @@ export const INITIAL_GAME_STATE: GameState = {
   intelCollected: 0,
   connectedWalletAddress: null,
   activeBoosts: [],
+  rpsWins: 0,
+  rpsLosses: 0,
+  rpsDraws: 0,
 };
 
 // ─── Seeker Scan System ───
