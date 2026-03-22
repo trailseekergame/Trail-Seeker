@@ -237,7 +237,30 @@ export interface GameState {
   currentMapId: MapId;
   unlockedMapIds: MapId[];
   completedMapIds: MapId[];
+
+  // $SKR economy (off-chain soft currency)
+  skrBalance: number;
+  skrLifetimeEarned: number;
+  skrMilestonesCompleted: string[]; // IDs of one-time milestones already claimed
+  intelCollected: number;           // Intel/Data resource
+
+  // Active boosts (from $SKR shop, expire after next run)
+  activeBoosts: ActiveBoost[];
 }
+
+export interface ActiveBoost {
+  id: string;
+  name: string;
+  effect: BoostEffect;
+  value: number;
+  expiresAfterRun: boolean; // true = consumed after one mission
+}
+
+export type BoostEffect =
+  | 'extra_scans'          // +N scans for next run
+  | 'resource_find_rate'   // +N% scrap/supplies from scans
+  | 'reduced_repair_cost'  // repair/heal costs N% less
+  | 'reduced_damage';      // take N% less HP/Rover damage
 
 export const INITIAL_GAME_STATE: GameState = {
   playerName: 'Drifter',
@@ -299,6 +322,11 @@ export const INITIAL_GAME_STATE: GameState = {
   currentMapId: 'camp',
   unlockedMapIds: ['camp', 'broken_overpass'],
   completedMapIds: [],
+  skrBalance: 0,
+  skrLifetimeEarned: 0,
+  skrMilestonesCompleted: [],
+  intelCollected: 0,
+  activeBoosts: [],
 };
 
 // ─── Seeker Scan System ───

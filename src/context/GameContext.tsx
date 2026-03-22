@@ -17,6 +17,7 @@ import {
   ScanResult,
   AvatarId,
   MapId,
+  ActiveBoost,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 import { ALL_GEAR_ITEMS } from '../data/gearItems';
@@ -77,7 +78,12 @@ type GameAction =
   | { type: 'SET_CURRENT_MAP'; payload: MapId }
   | { type: 'UNLOCK_MAP'; payload: MapId }
   | { type: 'COMPLETE_MAP'; payload: MapId }
-  | { type: 'LOAD_SECTOR_FOR_MAP'; payload: Sector };
+  | { type: 'LOAD_SECTOR_FOR_MAP'; payload: Sector }
+  | { type: 'EARN_SKR'; payload: { amount: number; milestoneId?: string } }
+  | { type: 'SPEND_SKR'; payload: number }
+  | { type: 'ADD_BOOST'; payload: ActiveBoost }
+  | { type: 'CONSUME_RUN_BOOSTS' }
+  | { type: 'ADD_INTEL'; payload: number };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -524,6 +530,45 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           sessionStartTime: Date.now(),
         },
       };
+    }
+
+    // ─── $SKR Economy ───
+
+    case 'EARN_SKR': {
+      const { amount, milestoneId } = action.payload;
+      // Prevent double-claiming one-time milestones
+      if (milestoneId && state.skrMilestonesCompleted.includes(milestoneId)) {
+        return state;
+      }
+      return {
+        ...state,
+        skrBalance: state.skrBalance + amount,
+        skrLifetimeEarned: state.skrLifetimeEarned + amount,
+        skrMilestonesCompleted: milestoneId
+          ? [...state.skrMilestonesCompleted, milestoneId]
+          : state.skrMilestonesCompleted,
+      };
+    }
+
+    case 'SPEND_SKR': {
+      if (state.skrBalance < action.payload) return state;
+      return { ...state, skrBalance: state.skrBalance - action.payload };
+    }
+
+    case 'ADD_BOOST': {
+      return { ...state, activeBoosts: [...state.activeBoosts, action.payload] };
+    }
+
+    case 'CONSUME_RUN_BOOSTS': {
+      // Remove boosts flagged as single-use after a run
+      return {
+        ...state,
+        activeBoosts: state.activeBoosts.filter(b => !b.expiresAfterRun),
+      };
+    }
+
+    case 'ADD_INTEL': {
+      return { ...state, intelCollected: state.intelCollected + action.payload };
     }
 
     default:

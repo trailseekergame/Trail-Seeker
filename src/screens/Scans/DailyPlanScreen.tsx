@@ -14,8 +14,10 @@ import { AVATARS } from '../../data/avatars';
 import { MAP_DEFS } from '../../data/sectorMaps';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
+import { SKR_SHOP, SkrShopItem, getExtraScansFromBoost } from '../../systems/skrEconomy';
 import CoachMark, { COACH } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
+import { ActiveBoost } from '../../types';
 
 // ─── Short gear effect labels for the summary strip ───
 const GEAR_SHORT: Record<GearSlotId, string> = {
@@ -129,6 +131,15 @@ export default function DailyPlanScreen() {
               <MaterialCommunityIcons name="package-variant" size={14} color={colors.supplies} />
               <Text style={[styles.statusValue, { color: colors.supplies }]}>{state.resources.supplies}</Text>
             </View>
+            {state.skrBalance > 0 && (
+              <>
+                <View style={styles.statusDivider} />
+                <View style={styles.statusItem}>
+                  <MaterialCommunityIcons name="hexagon-outline" size={14} color={colors.neonPurple} />
+                  <Text style={[styles.statusValue, { color: colors.neonPurple }]}>{state.skrBalance}</Text>
+                </View>
+              </>
+            )}
           </View>
 
           <Text style={styles.headerSubtext}>
@@ -171,6 +182,58 @@ export default function DailyPlanScreen() {
             <Text style={styles.scanNote}>{breakdownNote}</Text>
           )}
         </View>
+
+        {/* ─── 2b. $SKR SHOP ─── */}
+        {state.skrBalance > 0 && (
+          <View style={styles.skrSection}>
+            <View style={styles.skrHeader}>
+              <View style={styles.skrTitleRow}>
+                <MaterialCommunityIcons name="hexagon-outline" size={16} color={colors.neonPurple} />
+                <Text style={styles.skrTitle}>{state.skrBalance} $SKR</Text>
+              </View>
+              {state.activeBoosts.length > 0 && (
+                <Text style={styles.skrActiveCount}>{state.activeBoosts.length} active</Text>
+              )}
+            </View>
+
+            <View style={styles.skrShopGrid}>
+              {SKR_SHOP.map((item) => {
+                const owned = state.activeBoosts.some(b => b.name === item.boost.name);
+                const canAfford = state.skrBalance >= item.cost;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.skrShopCard, owned && styles.skrShopCardOwned]}
+                    disabled={owned || !canAfford}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (owned || !canAfford) return;
+                      dispatch({ type: 'SPEND_SKR', payload: item.cost });
+                      dispatch({ type: 'ADD_BOOST', payload: { id: item.id, ...item.boost } });
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name={item.icon as any}
+                      size={18}
+                      color={owned ? colors.neonGreen : canAfford ? colors.neonPurple : colors.textMuted}
+                    />
+                    <Text style={[styles.skrShopName, !canAfford && !owned && { color: colors.textMuted }]}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.skrShopDesc} numberOfLines={2}>{item.description}</Text>
+                    {owned ? (
+                      <Text style={styles.skrShopOwned}>ACTIVE</Text>
+                    ) : (
+                      <Text style={[styles.skrShopCost, !canAfford && { color: colors.textMuted }]}>
+                        {item.cost} $SKR
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* ─── 3. GEAR LOADOUT ─── */}
         <View style={styles.gearSection}>
@@ -479,6 +542,80 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.surfaceLight,
     paddingTop: spacing.sm,
+  },
+
+  // ─── 3. Gear ───
+  // ─── SKR Shop ───
+  skrSection: {
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  skrHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  skrTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  skrTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.neonPurple,
+  },
+  skrActiveCount: {
+    fontSize: fontSize.xs,
+    color: colors.neonGreen,
+    fontWeight: '600',
+  },
+  skrShopGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  skrShopCard: {
+    width: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neonPurple + '30',
+    padding: spacing.sm,
+    alignItems: 'center',
+    minHeight: 100,
+    justifyContent: 'center',
+  },
+  skrShopCardOwned: {
+    borderColor: colors.neonGreen + '40',
+    backgroundColor: colors.neonGreen + '08',
+  },
+  skrShopName: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  skrShopDesc: {
+    fontSize: 9,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 13,
+  },
+  skrShopCost: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    color: colors.neonPurple,
+    marginTop: 4,
+  },
+  skrShopOwned: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    color: colors.neonGreen,
+    marginTop: 4,
   },
 
   // ─── 3. Gear ───

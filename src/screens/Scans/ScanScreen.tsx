@@ -17,6 +17,7 @@ import AudioManager from '../../services/audioManager';
 import MicroEvent, { rollMicroEvent, MicroEventData, MicroEventEffect } from '../../components/scans/MicroEvent';
 import { MAP_DEFS, MapId } from '../../data/sectorMaps';
 import { saveGameState } from '../../services/storage';
+import { checkMilestones, applyResourceBoost, applyDamageReduction } from '../../systems/skrEconomy';
 
 // ─── Constants ───
 
@@ -94,6 +95,8 @@ export default function ScanScreen({ route }: any) {
   const [tileWeakenedNote, setTileWeakenedNote] = useState<string | null>(null);
   const [showFailedMission, setShowFailedMission] = useState(false);
   const [failReason, setFailReason] = useState<'hp_zero' | 'rover_zero' | null>(null);
+  const [earnedSkr, setEarnedSkr] = useState(0);
+  const [milestoneNames, setMilestoneNames] = useState<string[]>([]);
   const lastScannedTileRef = useRef<string | null>(null);
   const sessionStartRef = useRef(ss.sessionStartTime);
 
@@ -272,23 +275,35 @@ export default function ScanScreen({ route }: any) {
 
     dispatch({ type: 'USE_SCAN', payload: result });
 
+    // Apply active boosts to rewards
+    const boostedScrap = applyResourceBoost(rewards.scrapAwarded, state.activeBoosts);
+    const boostedSupplies = applyResourceBoost(rewards.suppliesAwarded, state.activeBoosts);
+    const reducedPlayerDmg = applyDamageReduction(rewards.playerDamage, state.activeBoosts);
+    const reducedRoverDmg = applyDamageReduction(rewards.roverDamage, state.activeBoosts);
+    result = { ...result, scrapAwarded: boostedScrap, suppliesAwarded: boostedSupplies, playerDamage: reducedPlayerDmg, roverDamage: reducedRoverDmg };
+
     // Apply resource awards
-    if (rewards.scrapAwarded > 0 || rewards.suppliesAwarded > 0) {
+    if (boostedScrap > 0 || boostedSupplies > 0) {
       dispatch({
         type: 'APPLY_RESOURCE_CHANGES',
         payload: {
-          scrap: rewards.scrapAwarded,
-          supplies: rewards.suppliesAwarded,
+          scrap: boostedScrap,
+          supplies: boostedSupplies,
         },
       });
     }
 
-    // Apply damage
-    if (rewards.playerDamage > 0) {
-      dispatch({ type: 'TAKE_DAMAGE', payload: rewards.playerDamage });
+    // Track intel
+    if (rewards.intelAwarded > 0) {
+      dispatch({ type: 'ADD_INTEL', payload: rewards.intelAwarded });
     }
-    if (rewards.roverDamage > 0) {
-      dispatch({ type: 'DAMAGE_ROVER', payload: rewards.roverDamage });
+
+    // Apply damage
+    if (reducedPlayerDmg > 0) {
+      dispatch({ type: 'TAKE_DAMAGE', payload: reducedPlayerDmg });
+    }
+    if (reducedRoverDmg > 0) {
+      dispatch({ type: 'DAMAGE_ROVER', payload: reducedRoverDmg });
     }
 
     // Add gear drop to inventory if found
@@ -467,13 +482,27 @@ export default function ScanScreen({ route }: any) {
     // Log session summary for balancing
     logSessionSummary(ss);
 
+    // Check milestones and award $SKR
+    const newMilestones = checkMilestones(state);
+    let totalSkr = 0;
+    const names: string[] = [];
+    for (const m of newMilestones) {
+      dispatch({ type: 'EARN_SKR', payload: { amount: m.reward, milestoneId: m.id } });
+      totalSkr += m.reward;
+      names.push(m.name);
+    }
+    setEarnedSkr(totalSkr);
+    setMilestoneNames(names);
+
+    // Consume single-use boosts after the run
+    dispatch({ type: 'CONSUME_RUN_BOOSTS' });
+
     setShowResult(false);
     setShowSessionEnd(true);
   };
 
   const handleDismissSessionEnd = () => {
     setShowSessionEnd(false);
-    // Explicit save on mission return (belt-and-suspenders with auto-save)
     saveGameState(state);
     nav.goBack();
   };
@@ -486,18 +515,25 @@ export default function ScanScreen({ route }: any) {
   const allTilesCleared = ss.currentSector.tiles.length > 0 && ss.currentSector.tiles.every(t => t.cleared);
 
   const handleMapComplete = () => {
-    // Mark map as completed
     dispatch({ type: 'COMPLETE_MAP', payload: mapId });
 
-    // Unlock next map if defined
     if (mapDef.unlocksMap) {
       dispatch({ type: 'UNLOCK_MAP', payload: mapDef.unlocksMap });
     }
 
-    // Return to camp
+    // Check milestones after map completion (state updated via dispatch)
+    // Use a brief delay to let reducer process COMPLETE_MAP first
+    setTimeout(() => {
+      const updatedState = { ...state, completedMapIds: [...state.completedMapIds, mapId] };
+      const newMilestones = checkMilestones(updatedState);
+      for (const m of newMilestones) {
+        dispatch({ type: 'EARN_SKR', payload: { amount: m.reward, milestoneId: m.id } });
+      }
+      dispatch({ type: 'CONSUME_RUN_BOOSTS' });
+      saveGameState(state);
+    }, 50);
+
     dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
-    // Explicit save on map completion
-    setTimeout(() => saveGameState(state), 100);
     nav.goBack();
   };
 
@@ -1133,6 +1169,17 @@ export default function ScanScreen({ route }: any) {
                 <Text style={styles.unlockText}>
                   New sector unlocked: {MAP_DEFS[mapDef.unlocksMap].name}
                 </Text>
+              </View>
+            )}
+
+            {/* $SKR earned from milestones */}
+            {earnedSkr > 0 && (
+              <View style={styles.skrEarnedRow}>
+                <MaterialCommunityIcons name="hexagon-outline" size={16} color={colors.neonPurple} />
+                <Text style={styles.skrEarnedText}>+{earnedSkr} $SKR</Text>
+                {milestoneNames.length > 0 && (
+                  <Text style={styles.skrMilestoneText}>{milestoneNames.join(' · ')}</Text>
+                )}
               </View>
             )}
 
@@ -1825,5 +1872,29 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonCyan,
     fontWeight: '600',
+  },
+
+  // ─── SKR Earned ───
+  skrEarnedRow: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.neonPurple + '12',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.neonPurple + '30',
+    marginBottom: spacing.md,
+  },
+  skrEarnedText: {
+    fontSize: fontSize.lg,
+    color: colors.neonPurple,
+    fontWeight: '700',
+  },
+  skrMilestoneText: {
+    fontSize: fontSize.xs,
+    color: colors.neonPurple,
+    opacity: 0.7,
+    textAlign: 'center',
   },
 });
