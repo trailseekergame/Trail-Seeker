@@ -172,19 +172,19 @@ ul li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;b
       <span style="display:inline-block;width:40px;height:3px;background:var(--cyan);vertical-align:middle"></span>
     </div>
     <h1>TRAIL SEEKER</h1>
-    <p class="subtitle">A daily survival RPG for Solana Seeker</p>
-    <p class="tagline">Five minutes a day. Real strategy. <span>$SKR-powered progression.</span></p>
+    <p class="subtitle">The daily survival RPG that makes Seeker owners open the app every day</p>
+    <p class="tagline">5-minute sessions. Streak-driven retention. <span>$SKR token economy built in.</span></p>
     <p class="footer-text" style="margin-top:80px">Solana Mobile Builder Grant Application &mdash; 2026</p>
   </div>
 </section>
 
 <!-- SLIDE 2: OPPORTUNITY -->
 <section class="slide" id="s2">
-  <h2>Mobile gaming needs what crypto does best</h2>
+  <h2>The problem: Seeker devices need a daily reason to open</h2>
   <div class="card-row">
-    <div class="card"><h3>Daily habit games dominate mobile</h3><p>Wordle, Duolingo, and daily card games proved that 5-minute sessions drive massive retention. Trail Seeker brings this to Seeker.</p></div>
-    <div class="card cyan"><h3>Seeker has 20K+ users waiting</h3><p>The Seeker user base is growing and looking for native apps worth opening daily. Trail Seeker is built to be that app.</p></div>
-    <div class="card amber"><h3>$SKR has no game sink yet</h3><p>$SKR exists as a token but lacks a sticky utility. Trail Seeker creates the first real daily $SKR economy inside a game.</p></div>
+    <div class="card"><h3>Daily habit games own mobile</h3><p>Wordle, Duolingo, and daily card games prove that 5-minute sessions drive 30%+ D30 retention. Trail Seeker is this mechanic built natively for Seeker.</p></div>
+    <div class="card cyan"><h3>Seeker users need sticky apps</h3><p>The device is growing but the app ecosystem needs daily-use software that showcases what Seeker does differently. Trail Seeker is that app.</p></div>
+    <div class="card amber"><h3>$SKR needs a real sink</h3><p>Without daily utility, tokens lose velocity. Trail Seeker creates the first meaningful $SKR spend loop &mdash; tied to gameplay decisions, not speculation.</p></div>
   </div>
 </section>
 
@@ -192,11 +192,11 @@ ul li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;b
 <section class="slide" id="s3">
   <h2>A once-a-day survival RPG with real strategy</h2>
   <ul>
-    <li>Players get 4&ndash;10 Seeker Scans per day (based on streak + gear)</li>
-    <li>Each Scan is a risk/reward decision: Scout (safe), Seeker (balanced), or Gambit (high risk)</li>
-    <li>Gear builds change how you play &mdash; not just your stats</li>
-    <li>A 7-day streak ladder rewards consistency without punishing misses</li>
-    <li>One 5-minute session. Real choices. Come back tomorrow for better odds.</li>
+    <li>Players get 4&ndash;10 Seeker Scans per day (based on streak + gear). Each scan is a risk/reward decision.</li>
+    <li>3 scan types: Scout (safe), Seeker (balanced), Gambit (high risk with a real-time skill check mini-game)</li>
+    <li>6 gear slots, pick 3 &mdash; builds change how you play, not just stats. Gambit builds, grinder builds, survivor builds.</li>
+    <li>7-day streak ladder: show up consecutively and your scans get sharper. Miss a day and it resets &mdash; or spend $SKR to protect it.</li>
+    <li>17 gear items across 3 tiers (standard, enhanced, ultra), 2 authored maps with 14 hand-written tiles, RPS arcade minigame</li>
   </ul>
   <div class="flow">
     <div class="flow-step"><div class="step-title">Daily Plan</div><div class="step-time">10 sec</div></div>
@@ -237,7 +237,7 @@ ul li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;b
   <div class="build"><strong>Gambit Build:</strong><p>Gauntlets + Cortex + Drone = High-risk hunter</p></div>
   <div class="build cyan"><strong>Grinder Build:</strong><p>Optics + Vest + Boots = Volume &amp; consistency</p></div>
   <div class="build amber"><strong>Survivor Build:</strong><p>Vest + Gauntlets + Drone = Balanced safety</p></div>
-  <p style="color:var(--w60);font-size:0.85rem;margin-top:8px">Gear is the main long-term progression. 20+ items across 3 quality tiers.</p>
+  <p style="color:var(--w60);font-size:0.85rem;margin-top:8px">17 items across 3 quality tiers (standard &rarr; enhanced &rarr; ultra). Gear drops from scans, not purchases.</p>
 </section>
 
 <!-- SLIDE 6: RETENTION -->
@@ -286,38 +286,45 @@ ul li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;b
 <!-- SLIDE 9: TRACTION -->
 <section class="slide" id="s9">
   <h2>Built, not just designed</h2>
-  <div style="display:inline-block;background:var(--green);color:var(--bg);font-family:var(--mono);font-size:0.75rem;font-weight:700;padding:4px 12px;border-radius:4px;margin-bottom:20px">STATUS: FUNCTIONAL PROTOTYPE</div>
+  <div style="display:inline-block;background:var(--green);color:var(--bg);font-family:var(--mono);font-size:0.75rem;font-weight:700;padding:4px 12px;border-radius:4px;margin-bottom:20px">STATUS: PLAYABLE BUILD — READY FOR SOFT LAUNCH</div>
   <ul>
-    <li>Working React Native + Expo codebase (TypeScript, SDK 55)</li>
-    <li>GitHub repo: github.com/trailseekergame/Trail-Seeker</li>
-    <li>Core systems: Seeker Scan engine, 6-slot gear, streak ladder, 5x5 sector grid, scan resolution</li>
-    <li>Live config system (gameBalance.json) for real-time balance tuning without app updates</li>
-    <li>Push notification system for daily retention</li>
-    <li>Dev analytics tracking player behavior for weekly reports</li>
+    <li>Full React Native + Expo codebase (TypeScript, SDK 55, 30+ source files)</li>
+    <li>Complete game loop: Onboarding &rarr; Camp &rarr; Mission Select &rarr; Scan &rarr; Loot &rarr; Session End &rarr; Return</li>
+    <li>17 gear items across 3 quality tiers with real stat effects and comparative upgrade hints</li>
+    <li>2 authored maps (Broken Overpass, Relay Field) with 14 hand-written tiles, each with unique loot/damage/flavor</li>
+    <li>Gambit skill check: real-time slider mini-game that upgrades loot on success or whiffs on failure</li>
+    <li>RPS arcade minigame (Scrap-Boy) with win/loss tracking and scrap rewards</li>
+    <li>Solana treasury wallet integration (deposit/withdraw stubs ready for $SKR SPL token)</li>
+    <li>$SKR economy: shop, boosts, burn/pool split &mdash; milestones gated for soft launch</li>
+    <li>Audio system: 14 SFX + 2 ambient music tracks, haptic feedback on all interactions</li>
+    <li>Psychological retention: streak loss aversion, session scarcity, return hooks, daily objectives</li>
+    <li>4-step narrative onboarding, push notifications, dev analytics pipeline</li>
+    <li>Live balance config (gameBalance.json) &mdash; tune drop rates, damage, and economy without app updates</li>
+    <li>2,000-player Monte Carlo simulation validated the balance model</li>
   </ul>
-  <div class="callout green"><p style="color:var(--green)">Trail Seeker is not a concept &mdash; it&rsquo;s a functional prototype ready for polish and launch.</p></div>
+  <div class="callout green"><p style="color:var(--green)">This is not a concept deck. Trail Seeker is a playable build with 30+ commits of real, working game code. <a href="https://github.com/trailseekergame/Trail-Seeker" style="color:var(--cyan)" target="_blank">View the repo &rarr;</a></p></div>
 </section>
 
 <!-- SLIDE 10: ROADMAP -->
 <section class="slide" id="s10">
-  <h2>From prototype to Seeker launch in 12 weeks</h2>
+  <h2>From playable build to Seeker launch in 8 weeks</h2>
   <table>
     <tr><th>Phase</th><th>Timeline</th><th>Deliverables</th></tr>
-    <tr><td><strong style="color:var(--green)">Phase 1: Core Loop</strong></td><td>Weeks 1&ndash;4</td><td>Seeker Scan system, gear builds, streak, sector grid. Playable v1 for internal testing.</td></tr>
-    <tr><td><strong style="color:var(--cyan)">Phase 2: $SKR Integration</strong></td><td>Weeks 5&ndash;8</td><td>Mobile Wallet Adapter, $SKR purchases, burn/pool split, Season Reward Pool smart contract.</td></tr>
-    <tr><td><strong style="color:var(--amber)">Phase 3: Content & Polish</strong></td><td>Weeks 9&ndash;10</td><td>20 sectors, full loot table, minigames, UI polish, sound.</td></tr>
-    <tr><td><strong style="color:var(--green)">Phase 4: Launch</strong></td><td>Weeks 11&ndash;12</td><td>Seeker app store submission, Season 1 start, community launch.</td></tr>
+    <tr><td><strong style="color:var(--green)">Phase 1: Core Loop</strong></td><td style="color:var(--green)">DONE</td><td>Scan engine, gear builds, streak, sector grid, skill checks, authored maps, onboarding, audio/haptics. <em>Playable now.</em></td></tr>
+    <tr><td><strong style="color:var(--cyan)">Phase 2: $SKR On-Chain</strong></td><td>Weeks 1&ndash;3</td><td>Mobile Wallet Adapter, $SKR SPL token purchases, burn/pool split, Season Reward Pool program.</td></tr>
+    <tr><td><strong style="color:var(--amber)">Phase 3: Content Scale</strong></td><td>Weeks 4&ndash;6</td><td>10+ sectors, expanded loot tables, boss encounters, cosmetic crafting, pixel art polish.</td></tr>
+    <tr><td><strong style="color:var(--green)">Phase 4: Launch</strong></td><td>Weeks 7&ndash;8</td><td>Seeker dApp store submission, Season 1 start, community onboarding, marketing push.</td></tr>
   </table>
 </section>
 
 <!-- SLIDE 11: GRANT USE -->
 <section class="slide" id="s11">
   <h2>How grant funding accelerates Trail Seeker</h2>
-  <div class="progress-item"><h3>Development (60%)</h3><div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--green)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Complete $SKR on-chain integration, Season Reward Pool smart contract, full sector content pipeline.</p></div>
-  <div class="progress-item"><h3 style="color:var(--cyan)">Design & Art (20%)</h3><div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--cyan)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Replace placeholder UI with production art direction, gear icons, sector visuals, scan animations.</p></div>
-  <div class="progress-item"><h3 style="color:var(--amber)">Testing & QA (10%)</h3><div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--amber)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Multi-device Seeker testing, balance playtesting, security audit for $SKR transactions.</p></div>
-  <div class="progress-item"><h3 style="color:var(--white)">Launch & Community (10%)</h3><div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--white)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Seeker app store listing, community onboarding, Season 1 marketing.</p></div>
-  <div class="callout green"><p>Grant funding bridges Trail Seeker from working prototype to Seeker launch. The core systems exist &mdash; funding accelerates content, polish, and $SKR integration.</p></div>
+  <div class="progress-item"><h3>$SKR On-Chain Integration (40%)</h3><div class="progress-bar"><div class="progress-fill" style="width:40%;background:var(--green)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Season Reward Pool program, MWA integration, burn/pool split, on-chain cosmetic ownership. The core game exists &mdash; this is the crypto layer.</p></div>
+  <div class="progress-item"><h3 style="color:var(--cyan)">Content & Art (30%)</h3><div class="progress-bar"><div class="progress-fill" style="width:30%;background:var(--cyan)"></div></div><p style="font-size:0.85rem;color:var(--w60)">10+ new sectors, boss encounters, expanded loot tables, production pixel art, scan animations. The framework handles any content we add.</p></div>
+  <div class="progress-item"><h3 style="color:var(--amber)">Security & QA (15%)</h3><div class="progress-bar"><div class="progress-fill" style="width:15%;background:var(--amber)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Solana program audit, multi-device Seeker testing, balance tuning via Monte Carlo simulation (already built).</p></div>
+  <div class="progress-item"><h3 style="color:var(--white)">Launch & Community (15%)</h3><div class="progress-bar"><div class="progress-fill" style="width:15%;background:var(--white)"></div></div><p style="font-size:0.85rem;color:var(--w60)">Seeker dApp store listing, Season 1 kickoff, early adopter onboarding, Discord/Twitter community build.</p></div>
+  <div class="callout green"><p>The game is built and playable. Grant funding ships the crypto layer and content scale needed to launch Season 1 on Seeker.</p></div>
 </section>
 
 <!-- SLIDE 12: TEAM -->
@@ -364,8 +371,8 @@ ul li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;b
       <span style="display:inline-block;width:40px;height:3px;background:var(--green);vertical-align:middle"></span>
     </div>
     <h1>TRAIL SEEKER</h1>
-    <p>Five minutes a day. Real strategy. <span style="color:var(--cyan)">$SKR-powered.</span></p>
-    <p class="bold">Built for Seeker. Ready to ship.</p>
+    <p>5-minute daily sessions. Streak-driven retention. <span style="color:var(--cyan)">$SKR-powered economy.</span></p>
+    <p class="bold">Built. Playable. Ready to ship.</p>
     <div style="margin-top:16px">
       <span style="display:inline-block;width:40px;height:3px;background:var(--green);margin-right:4px;vertical-align:middle"></span>
       <span style="display:inline-block;width:40px;height:3px;background:var(--cyan);vertical-align:middle"></span>
