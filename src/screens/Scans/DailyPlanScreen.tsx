@@ -163,6 +163,21 @@ export default function DailyPlanScreen() {
           </View>
         </View>
 
+        {/* ─── Onboarding: camp intro ─── */}
+        <CoachMark
+          id={COACH.CAMP_INTRO}
+          text="This is your camp. Use Scans to search sectors for Scrap and Supplies. Scrap repairs your rover; Supplies heal you. Pick a mission when you're ready."
+          delay={800}
+        />
+
+        {/* ─── Onboarding: return to camp damaged ─── */}
+        <CoachMark
+          id={COACH.CAMP_HEAL}
+          text="You took some hits out there. Scroll down to Status — spend Supplies to heal and Scrap to repair before your next run."
+          visible={state.playerHealth < 100 || state.roverHealth < 100}
+          delay={600}
+        />
+
         {/* ─── 1b. DAILY OBJECTIVE ─── */}
         <View style={styles.objectiveCard}>
           <Text style={styles.objectiveBrief}>{objective.brief}</Text>

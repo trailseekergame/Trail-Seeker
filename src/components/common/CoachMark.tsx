@@ -31,12 +31,18 @@ export function hasBeenShown(id: string): boolean {
 
 // ─── Coach Mark IDs ───
 export const COACH = {
+  // Scan mechanics
   FIRST_TILE: 'first_tile',          // Tap a green tile to scan it
   SCAN_TYPES: 'scan_types',          // Choose your scan type below
   FIRST_WHIFF: 'first_whiff',        // Dead signal — it happens
   FIRST_RARE: 'first_rare',          // Rare pull — gear helps these
   GAMBIT_INTRO: 'gambit_intro',       // Gambit burns the scan for one shot
   GEAR_MATTERS: 'gear_matters',       // Your loadout shapes every read
+  // Onboarding essentials (first 1-2 runs)
+  CAMP_INTRO: 'onboard_camp',         // First time at camp
+  FIRST_REWARD: 'onboard_reward',     // First successful scan with resources
+  FIRST_DAMAGE: 'onboard_damage',     // First time taking damage
+  CAMP_HEAL: 'onboard_heal',          // Return to camp while damaged
 } as const;
 
 interface Props {

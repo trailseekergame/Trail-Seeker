@@ -1033,6 +1033,15 @@ export default function ScanScreen({ route }: any) {
                     </View>
                   )}
 
+                  {/* Onboarding: first reward */}
+                  {(lastResult.scrapAwarded > 0 || lastResult.suppliesAwarded > 0) && (
+                    <CoachMark
+                      id={COACH.FIRST_REWARD}
+                      text="Resources found. Scrap and Supplies keep you alive between runs. Some tiles also drop gear."
+                      delay={300}
+                    />
+                  )}
+
                   {/* Gear drop */}
                   {lastResult.gearDrop && (
                     <View style={styles.gearDropRow}>
@@ -1043,6 +1052,13 @@ export default function ScanScreen({ route }: any) {
 
                   {/* Damage taken */}
                   {(lastResult.playerDamage > 0 || lastResult.roverDamage > 0) && (
+                    <>
+                    {/* Onboarding: first damage */}
+                    <CoachMark
+                      id={COACH.FIRST_DAMAGE}
+                      text="That scan cost you. Risky scan types and hazardous tiles deal HP or Rover damage. Scout scans are safer."
+                      delay={200}
+                    />
                     <View style={styles.damageRow}>
                       {lastResult.playerDamage > 0 && (
                         <View style={styles.damageChip}>
@@ -1057,6 +1073,7 @@ export default function ScanScreen({ route }: any) {
                         </View>
                       )}
                     </View>
+                    </>
                   )}
 
                   {/* Gear procs */}
