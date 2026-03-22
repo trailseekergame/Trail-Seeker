@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Imag
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { resolveScan, getEffectiveWhiffRate, computeScanRewards } from '../../systems/scanEngine';
+import { resolveScan, getEffectiveWhiffRate, computeScanRewards, rollUltraDrop } from '../../systems/scanEngine';
+import { BROKEN_OVERPASS_TILES } from '../../data/authoredTiles';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
@@ -306,9 +307,23 @@ export default function ScanScreen({ route }: any) {
       dispatch({ type: 'DAMAGE_ROVER', payload: reducedRoverDmg });
     }
 
-    // Add gear drop to inventory if found
-    if (rewards.gearDrop) {
-      dispatch({ type: 'ADD_SPECIAL_LOOT', payload: rewards.gearDrop });
+    // Add gear drop to inventory (real GearItem, not just string)
+    if (rewards.gearDrop && selectedTile.flavor) {
+      // Find the authored tile def to get the real GearItem
+      const tileDef = BROKEN_OVERPASS_TILES.find(t => t.flavor.name === selectedTile.flavor?.name);
+      if (tileDef?.gearDropItem) {
+        dispatch({ type: 'ADD_GEAR_ITEM', payload: tileDef.gearDropItem });
+        result = { ...result, gearDropItem: tileDef.gearDropItem };
+      }
+    }
+
+    // Roll for ultra-rare gear drop on risky tiles
+    if (result.outcome !== 'whiff') {
+      const ultraDrop = rollUltraDrop(tileType, ss.streakDay);
+      if (ultraDrop) {
+        dispatch({ type: 'ADD_GEAR_ITEM', payload: ultraDrop });
+        result = { ...result, gearDrop: ultraDrop.name, gearDropItem: ultraDrop };
+      }
     }
 
     // Handle durability: damage tile instead of clearing directly
@@ -1044,9 +1059,27 @@ export default function ScanScreen({ route }: any) {
 
                   {/* Gear drop */}
                   {lastResult.gearDrop && (
-                    <View style={styles.gearDropRow}>
-                      <MaterialCommunityIcons name="trophy" size={16} color={colors.neonAmber} />
-                      <Text style={styles.gearDropText}>Found: {lastResult.gearDrop}</Text>
+                    <View style={[
+                      styles.gearDropRow,
+                      lastResult.gearDropItem?.quality === 'ultra' && { borderColor: colors.neonPurple + '60', backgroundColor: colors.neonPurple + '15' },
+                    ]}>
+                      <MaterialCommunityIcons
+                        name={lastResult.gearDropItem?.quality === 'ultra' ? 'star-four-points' : 'trophy'}
+                        size={16}
+                        color={lastResult.gearDropItem?.quality === 'ultra' ? colors.neonPurple : colors.neonAmber}
+                      />
+                      <View>
+                        <Text style={[
+                          styles.gearDropText,
+                          lastResult.gearDropItem?.quality === 'ultra' && { color: colors.neonPurple },
+                        ]}>
+                          {lastResult.gearDropItem?.quality === 'ultra' ? 'ULTRA DROP: ' : 'Found: '}
+                          {lastResult.gearDrop}
+                        </Text>
+                        {lastResult.gearDropItem && (
+                          <Text style={styles.gearDropDesc}>{lastResult.gearDropItem.shortDesc}</Text>
+                        )}
+                      </View>
                     </View>
                   )}
 
@@ -1919,6 +1952,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.neonAmber,
     fontWeight: '700',
+  },
+  gearDropDesc: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
   },
 
   // ─── Map Unlock ───

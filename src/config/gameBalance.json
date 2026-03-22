@@ -46,32 +46,38 @@
     "optics_rig": {
       "standard":  { "rare_boost": 0.04 },
       "enhanced":  { "rare_boost": 0.06 },
-      "perfected": { "rare_boost": 0.09 }
+      "perfected": { "rare_boost": 0.09 },
+      "ultra":     { "rare_boost": 0.14, "legendary_boost": 0.03 }
     },
     "exo_vest": {
       "standard":  { "bonus_scans": 1 },
       "enhanced":  { "bonus_scans": 1, "loot_quality_boost": 0.05 },
-      "perfected": { "bonus_scans": 2, "loot_quality_boost": 0.05 }
+      "perfected": { "bonus_scans": 2, "loot_quality_boost": 0.05 },
+      "ultra":     { "bonus_scans": 2, "loot_quality_boost": 0.10 }
     },
     "grip_gauntlets": {
       "standard":  { "whiff_reduction": 0.04 },
       "enhanced":  { "whiff_reduction": 0.06 },
-      "perfected": { "whiff_reduction": 0.09 }
+      "perfected": { "whiff_reduction": 0.09 },
+      "ultra":     { "whiff_reduction": 0.12 }
     },
     "nav_boots": {
       "standard":  { "sector_bonus": 0.5 },
       "enhanced":  { "sector_bonus": 1.0 },
-      "perfected": { "sector_bonus": 1.0, "double_progress_chance": 0.15 }
+      "perfected": { "sector_bonus": 1.0, "double_progress_chance": 0.15 },
+      "ultra":     { "sector_bonus": 1.0, "double_progress_chance": 0.30 }
     },
     "cortex_link": {
       "standard":  { "gambit_legendary_boost": 0.03 },
       "enhanced":  { "gambit_legendary_boost": 0.06 },
-      "perfected": { "gambit_legendary_boost": 0.10, "component_boost": 0.03 }
+      "perfected": { "gambit_legendary_boost": 0.10, "component_boost": 0.03 },
+      "ultra":     { "gambit_legendary_boost": 0.15, "component_boost": 0.06 }
     },
     "salvage_drone": {
       "standard":  { "refund_chance": 0.08 },
       "enhanced":  { "refund_chance": 0.15 },
-      "perfected": { "refund_chance": 0.25 }
+      "perfected": { "refund_chance": 0.25 },
+      "ultra":     { "refund_chance": 0.30 }
     }
   },
 

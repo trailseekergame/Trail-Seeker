@@ -1,5 +1,6 @@
 import gameBalance from '../config/gameBalance.json';
 import { ScanType, ScanOutcome, ScanResult, GearSlotId, GearItem, SeekerScanState, TileFlavor } from '../types';
+import { ULTRA_DROPS } from '../data/gearItems';
 
 // ─── Read config ───
 const config = gameBalance;
@@ -285,6 +286,7 @@ export interface ScanRewards {
   roverDamage: number;
   scrapValue: number;
   gearDrop?: string;
+  gearDropItem?: GearItem;
 }
 
 /** Compute resource rewards and damage for a scan result */
@@ -339,6 +341,21 @@ export function computeScanRewards(
   }
 
   return { scrapAwarded, suppliesAwarded, intelAwarded: 0, playerDamage, roverDamage, scrapValue };
+}
+
+/**
+ * Roll for ultra-rare gear drop.
+ * Only triggers on anomaly/boss tiles when streak >= 5.
+ * 0.5% chance per eligible scan.
+ */
+export function rollUltraDrop(
+  tileType: string,
+  streakDay: number,
+): GearItem | undefined {
+  if (streakDay < 5) return undefined;
+  if (tileType !== 'anomaly' && tileType !== 'boss') return undefined;
+  if (Math.random() > 0.005) return undefined; // 0.5%
+  return ULTRA_DROPS[Math.floor(Math.random() * ULTRA_DROPS.length)];
 }
 
 /** Compute rewards using authored tile flavor ranges */

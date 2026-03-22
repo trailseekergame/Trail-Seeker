@@ -343,7 +343,7 @@ export const INITIAL_GAME_STATE: GameState = {
 export type ScanType = 'scout' | 'seeker' | 'gambit';
 export type ScanOutcome = 'whiff' | 'common' | 'uncommon' | 'rare' | 'legendary' | 'component';
 export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boots' | 'cortex_link' | 'salvage_drone';
-export type GearQuality = 'standard' | 'enhanced' | 'perfected';
+export type GearQuality = 'standard' | 'enhanced' | 'perfected' | 'ultra';
 export type TileType = 'unknown' | 'resource' | 'anomaly' | 'boss' | 'cleared';
 
 export interface GearItem {
@@ -423,6 +423,7 @@ export interface ScanResult {
   roverDamage: number;    // Rover condition damage this scan
   scrapValue: number;     // How much scrap the loot item is worth if scrapped
   gearDrop?: string;      // Name of gear item found (authored tiles only)
+  gearDropItem?: GearItem; // Full gear item to add to inventory
 }
 
 export interface SeekerScanState {

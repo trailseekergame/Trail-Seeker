@@ -1,4 +1,9 @@
-import { TileFlavor, TileType } from '../types';
+import { TileFlavor, TileType, GearItem } from '../types';
+import {
+  GEAR_PADDED_JACKET,
+  GEAR_SCAVENGER_SATCHEL,
+  GEAR_SIGNAL_SCANNER,
+} from './gearItems';
 
 /**
  * Authored tile flavors for Broken Overpass.
@@ -12,10 +17,13 @@ export interface AuthoredTileDef {
   validTypes: TileType[];
   /** Durability override (if different from default) */
   durability?: number;
+  /** Real GearItem to add to inventory on gear drop */
+  gearDropItem?: GearItem;
 }
 
 // ─── Tile 1: Jackknifed Semi ───
 const JACKKNIFED_SEMI: AuthoredTileDef = {
+  gearDropItem: GEAR_PADDED_JACKET,
   flavor: {
     name: 'Jackknifed Semi',
     desc: 'A rusted semi-truck lies across two lanes, its trailer split open and spilling crates into the grass below the overpass.',
@@ -77,6 +85,7 @@ const COLLAPSED_ON_RAMP: AuthoredTileDef = {
 
 // ─── Tile 3: Roadside Cache ───
 const ROADSIDE_CACHE: AuthoredTileDef = {
+  gearDropItem: GEAR_SCAVENGER_SATCHEL,
   flavor: {
     name: 'Roadside Cache',
     desc: 'Someone once stashed supplies beneath a roadside barrier, marked only by a faded symbol.',
@@ -139,6 +148,7 @@ const OVERPASS_CAMPFIRE: AuthoredTileDef = {
 
 // ─── Tile 5: Abandoned Checkpoint ───
 const ABANDONED_CHECKPOINT: AuthoredTileDef = {
+  gearDropItem: GEAR_SIGNAL_SCANNER,
   flavor: {
     name: 'Abandoned Checkpoint',
     desc: 'Concrete barriers, rusted signs, and an overturned security booth choke the road, hinting at an old evacuation checkpoint.',

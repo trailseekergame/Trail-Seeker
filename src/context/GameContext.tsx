@@ -87,7 +87,8 @@ type GameAction =
   | { type: 'SET_WALLET_ADDRESS'; payload: string | null }
   | { type: 'RPS_WIN' }
   | { type: 'RPS_LOSS' }
-  | { type: 'RPS_DRAW' };
+  | { type: 'RPS_DRAW' }
+  | { type: 'ADD_GEAR_ITEM'; payload: GearItem };
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -577,6 +578,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_WALLET_ADDRESS':
       return { ...state, connectedWalletAddress: action.payload };
+
+    case 'ADD_GEAR_ITEM': {
+      const newGear = action.payload;
+      // Replace existing item in same slot if present, otherwise add
+      const existing = state.seekerScans.gearInventory.findIndex(g => g.slotId === newGear.slotId);
+      let updatedInventory;
+      if (existing >= 0) {
+        // Only replace if new item is higher quality
+        const qualityOrder: Record<string, number> = { standard: 0, enhanced: 1, perfected: 2, ultra: 3 };
+        const oldQ = qualityOrder[state.seekerScans.gearInventory[existing].quality] ?? 0;
+        const newQ = qualityOrder[newGear.quality] ?? 0;
+        if (newQ > oldQ) {
+          updatedInventory = [...state.seekerScans.gearInventory];
+          updatedInventory[existing] = newGear;
+        } else {
+          return state; // Already have equal or better
+        }
+      } else {
+        updatedInventory = [...state.seekerScans.gearInventory, newGear];
+      }
+      return {
+        ...state,
+        seekerScans: { ...state.seekerScans, gearInventory: updatedInventory },
+      };
+    }
 
     case 'RPS_WIN':
       return { ...state, rpsWins: state.rpsWins + 1 };
