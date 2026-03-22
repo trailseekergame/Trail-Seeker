@@ -229,6 +229,8 @@ export default function DailyPlanScreen() {
                     onPress={() => {
                       if (owned || !canAfford) return;
                       dispatch({ type: 'SPEND_SKR', payload: item.cost });
+                      AudioManager.playSfx('ui_confirm');
+                      AudioManager.vibrate('medium');
                       if (isBoost && item.boost) {
                         dispatch({ type: 'ADD_BOOST', payload: { id: item.id, ...item.boost } });
                       } else if (isCosmetic && item.cosmeticId) {
@@ -287,6 +289,8 @@ export default function DailyPlanScreen() {
                   ]}
                   onPress={() => {
                     if (!canToggle) return;
+                    AudioManager.playSfx('ui_tap');
+                    AudioManager.vibrate('light');
                     if (isActive) {
                       dispatch({
                         type: 'SET_ACTIVE_GEAR',
@@ -457,7 +461,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface + 'CC',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.full,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
   },
@@ -483,7 +487,7 @@ const styles = StyleSheet.create({
   streakDot: {
     width: 30,
     height: 30,
-    borderRadius: borderRadius.full,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
     alignItems: 'center',
@@ -506,7 +510,7 @@ const styles = StyleSheet.create({
   // ─── 1b. Objective ───
   objectiveCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.neonAmber + '30',
     borderLeftWidth: 3,
@@ -529,7 +533,7 @@ const styles = StyleSheet.create({
 
   scanCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
     padding: spacing.lg,
@@ -719,7 +723,7 @@ const styles = StyleSheet.create({
   // ─── 4. Sector ───
   sectorCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
     padding: spacing.md,
@@ -735,13 +739,13 @@ const styles = StyleSheet.create({
   sectorBar: {
     height: 6,
     backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.full,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   sectorBarFill: {
     height: '100%',
     backgroundColor: colors.neonGreen,
-    borderRadius: borderRadius.full,
+    borderRadius: 2,
   },
   sectorProgress: {
     fontSize: fontSize.xs,
@@ -759,7 +763,7 @@ const styles = StyleSheet.create({
   // ─── 4b. Pathfinder ───
   pathfinderCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
     padding: spacing.md,

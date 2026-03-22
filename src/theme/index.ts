@@ -4,17 +4,20 @@
  */
 
 export const colors = {
-  // Core palette — darker, more contrast
-  background: '#080B10',
-  surface: '#0F1319',
-  surfaceLight: '#1A2030',
-  surfaceHighlight: '#1E2A3C',
+  // Core palette — field terminal darkness
+  background: '#060A0E',
+  surface: '#0C1018',
+  surfaceLight: '#151C28',
+  surfaceHighlight: '#1A2436',
 
-  // Text — slightly cooler, more terminal-like
-  textPrimary: '#D8DDE5',
-  textSecondary: '#7A8696',
-  textMuted: '#4A5567',
+  // Text — dim terminal phosphor
+  textPrimary: '#C8D0DC',
+  textSecondary: '#5E6E82',
+  textMuted: '#3A4858',
   textAccent: '#00FFAA',
+
+  // Subtle CRT tint
+  terminalGlow: 'rgba(0, 232, 156, 0.07)',
 
   // Neon accents — slightly desaturated for grit
   neonGreen: '#00E89C',
@@ -77,10 +80,10 @@ export const fontWeight = {
 };
 
 export const borderRadius = {
-  sm: 2,
-  md: 4,
-  lg: 6,
-  xl: 8,
+  sm: 0,
+  md: 2,
+  lg: 4,
+  xl: 6,
   full: 999,
 };
 
@@ -102,9 +105,9 @@ export const shadows = {
   neonGlow: {
     shadowColor: '#00E89C',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
   },
 };
 

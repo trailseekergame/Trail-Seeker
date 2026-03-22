@@ -41,9 +41,9 @@ function SettingsButton() {
 }
 
 const screenOptions = {
-  headerStyle: { backgroundColor: colors.surface },
+  headerStyle: { backgroundColor: colors.background },
   headerTintColor: colors.textPrimary,
-  headerTitleStyle: { fontWeight: '600' as const },
+  headerTitleStyle: { fontWeight: '600' as const, letterSpacing: 1 },
   headerShadowVisible: false,
   contentStyle: { backgroundColor: colors.background },
   headerRight: () => <SettingsButton />,
@@ -172,8 +172,8 @@ function MainTabs() {
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 1,
-          height: 65,
+          borderTopWidth: 2,
+          height: 56,
           paddingBottom: 8,
         },
         tabBarShowLabel: false,

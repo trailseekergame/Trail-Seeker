@@ -101,9 +101,9 @@ export default function CoachMark({ id, text, visible = true, delay = 500 }: Pro
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.neonAmber + '18',
+    backgroundColor: colors.neonAmber + '12',
     borderWidth: 1,
-    borderColor: colors.neonAmber + '40',
+    borderColor: colors.neonAmber + '30',
     borderLeftWidth: 3,
     borderLeftColor: colors.neonAmber,
     borderRadius: borderRadius.md,

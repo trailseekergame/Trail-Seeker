@@ -57,12 +57,14 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 8,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    borderRadius: borderRadius.full,
+    borderRadius: 2,
   },
 });

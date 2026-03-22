@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import AudioManager from '../../services/audioManager';
 
 interface Props {
   title: string;
@@ -26,8 +27,8 @@ export default function NeonButton({
 }: Props) {
   const variantStyles = {
     primary: {
-      bg: colors.neonGreen,
-      text: colors.background,
+      bg: colors.neonGreen + '15',
+      text: colors.neonGreen,
       border: colors.neonGreen,
     },
     secondary: {
@@ -58,14 +59,18 @@ export default function NeonButton({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={() => {
+        AudioManager.playSfx('ui_tap');
+        AudioManager.vibrate('light');
+        onPress();
+      }}
       disabled={disabled}
       activeOpacity={0.7}
       style={[
         styles.button,
         {
           backgroundColor: disabled ? colors.surfaceLight : v.bg,
-          borderColor: disabled ? colors.textMuted : v.border,
+          borderColor: disabled ? colors.textMuted + '40' : v.border,
           paddingHorizontal: s.paddingH,
           paddingVertical: s.paddingV,
         },
@@ -101,7 +106,7 @@ export default function NeonButton({
 const styles = StyleSheet.create({
   button: {
     borderWidth: 1,
-    borderRadius: borderRadius.md,
+    borderRadius: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -112,7 +117,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 2,
     textTransform: 'uppercase',
   },
 });

@@ -17,6 +17,7 @@ import { archetypes, lastLostOptions } from '../data/backstory';
 import { AVATARS } from '../data/avatars';
 import { AvatarId } from '../types';
 import { colors, spacing, fontSize, borderRadius } from '../theme';
+import AudioManager from '../services/audioManager';
 
 type Step = 'wake' | 'avatar' | 'identity' | 'scans' | 'go';
 
@@ -33,6 +34,8 @@ export default function OnboardingScreen() {
   const [scanTextDone, setScanTextDone] = useState(false);
 
   const handleComplete = () => {
+    AudioManager.playSfx('sector_complete');
+    AudioManager.vibrate('heavy');
     dispatch({ type: 'SET_PLAYER_NAME', payload: playerName || 'Drifter' });
     dispatch({ type: 'SET_AVATAR', payload: selectedAvatar });
 
@@ -78,7 +81,7 @@ export default function OnboardingScreen() {
       {wakeTextDone && (
         <NeonButton
           title="Get up."
-          onPress={() => setStep('avatar')}
+          onPress={() => { AudioManager.playSfx('ui_confirm'); setStep('avatar'); }}
           variant="primary"
           size="lg"
           style={styles.wakeBtn}
@@ -377,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceLight,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -488,7 +491,7 @@ const styles = StyleSheet.create({
   avatarCard: {
     borderWidth: 2,
     borderColor: colors.surfaceLight,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     overflow: 'hidden',
     width: 140,
     height: 200,

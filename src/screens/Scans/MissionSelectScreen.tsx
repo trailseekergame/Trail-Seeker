@@ -14,6 +14,7 @@ import { MAP_DEFS, MISSION_MAPS, generateSectorForMap, MapId } from '../../data/
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import AudioManager from '../../services/audioManager';
 
 export default function MissionSelectScreen() {
   const { state, dispatch } = useGame();
@@ -22,6 +23,8 @@ export default function MissionSelectScreen() {
   const roverDisabled = state.roverHealth <= 0;
 
   const handleSelectMission = (mapId: MapId) => {
+    AudioManager.playSfx('ui_confirm');
+    AudioManager.vibrate('medium');
     const mapDef = MAP_DEFS[mapId];
     const isCompleted = state.completedMapIds.includes(mapId);
 
@@ -159,7 +162,7 @@ const styles = StyleSheet.create({
 
   // ─── Mission Card ───
   missionCard: {
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     overflow: 'hidden',
     marginBottom: spacing.md,
     borderWidth: 1,
@@ -173,7 +176,7 @@ const styles = StyleSheet.create({
     minHeight: 180,
   },
   missionBgImage: {
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
   },
   missionOverlay: {
     flex: 1,

@@ -13,6 +13,7 @@ import {
   RpsLeaderEntry,
 } from '../../services/rpsService';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import AudioManager from '../../services/audioManager';
 
 type ScreenView = 'menu' | 'searching' | 'choose' | 'result' | 'leaderboard';
 
@@ -42,6 +43,8 @@ export default function RPSScreen() {
   const [leaderboard, setLeaderboard] = useState<RpsLeaderEntry[]>([]);
 
   const handleFindMatch = async () => {
+    AudioManager.playSfx('scan_press');
+    AudioManager.vibrate('light');
     setView('searching');
     clearMatch();
     try {
@@ -55,6 +58,8 @@ export default function RPSScreen() {
 
   const handleChoice = async (choice: RpsChoice) => {
     if (!match) return;
+    AudioManager.playSfx('ui_confirm');
+    AudioManager.vibrate('medium');
     setView('searching');
     try {
       const resolved = await submitChoice(choice);
@@ -65,7 +70,15 @@ export default function RPSScreen() {
       else dispatch({ type: 'RPS_DRAW' });
 
       if (resolved.result === 'win') {
+        AudioManager.playSfx('gambit_win');
+        AudioManager.vibrate('heavy');
         dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: 2 } });
+      } else if (resolved.result === 'lose') {
+        AudioManager.playSfx('gambit_whiff');
+        AudioManager.vibrate('medium');
+      } else {
+        AudioManager.playSfx('ui_tap');
+        AudioManager.vibrate('light');
       }
 
       setView('result');
