@@ -296,22 +296,50 @@ export default function WardrobeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ═══════════ SILHOUETTE ═══════════ */}
-        <View style={styles.silhouetteContainer}>
-          <View style={[styles.silhouetteFrame, { borderColor: activeTab === 'rig' ? colors.neonGreen + '15' : colors.neonPurple + '15' }]}>
-            <MaterialCommunityIcons
-              name="account-outline"
-              size={72}
-              color={activeTab === 'rig' ? colors.neonGreen + '25' : colors.neonPurple + '25'}
-            />
-            <Text style={[styles.silhouetteCallsign, { color: activeTab === 'rig' ? colors.neonGreen : colors.neonPurple }]}>
-              {state.playerName}
-            </Text>
-            {state.backstory && (
-              <Text style={styles.silhouetteOrigin}>{state.backstory.archetype}</Text>
-            )}
-          </View>
-        </View>
+        {/* ═══════════ EXOSUIT SILHOUETTE ═══════════ */}
+        {(() => {
+          const accent = activeTab === 'rig' ? colors.neonGreen : colors.neonPurple;
+          const line = accent + '35';
+          const fill = accent + '06';
+          return (
+            <View style={styles.silhouetteContainer}>
+              {/* ── Head ── */}
+              <View style={[styles.exoHead, { borderColor: line }]} />
+              {/* ── Neck ── */}
+              <View style={[styles.exoNeck, { backgroundColor: line }]} />
+              {/* ── Shoulders + Torso ── */}
+              <View style={styles.exoShoulderRow}>
+                <View style={[styles.exoArm, { borderColor: line, backgroundColor: fill }]} />
+                <View style={[styles.exoTorso, { borderColor: line, backgroundColor: fill }]}>
+                  <Text style={[styles.exoLabel, { color: accent + '50' }]}>EXO</Text>
+                  <MaterialCommunityIcons name="shield-half-full" size={18} color={accent + '30'} />
+                </View>
+                <View style={[styles.exoArm, { borderColor: line, backgroundColor: fill }]} />
+              </View>
+              {/* ── Waist ── */}
+              <View style={[styles.exoWaist, { borderColor: line }]} />
+              {/* ── Legs ── */}
+              <View style={styles.exoLegRow}>
+                <View style={[styles.exoLeg, { borderColor: line, backgroundColor: fill }]} />
+                <View style={{ width: 6 }} />
+                <View style={[styles.exoLeg, { borderColor: line, backgroundColor: fill }]} />
+              </View>
+              {/* ── Boots ── */}
+              <View style={styles.exoBootRow}>
+                <View style={[styles.exoBoot, { borderColor: line }]} />
+                <View style={{ width: 14 }} />
+                <View style={[styles.exoBoot, { borderColor: line }]} />
+              </View>
+              {/* ── Callsign ── */}
+              <Text style={[styles.silhouetteCallsign, { color: accent }]}>
+                {state.playerName}
+              </Text>
+              {state.backstory && (
+                <Text style={styles.silhouetteOrigin}>{state.backstory.archetype}</Text>
+              )}
+            </View>
+          );
+        })()}
 
         {/* ═══════════ RIG TAB ═══════════ */}
         {activeTab === 'rig' && (
@@ -561,26 +589,81 @@ const styles = StyleSheet.create({
     color: colors.neonPurple,
   },
 
-  // ─── Silhouette ───
+  // ─── Exosuit Silhouette ───
   silhouetteContainer: {
     alignItems: 'center',
     marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  silhouetteFrame: {
+  exoHead: {
+    width: 28,
+    height: 28,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+  },
+  exoNeck: {
+    width: 2,
+    height: 8,
+    backgroundColor: colors.panelBorder,
+  },
+  exoShoulderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  exoArm: {
+    width: 14,
+    height: 56,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    marginTop: 4,
+  },
+  exoTorso: {
+    width: 64,
+    height: 60,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 120,
-    height: 130,
+  },
+  exoLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 3,
+    marginBottom: 2,
+  },
+  exoWaist: {
+    width: 48,
+    height: 10,
     borderWidth: 1,
     borderColor: colors.panelBorder,
-    borderStyle: 'dashed',
+  },
+  exoLegRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  exoLeg: {
+    width: 20,
+    height: 48,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+  },
+  exoBootRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  exoBoot: {
+    width: 26,
+    height: 10,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
   },
   silhouetteCallsign: {
     fontSize: fontSize.sm,
     fontWeight: '700',
     fontFamily: fontMono,
     letterSpacing: 2,
-    marginTop: 4,
+    marginTop: spacing.sm,
   },
   silhouetteOrigin: {
     fontSize: 9,
