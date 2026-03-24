@@ -350,12 +350,16 @@ export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boo
 export type GearQuality = 'standard' | 'enhanced' | 'perfected' | 'ultra';
 export type TileType = 'unknown' | 'resource' | 'anomaly' | 'boss' | 'cleared';
 
+export type GearZone = 'sensor' | 'core' | 'drive';
+
 export interface GearItem {
   slotId: GearSlotId;
   quality: GearQuality;
   name: string;
   shortDesc: string;
   icon: string;
+  zone: GearZone;
+  lore: string;
 }
 
 /** Authored tile flavor — overrides generic tile behavior with specific content */

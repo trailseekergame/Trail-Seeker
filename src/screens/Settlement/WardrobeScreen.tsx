@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../../context/GameContext';
 import cosmeticItems from '../../data/cosmetics';
-import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
+import { colors, spacing, fontSize, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
-import { GearSlotId, GearItem, CosmeticItem, CosmeticSlot, EquippedCosmetics } from '../../types';
+import { GearSlotId, GearItem, GearZone, CosmeticItem, CosmeticSlot, EquippedCosmetics } from '../../types';
 import gameBalance from '../../config/gameBalance.json';
+import AudioManager from '../../services/audioManager';
 
 // ─── Gear stat descriptions ───
 const GEAR_STAT_LINE: Record<GearSlotId, (q: string) => string> = {
@@ -43,15 +44,6 @@ const GEAR_STAT_LINE: Record<GearSlotId, (q: string) => string> = {
   },
 };
 
-const GEAR_BODY_AREA: Record<GearSlotId, string> = {
-  optics_rig: 'HEAD',
-  exo_vest: 'CHEST',
-  grip_gauntlets: 'HANDS',
-  nav_boots: 'FEET',
-  cortex_link: 'BACK',
-  salvage_drone: 'SHOULDER',
-};
-
 const QUALITY_COLORS: Record<string, string> = {
   standard: colors.textSecondary,
   enhanced: colors.neonCyan,
@@ -65,6 +57,20 @@ const QUALITY_ORDER: Record<string, number> = {
   perfected: 2,
   ultra: 3,
 };
+
+const ZONE_COLORS: Record<GearZone, string> = {
+  sensor: colors.neonCyan,
+  core: colors.neonGreen,
+  drive: colors.neonAmber,
+};
+
+const ZONE_LABELS: Record<GearZone, string> = {
+  sensor: 'SENSOR',
+  core: 'CORE',
+  drive: 'DRIVE',
+};
+
+const HARDPOINT_ORDER: GearZone[] = ['sensor', 'core', 'drive'];
 
 // ─── Cosmetic constants ───
 const COSMETIC_SLOT_LABELS: Record<CosmeticSlot, string> = {
@@ -93,29 +99,6 @@ const getRarityColor = (rarity: string) => {
   }
 };
 
-// ─── Compare hint: what does this item do vs what the player has equipped in the same slot ───
-function getCompareHint(gear: GearItem, inventory: GearItem[], activeSlots: GearSlotId[]): string | null {
-  // Only show hints for items that are NOT equipped
-  if (activeSlots.includes(gear.slotId)) return null;
-
-  const equippedInSlot = inventory.find(
-    g => g.slotId === gear.slotId && activeSlots.includes(g.slotId)
-  );
-
-  if (!equippedInSlot) {
-    // No item equipped in this slot
-    return 'Empty slot — equip for a bonus';
-  }
-
-  const myQ = QUALITY_ORDER[gear.quality] ?? 0;
-  const theirQ = QUALITY_ORDER[equippedInSlot.quality] ?? 0;
-
-  if (myQ > theirQ) return `Upgrade from ${equippedInSlot.name}`;
-  if (myQ === theirQ && gear.slotId !== equippedInSlot.slotId) return 'Same tier, different effect';
-  if (myQ < theirQ) return `Weaker than ${equippedInSlot.name}`;
-  return null;
-}
-
 export default function WardrobeScreen() {
   const { state, dispatch } = useGame();
   const ss = state.seekerScans;
@@ -123,28 +106,47 @@ export default function WardrobeScreen() {
   const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
   const [cosmeticSlot, setCosmeticSlot] = useState<CosmeticSlot>('headgear');
 
-  // ─── Sort gear: equipped first, then by quality desc, then unequipped ───
-  const sortedGear = useMemo(() => {
-    const inventory = ss.gearInventory.length > 0 ? [...ss.gearInventory] : [];
-    return inventory.sort((a, b) => {
-      const aActive = ss.activeGearSlots.includes(a.slotId) ? 1 : 0;
-      const bActive = ss.activeGearSlots.includes(b.slotId) ? 1 : 0;
-      if (bActive !== aActive) return bActive - aActive; // equipped first
-      const aQ = QUALITY_ORDER[a.quality] ?? 0;
-      const bQ = QUALITY_ORDER[b.quality] ?? 0;
-      return bQ - aQ; // higher quality first
-    });
+  // ─── Installed items by zone ───
+  const installedByZone = useMemo(() => {
+    const map: Record<GearZone, GearItem | null> = { sensor: null, core: null, drive: null };
+    for (const gear of ss.gearInventory) {
+      if (ss.activeGearSlots.includes(gear.slotId)) {
+        map[gear.zone] = gear;
+      }
+    }
+    return map;
   }, [ss.gearInventory, ss.activeGearSlots]);
 
-  // ─── Gear logic ───
-  const toggleGear = (slotId: GearSlotId) => {
+  // ─── Backpack items (not installed) ───
+  const backpackItems = useMemo(() => {
+    return ss.gearInventory
+      .filter(g => !ss.activeGearSlots.includes(g.slotId))
+      .sort((a, b) => {
+        const aQ = QUALITY_ORDER[a.quality] ?? 0;
+        const bQ = QUALITY_ORDER[b.quality] ?? 0;
+        return bQ - aQ;
+      });
+  }, [ss.gearInventory, ss.activeGearSlots]);
+
+  // ─── Install / Detach logic ───
+  const installItem = (gear: GearItem) => {
     if (ss.gearLockedToday) return;
-    const current = [...ss.activeGearSlots];
-    if (current.includes(slotId)) {
-      dispatch({ type: 'SET_ACTIVE_GEAR', payload: current.filter(s => s !== slotId) });
-    } else if (current.length < 3) {
-      dispatch({ type: 'SET_ACTIVE_GEAR', payload: [...current, slotId] });
-    }
+    const sameZoneSlots = ss.gearInventory
+      .filter(g => g.zone === gear.zone && ss.activeGearSlots.includes(g.slotId))
+      .map(g => g.slotId);
+    const newSlots = ss.activeGearSlots.filter(s => !sameZoneSlots.includes(s));
+    dispatch({ type: 'SET_ACTIVE_GEAR', payload: [...newSlots, gear.slotId] });
+    AudioManager.playSfx('ui_confirm');
+    AudioManager.vibrate('medium');
+    setSelectedGear(null);
+  };
+
+  const detachItem = (gear: GearItem) => {
+    if (ss.gearLockedToday) return;
+    dispatch({ type: 'SET_ACTIVE_GEAR', payload: ss.activeGearSlots.filter(s => s !== gear.slotId) });
+    AudioManager.playSfx('ui_tap');
+    AudioManager.vibrate('light');
+    setSelectedGear(null);
   };
 
   // ─── Cosmetic logic ───
@@ -163,7 +165,6 @@ export default function WardrobeScreen() {
     dispatch({ type: 'EQUIP_COSMETIC', payload: { [slot]: undefined } as Partial<EquippedCosmetics> });
   };
 
-  // ─── Cosmetic sorting: equipped → unlocked → locked with obtainable conditions ───
   const sortedCosmeticsForSlot = useMemo(() => {
     const items = getItemsForSlot(cosmeticSlot);
     const equipped: CosmeticItem[] = [];
@@ -179,81 +180,140 @@ export default function WardrobeScreen() {
     return [...equipped, ...unlocked, ...locked];
   }, [cosmeticSlot, state.equipped, state.unlockedCosmeticIds]);
 
+  // ─── Info panel helpers ───
+  const isInstalled = (gear: GearItem) => ss.activeGearSlots.includes(gear.slotId);
+  const hardpointOccupied = (gear: GearItem) => installedByZone[gear.zone] !== null;
+
+  const getActionLabel = (gear: GearItem): { label: string; variant: 'primary' | 'ghost' | 'danger'; action: () => void } | null => {
+    if (ss.gearLockedToday) return null;
+    if (isInstalled(gear)) {
+      return { label: 'DETACH', variant: 'danger', action: () => detachItem(gear) };
+    }
+    if (hardpointOccupied(gear)) {
+      return { label: 'SWAP', variant: 'ghost', action: () => installItem(gear) };
+    }
+    return { label: 'INSTALL', variant: 'primary', action: () => installItem(gear) };
+  };
+
+  // ─── Render hardpoint slot ───
+  const renderHardpoint = (zone: GearZone) => {
+    const gear = installedByZone[zone];
+    const zoneColor = ZONE_COLORS[zone];
+    const zoneLabel = ZONE_LABELS[zone];
+
+    if (!gear) {
+      return (
+        <View style={[styles.hardpoint, styles.hardpointEmpty, { borderColor: zoneColor + '30' }]}>
+          <Text style={[styles.hardpointZoneLabel, { color: zoneColor }]}>{zoneLabel} HARDPOINT</Text>
+          <Text style={styles.hardpointEmptyText}>[ EMPTY ]</Text>
+        </View>
+      );
+    }
+
+    const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
+    const selected = selectedGear?.slotId === gear.slotId && selectedGear?.quality === gear.quality;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.hardpoint,
+          styles.hardpointInstalled,
+          selected && { borderColor: qualityColor },
+        ]}
+        onPress={() => {
+          AudioManager.playSfx('ui_tap');
+          AudioManager.vibrate('light');
+          setSelectedGear(selected ? null : gear);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.hardpointTop}>
+          <Text style={[styles.hardpointZoneLabel, { color: zoneColor }]}>{zoneLabel}</Text>
+          <View style={styles.installedTag}>
+            <Text style={styles.installedTagText}>INSTALLED</Text>
+          </View>
+        </View>
+        <View style={styles.hardpointContent}>
+          <MaterialCommunityIcons name={gear.icon as any} size={22} color={colors.neonGreen} />
+          <Text style={styles.hardpointName} numberOfLines={1}>{gear.name}</Text>
+          <View style={[styles.qualityBadge, { borderColor: qualityColor + '60' }]}>
+            <Text style={[styles.qualityBadgeText, { color: qualityColor }]}>
+              {gear.quality.charAt(0).toUpperCase() + gear.quality.slice(1)}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // ─── Render backpack item ───
+  const renderBackpackItem = (gear: GearItem) => {
+    const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
+    const selected = selectedGear?.slotId === gear.slotId && selectedGear?.quality === gear.quality;
+
+    return (
+      <TouchableOpacity
+        key={`${gear.slotId}-${gear.quality}-${gear.name}`}
+        style={[
+          styles.backpackCard,
+          { borderLeftColor: qualityColor, borderLeftWidth: 3 },
+          selected && { borderColor: qualityColor },
+        ]}
+        onPress={() => {
+          AudioManager.playSfx('ui_tap');
+          AudioManager.vibrate('light');
+          setSelectedGear(selected ? null : gear);
+        }}
+        activeOpacity={0.7}
+      >
+        <MaterialCommunityIcons name={gear.icon as any} size={20} color={qualityColor} />
+        <Text style={styles.backpackName} numberOfLines={2}>{gear.name}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* ═══════════ SECTION 1: FUNCTIONAL GEAR ═══════════ */}
+        {/* ═══════════ SECTION 1: EXO-RIG SCHEMATIC ═══════════ */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel}>GEAR LOADOUT</Text>
+          <Text style={styles.sectionLabel}>EXO-RIG SCHEMATIC</Text>
           {ss.gearLockedToday ? (
             <Text style={styles.lockedBadge}>LOCKED TODAY</Text>
           ) : (
-            <Text style={styles.sectionHint}>{ss.activeGearSlots.length}/3 equipped</Text>
+            <Text style={styles.sectionHint}>{ss.activeGearSlots.length}/3 installed</Text>
           )}
         </View>
         <Text style={styles.sectionDesc}>
-          Your operational loadout. Each piece changes how the rover reads signal in the field. Choose 3.
+          Hardpoint loadout. Each rig changes how the rover reads signal. One per zone.
         </Text>
 
-        {/* Gear cards — sorted: equipped first, then by quality */}
-        {sortedGear.length > 0 ? (
-          sortedGear.map((gear) => {
-            const isActive = ss.activeGearSlots.includes(gear.slotId);
-            const statLine = GEAR_STAT_LINE[gear.slotId](gear.quality);
-            const bodyArea = GEAR_BODY_AREA[gear.slotId];
-            const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
-            const canToggle = !ss.gearLockedToday && (isActive || ss.activeGearSlots.length < 3);
-            const compareHint = getCompareHint(gear, ss.gearInventory, ss.activeGearSlots);
+        {ss.gearInventory.length > 0 ? (
+          <View style={styles.schematicRow}>
+            {/* LEFT — Schematic hardpoints */}
+            <View style={styles.schematicLeft}>
+              {HARDPOINT_ORDER.map((zone, i) => (
+                <React.Fragment key={zone}>
+                  {renderHardpoint(zone)}
+                  {i < HARDPOINT_ORDER.length - 1 && <View style={styles.connector} />}
+                </React.Fragment>
+              ))}
+            </View>
 
-            return (
-              <TouchableOpacity
-                key={`${gear.slotId}-${gear.quality}`}
-                style={[styles.gearCard, isActive && styles.gearCardActive]}
-                onPress={() => canToggle ? toggleGear(gear.slotId) : setSelectedGear(gear)}
-                activeOpacity={canToggle ? 0.7 : 0.9}
-              >
-                <View style={[styles.gearCardLeft, isActive && styles.gearCardLeftActive]}>
-                  <MaterialCommunityIcons name={gear.icon as any} size={24} color={isActive ? colors.neonGreen : qualityColor} />
+            {/* RIGHT — Backpack grid */}
+            <View style={styles.schematicRight}>
+              <Text style={styles.backpackLabel}>BACKPACK</Text>
+              {backpackItems.length > 0 ? (
+                <View style={styles.backpackGrid}>
+                  {backpackItems.map((gear) => renderBackpackItem(gear))}
                 </View>
-                <View style={styles.gearCardCenter}>
-                  <View style={styles.gearNameRow}>
-                    <Text style={[styles.gearName, isActive && styles.gearNameActive]}>
-                      {gear.name}
-                    </Text>
-                    {isActive && (
-                      <View style={styles.equippedTag}>
-                        <Text style={styles.equippedTagText}>EQUIPPED</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.gearStatLine}>{statLine}</Text>
-                  <View style={styles.gearMetaRow}>
-                    <Text style={[styles.gearQuality, { color: qualityColor }]}>
-                      {gear.quality.charAt(0).toUpperCase() + gear.quality.slice(1)}
-                    </Text>
-                    <Text style={styles.gearBodyArea}>{bodyArea}</Text>
-                  </View>
-                  {/* Compare hint for non-equipped items */}
-                  {compareHint && !isActive && (
-                    <Text style={styles.compareHint}>{compareHint}</Text>
-                  )}
+              ) : (
+                <View style={styles.backpackEmpty}>
+                  <Text style={styles.backpackEmptyText}>All items installed</Text>
                 </View>
-                <View style={styles.gearCardRight}>
-                  {isActive ? (
-                    <View style={styles.equippedDot}>
-                      <Text style={styles.equippedDotText}>ON</Text>
-                    </View>
-                  ) : canToggle ? (
-                    <View style={styles.unequippedDot}>
-                      <MaterialCommunityIcons name="plus" size={14} color={colors.textMuted} />
-                    </View>
-                  ) : (
-                    <View style={styles.unequippedDot} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })
+              )}
+            </View>
+          </View>
         ) : (
           <View style={styles.emptyGearCard}>
             <MaterialCommunityIcons name="shield-off-outline" size={28} color={colors.textMuted} />
@@ -261,8 +321,62 @@ export default function WardrobeScreen() {
           </View>
         )}
 
-        {/* Future gear placeholder — only when inventory is small */}
-        {sortedGear.length > 0 && sortedGear.length < 4 && (
+        {/* ─── Info Panel ─── */}
+        {selectedGear && (
+          <View style={styles.infoPanel}>
+            <View style={styles.infoPanelHeader}>
+              <MaterialCommunityIcons
+                name={selectedGear.icon as any}
+                size={28}
+                color={QUALITY_COLORS[selectedGear.quality] || colors.textSecondary}
+              />
+              <View style={styles.infoPanelTitle}>
+                <Text style={[styles.infoPanelName, { color: QUALITY_COLORS[selectedGear.quality] || colors.textPrimary }]}>
+                  {selectedGear.name}
+                </Text>
+                <View style={styles.infoPanelBadges}>
+                  <View style={[styles.zoneBadge, { borderColor: ZONE_COLORS[selectedGear.zone] + '60' }]}>
+                    <Text style={[styles.zoneBadgeText, { color: ZONE_COLORS[selectedGear.zone] }]}>
+                      {ZONE_LABELS[selectedGear.zone]}
+                    </Text>
+                  </View>
+                  <View style={[styles.qualityBadgeInline, { borderColor: (QUALITY_COLORS[selectedGear.quality] || colors.textSecondary) + '60' }]}>
+                    <Text style={[styles.qualityBadgeInlineText, { color: QUALITY_COLORS[selectedGear.quality] || colors.textSecondary }]}>
+                      {selectedGear.quality.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedGear(null)} style={styles.infoPanelClose}>
+                <MaterialCommunityIcons name="close" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.infoPanelStat}>
+              {GEAR_STAT_LINE[selectedGear.slotId](selectedGear.quality)}
+            </Text>
+            <Text style={styles.infoPanelLore}>{selectedGear.lore}</Text>
+            {ss.gearLockedToday ? (
+              <Text style={styles.infoPanelLocked}>GEAR LOCKED — first scan locks loadout for the day</Text>
+            ) : (
+              (() => {
+                const action = getActionLabel(selectedGear);
+                if (!action) return null;
+                return (
+                  <NeonButton
+                    title={action.label}
+                    onPress={action.action}
+                    variant={action.variant === 'danger' ? 'ghost' : action.variant}
+                    size="sm"
+                    style={styles.infoPanelBtn}
+                  />
+                );
+              })()
+            )}
+          </View>
+        )}
+
+        {/* ─── Future gear hint ─── */}
+        {ss.gearInventory.length > 0 && ss.gearInventory.length < 4 && (
           <View style={styles.futureGearHint}>
             <MaterialCommunityIcons name="radar" size={14} color={colors.textMuted} />
             <Text style={styles.futureGearText}>New rigs will show up here as you earn them.</Text>
@@ -368,7 +482,6 @@ export default function WardrobeScreen() {
                 {equipped && (
                   <NeonButton title="Unequip" onPress={() => handleUnequipCosmetic(item.slot)} variant="ghost" size="sm" />
                 )}
-                {/* Locked items show no button in production — just the lock condition above */}
                 {__DEV__ && !unlocked && (
                   <NeonButton title="Dev Unlock" onPress={() => dispatch({ type: 'UNLOCK_COSMETIC', payload: item.id })} variant="ghost" size="sm" />
                 )}
@@ -377,52 +490,6 @@ export default function WardrobeScreen() {
           );
         })}
       </ScrollView>
-
-      {/* ─── GEAR DETAIL POPUP ─── */}
-      <Modal visible={selectedGear !== null} transparent animationType="fade" onRequestClose={() => setSelectedGear(null)}>
-        <TouchableOpacity
-          style={styles.popupOverlay}
-          activeOpacity={1}
-          onPress={() => setSelectedGear(null)}
-        >
-          {selectedGear && (() => {
-            const qualityColor = QUALITY_COLORS[selectedGear.quality] || colors.textSecondary;
-            const compareHint = getCompareHint(selectedGear, ss.gearInventory, ss.activeGearSlots);
-            return (
-              <View style={[styles.popupCard, { borderColor: qualityColor + '40' }]}>
-                <View style={[styles.popupIconBg, { borderColor: qualityColor + '60' }]}>
-                  <MaterialCommunityIcons name={selectedGear.icon as any} size={32} color={qualityColor} />
-                </View>
-                <Text style={styles.popupName}>{selectedGear.name}</Text>
-                <Text style={[styles.popupQuality, { color: qualityColor }]}>
-                  {selectedGear.quality.toUpperCase()}
-                </Text>
-                <View style={styles.popupDivider} />
-                <Text style={styles.popupBodyArea}>
-                  {GEAR_BODY_AREA[selectedGear.slotId]}
-                </Text>
-                <Text style={styles.popupStatLine}>
-                  {GEAR_STAT_LINE[selectedGear.slotId](selectedGear.quality)}
-                </Text>
-                <Text style={styles.popupShortDesc}>{selectedGear.shortDesc}</Text>
-                {compareHint && (
-                  <Text style={styles.popupCompare}>{compareHint}</Text>
-                )}
-                {ss.gearLockedToday && (
-                  <Text style={styles.popupLocked}>Gear is locked after first scan today</Text>
-                )}
-                <NeonButton
-                  title="Close"
-                  onPress={() => setSelectedGear(null)}
-                  variant="ghost"
-                  size="sm"
-                  style={styles.popupClose}
-                />
-              </View>
-            );
-          })()}
-        </TouchableOpacity>
-      </Modal>
     </ScreenWrapper>
   );
 }
@@ -466,133 +533,218 @@ const styles = StyleSheet.create({
     fontFamily: fontMono,
   },
 
-  // ─── Gear cards ───
-  gearCard: {
+  // ─── Schematic layout ───
+  schematicRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 0,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  schematicLeft: {
+    width: '55%',
+    alignItems: 'stretch',
+  },
+  schematicRight: {
+    width: '45%',
+    paddingLeft: spacing.xs,
+  },
+
+  // ─── Hardpoints ───
+  hardpoint: {
     borderWidth: 1.5,
     borderColor: colors.panelBorder,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    padding: spacing.md,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
   },
-  gearCardActive: {
+  hardpointEmpty: {
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  hardpointInstalled: {
     borderColor: colors.neonGreen + '60',
     backgroundColor: colors.neonGreen + '06',
-    borderLeftWidth: 3,
-    borderLeftColor: colors.neonGreen,
   },
-  gearCardLeft: {
-    width: 44,
-    height: 44,
-    borderRadius: 0,
-    backgroundColor: colors.surfaceLight,
+  hardpointTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  gearCardLeftActive: {
-    backgroundColor: colors.neonGreen + '15',
-    borderWidth: 1,
-    borderColor: colors.neonGreen + '30',
+  hardpointZoneLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 2,
+    fontFamily: fontMono,
   },
-  gearCardCenter: {
+  hardpointEmptyText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    marginTop: spacing.xs,
+  },
+  hardpointContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  hardpointName: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.neonGreen,
+    fontFamily: fontMono,
     flex: 1,
   },
-  gearNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: 2,
-  },
-  gearName: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    fontFamily: fontMono,
-  },
-  gearNameActive: {
-    color: colors.neonGreen,
-  },
-  equippedTag: {
+  installedTag: {
     backgroundColor: colors.neonGreen + '20',
-    borderWidth: 1,
-    borderColor: colors.neonGreen + '40',
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     paddingVertical: 1,
   },
-  equippedTagText: {
-    fontSize: 8,
+  installedTagText: {
+    fontSize: 7,
     fontWeight: '800',
     color: colors.neonGreen,
-    letterSpacing: 1.5,
-    fontFamily: fontMono,
-  },
-  gearStatLine: {
-    fontSize: fontSize.sm,
-    color: colors.neonCyan,
-    marginTop: 2,
-    fontFamily: fontMono,
-  },
-  gearMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: 2,
-  },
-  gearQuality: {
-    fontSize: 10,
-    fontWeight: '600',
     letterSpacing: 1,
     fontFamily: fontMono,
   },
-  gearBodyArea: {
-    fontSize: 10,
+  qualityBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  qualityBadgeText: {
+    fontSize: 8,
     fontWeight: '700',
     letterSpacing: 1,
     fontFamily: fontMono,
-    color: colors.textMuted,
   },
-  compareHint: {
-    fontSize: fontSize.xs,
-    color: colors.neonAmber,
-    fontFamily: fontMono,
-    marginTop: 4,
-    fontStyle: 'italic',
+  connector: {
+    height: 12,
+    width: 2,
+    backgroundColor: colors.panelBorder,
+    alignSelf: 'center',
   },
-  gearCardRight: {
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.sm,
-  },
-  equippedDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 0,
-    backgroundColor: colors.neonGreen + '20',
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  equippedDotText: {
+
+  // ─── Backpack ───
+  backpackLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: colors.neonGreen,
-    letterSpacing: 1,
+    color: colors.textMuted,
+    letterSpacing: 2,
     fontFamily: fontMono,
+    marginBottom: spacing.sm,
   },
-  unequippedDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 0,
+  backpackGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  backpackCard: {
+    width: '47%',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    padding: spacing.sm,
+    alignItems: 'center',
+    gap: 4,
+  },
+  backpackName: {
+    fontSize: 10,
+    color: colors.textPrimary,
+    fontFamily: fontMono,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  backpackEmpty: {
     borderWidth: 1,
     borderColor: colors.panelBorder,
+    borderStyle: 'dashed',
+    padding: spacing.md,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  backpackEmptyText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+  },
+
+  // ─── Info panel ───
+  infoPanel: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1.5,
+    borderTopColor: colors.panelBorder,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+  },
+  infoPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  infoPanelTitle: {
+    flex: 1,
+  },
+  infoPanelName: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    fontFamily: fontMono,
+  },
+  infoPanelBadges: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: 4,
+  },
+  zoneBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  zoneBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    fontFamily: fontMono,
+  },
+  qualityBadgeInline: {
+    borderWidth: 1,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  qualityBadgeInlineText: {
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    fontFamily: fontMono,
+  },
+  infoPanelClose: {
+    padding: 4,
+  },
+  infoPanelStat: {
+    fontSize: fontSize.sm,
+    color: colors.neonCyan,
+    fontFamily: fontMono,
+    marginBottom: spacing.sm,
+  },
+  infoPanelLore: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+  },
+  infoPanelLocked: {
+    fontSize: fontSize.xs,
+    color: colors.neonRed,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+  infoPanelBtn: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
   },
 
   // ─── Empty state ───
@@ -799,93 +951,5 @@ const styles = StyleSheet.create({
   cosmeticActions: {
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-
-  // ─── Gear detail popup ───
-  popupOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  popupCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 0,
-    borderWidth: 1.5,
-    borderColor: colors.panelBorder,
-    padding: spacing.xl,
-    width: '100%',
-    maxWidth: 300,
-    alignItems: 'center',
-  },
-  popupIconBg: {
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceLight,
-    borderWidth: 1,
-    marginBottom: spacing.sm,
-  },
-  popupName: {
-    fontSize: fontSize.xl,
-    color: colors.textPrimary,
-    fontWeight: '700',
-    fontFamily: fontMono,
-    textAlign: 'center',
-  },
-  popupQuality: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginTop: spacing.xs,
-    fontFamily: fontMono,
-  },
-  popupDivider: {
-    height: 1,
-    backgroundColor: colors.surfaceLight,
-    width: '80%',
-    marginVertical: spacing.md,
-  },
-  popupBodyArea: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    letterSpacing: 2,
-    fontWeight: '600',
-    marginBottom: spacing.sm,
-    fontFamily: fontMono,
-  },
-  popupStatLine: {
-    fontSize: fontSize.md,
-    color: colors.neonCyan,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing.sm,
-    fontFamily: fontMono,
-  },
-  popupShortDesc: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  popupCompare: {
-    fontSize: fontSize.xs,
-    color: colors.neonAmber,
-    fontFamily: fontMono,
-    fontStyle: 'italic',
-    marginTop: spacing.sm,
-    textAlign: 'center',
-  },
-  popupLocked: {
-    fontSize: fontSize.xs,
-    color: colors.neonRed,
-    marginTop: spacing.md,
-    fontWeight: '600',
-    fontFamily: fontMono,
-  },
-  popupClose: {
-    marginTop: spacing.lg,
-    width: 120,
   },
 });

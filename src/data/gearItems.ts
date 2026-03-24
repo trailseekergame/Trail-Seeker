@@ -22,6 +22,8 @@ export const GEAR_DUSTWALKER_LENS: GearItem = {
   name: 'Dustwalker Lens',
   shortDesc: 'Filters noise from scan signals. Rarer finds surface.',
   icon: 'binoculars',
+  zone: 'sensor',
+  lore: 'Salvaged from a relay tower south of the Dead Reactor. The glass is cracked but the filters still cut through tox-storm interference.',
 };
 
 export const GEAR_DRIFTER_VEST: GearItem = {
@@ -30,6 +32,8 @@ export const GEAR_DRIFTER_VEST: GearItem = {
   name: 'Drifter Vest',
   shortDesc: 'Reinforced frame lets you run more scans per day.',
   icon: 'shield-half-full',
+  zone: 'core',
+  lore: 'Standard-issue for unlicensed operators. The power cell is duct-taped in, but it holds a charge long enough to run extra scans.',
 };
 
 export const GEAR_STEADY_GRIPS: GearItem = {
@@ -38,6 +42,8 @@ export const GEAR_STEADY_GRIPS: GearItem = {
   name: 'Steady Grips',
   shortDesc: 'Dampens interference. Fewer dead signals on risky scans.',
   icon: 'hand-back-fist',
+  zone: 'core',
+  lore: 'Dampener gloves pulled off a dead Directorate signal tech. They reduce hand tremor enough to hold a scan lock in high-interference zones.',
 };
 
 export const GEAR_TRAILRUNNERS: GearItem = {
@@ -46,6 +52,8 @@ export const GEAR_TRAILRUNNERS: GearItem = {
   name: 'Trailrunners',
   shortDesc: 'Terrain-mapped soles. You cover more ground per scan.',
   icon: 'shoe-print',
+  zone: 'drive',
+  lore: 'Terrain-mapped boots from a Free Bands courier. The soles read ground composition and plot efficient routes through rubble fields.',
 };
 
 export const GEAR_NEURAL_TAP: GearItem = {
@@ -54,6 +62,8 @@ export const GEAR_NEURAL_TAP: GearItem = {
   name: 'Neural Tap',
   shortDesc: 'Wired into the rover\'s deep-field array. Gambits hit harder.',
   icon: 'brain',
+  zone: 'sensor',
+  lore: 'A crude neural interface wired into the rover\'s deep-field array. Hurts when it connects, but Gambit signals come through sharper.',
 };
 
 export const GEAR_SCRAP_HAWK: GearItem = {
@@ -62,6 +72,8 @@ export const GEAR_SCRAP_HAWK: GearItem = {
   name: 'Scrap Hawk',
   shortDesc: 'Automated recovery unit. Sometimes catches what you miss.',
   icon: 'drone',
+  zone: 'drive',
+  lore: 'Autonomous recovery drone cobbled together from Directorate surveillance parts. It circles back over missed signals and sometimes catches what you didn\'t.',
 };
 
 // Authored tile drops — mapped to real gear slots
@@ -71,6 +83,8 @@ export const GEAR_PADDED_JACKET: GearItem = {
   name: 'Padded Jacket',
   shortDesc: 'Layered padding absorbs impacts. +1 bonus scan.',
   icon: 'shield-half-full',
+  zone: 'core',
+  lore: 'Layered ballistic padding traded from a caravan near the Reclamation Zone border. Won\'t stop a bullet, but it absorbs enough impact to keep you scanning.',
 };
 
 export const GEAR_SCAVENGER_SATCHEL: GearItem = {
@@ -79,6 +93,8 @@ export const GEAR_SCAVENGER_SATCHEL: GearItem = {
   name: 'Scavenger Satchel',
   shortDesc: 'Extra carry capacity. More ground covered per scan.',
   icon: 'shoe-print',
+  zone: 'drive',
+  lore: 'Oversized cargo harness used by ruin-pickers in the outer sectors. More carry capacity means more ground covered before the signal window closes.',
 };
 
 export const GEAR_SIGNAL_SCANNER: GearItem = {
@@ -87,6 +103,8 @@ export const GEAR_SIGNAL_SCANNER: GearItem = {
   name: 'Signal Scanner',
   shortDesc: 'Broadband receiver. Slightly sharper scan reads.',
   icon: 'binoculars',
+  zone: 'sensor',
+  lore: 'Broadband receiver ripped from a downed Directorate drone. The housing is melted on one side but the antenna array still pulls clean signal.',
 };
 
 // ═══════════════════════════════════════════════════════
@@ -99,6 +117,8 @@ export const GEAR_DUSTWALKER_LENS_PLUS: GearItem = {
   name: 'Dustwalker Lens+',
   shortDesc: 'Tuned filters and a wider band. Rare signals come through cleaner.',
   icon: 'binoculars',
+  zone: 'sensor',
+  lore: 'Factory-tuned version found sealed in a pre-collapse shipping container. The filters are pristine — rare signals come through like they\'re shouting.',
 };
 
 export const GEAR_DRIFTER_VEST_PLUS: GearItem = {
@@ -107,6 +127,8 @@ export const GEAR_DRIFTER_VEST_PLUS: GearItem = {
   name: 'Drifter Vest+',
   shortDesc: 'Plated reinforcement. Extra scan charge and better loot quality.',
   icon: 'shield-half-full',
+  zone: 'core',
+  lore: 'Reinforced with plate salvaged from a Directorate APC. The extra weight is worth it — additional scan charge and cleaner loot resolution.',
 };
 
 export const GEAR_STEADY_GRIPS_PLUS: GearItem = {
@@ -115,6 +137,8 @@ export const GEAR_STEADY_GRIPS_PLUS: GearItem = {
   name: 'Steady Grips+',
   shortDesc: 'Stabilized dampeners. Whiff rate drops noticeably.',
   icon: 'hand-back-fist',
+  zone: 'core',
+  lore: 'Military-grade stabilizers with active dampening. The Directorate used these for precision demolition. You use them to hold a scan lock in a tox-storm.',
 };
 
 export const GEAR_NEURAL_TAP_PLUS: GearItem = {
@@ -123,6 +147,8 @@ export const GEAR_NEURAL_TAP_PLUS: GearItem = {
   name: 'Neural Tap+',
   shortDesc: 'Deep-field amplifier. Gambit legendary chance jumps.',
   icon: 'brain',
+  zone: 'sensor',
+  lore: 'Deep-field amplifier recovered from a Relay Tech outpost. The previous owner\'s initials are scratched into the housing. They didn\'t need it anymore.',
 };
 
 // ═══════════════════════════════════════════════════════
@@ -135,6 +161,8 @@ export const GEAR_GHOSTWEAVE_HOOD: GearItem = {
   name: 'Ghostweave Hood',
   shortDesc: 'Pre-collapse optics woven into the fabric. Rare+ signals are almost guaranteed.',
   icon: 'binoculars',
+  zone: 'sensor',
+  lore: 'Pre-collapse military optics woven into adaptive fabric. The Directorate catalogued these as destroyed. This one survived in a sealed bunker beneath the Dead Reactor.',
 };
 
 export const GEAR_OVERCLOCKED_VEST: GearItem = {
@@ -143,6 +171,8 @@ export const GEAR_OVERCLOCKED_VEST: GearItem = {
   name: 'Overclocked Vest Rig',
   shortDesc: 'Military-grade exoframe. +2 scans and loot quality boost.',
   icon: 'shield-half-full',
+  zone: 'core',
+  lore: 'Directorate special-operations exoframe. The power output was considered unsafe for standard troops. You\'re not standard troops.',
 };
 
 export const GEAR_GRIMLINE_BOOTS: GearItem = {
@@ -151,6 +181,8 @@ export const GEAR_GRIMLINE_BOOTS: GearItem = {
   name: 'Grimline Boots',
   shortDesc: 'Directorate special-ops treads. Double sector progress chance.',
   icon: 'shoe-print',
+  zone: 'drive',
+  lore: 'Directorate spec-ops treads with terrain prediction AI. They read the ground three steps ahead. The previous wearer left them in a hurry.',
 };
 
 export const GEAR_ECHO_DRONE: GearItem = {
@@ -159,6 +191,8 @@ export const GEAR_ECHO_DRONE: GearItem = {
   name: 'Echo Drone Mk.III',
   shortDesc: 'Autonomous deep-recovery unit. 25% scan refund chance.',
   icon: 'drone',
+  zone: 'drive',
+  lore: 'Third-generation autonomous recovery unit. It operates on a frequency the Directorate can\'t jam. 25% of the time, it finds what you missed.',
 };
 
 // ═══════════════════════════════════════════════════════
