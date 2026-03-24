@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -33,6 +33,22 @@ export default function DailyPlanScreen() {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
+
+  // ─── Dev shortcut: tap header 5x to unlock 99 scans ───
+  const devTapCount = useRef(0);
+  const devTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleDevTap = useCallback(() => {
+    if (!__DEV__) return;
+    devTapCount.current += 1;
+    if (devTapTimer.current) clearTimeout(devTapTimer.current);
+    devTapTimer.current = setTimeout(() => { devTapCount.current = 0; }, 1500);
+    if (devTapCount.current >= 5) {
+      devTapCount.current = 0;
+      dispatch({ type: 'UPDATE_SCAN_TOTAL', payload: 99 });
+      AudioManager.playSfx('sector_complete');
+      AudioManager.vibrate('heavy');
+    }
+  }, [dispatch]);
 
   // Initialize gear & sector if empty
   useEffect(() => {
@@ -108,7 +124,7 @@ export default function DailyPlanScreen() {
             style={styles.headerAvatar}
             resizeMode="cover"
           />
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerTitle} onPress={handleDevTap}>
             Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
           </Text>
 
