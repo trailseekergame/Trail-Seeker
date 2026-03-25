@@ -45,6 +45,7 @@ export default function DailyPlanScreen() {
     if (devTapCount.current >= 5) {
       devTapCount.current = 0;
       dispatch({ type: 'UPDATE_SCAN_TOTAL', payload: 99 });
+      dispatch({ type: 'DEV_UNLOCK_GEAR' });
       AudioManager.playSfx('sector_complete');
       AudioManager.vibrate('heavy');
     }
@@ -124,9 +125,11 @@ export default function DailyPlanScreen() {
             style={styles.headerAvatar}
             resizeMode="cover"
           />
-          <Text style={styles.headerTitle} onPress={handleDevTap}>
-            Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
-          </Text>
+          <TouchableOpacity onPress={handleDevTap} activeOpacity={1}>
+            <Text style={styles.headerTitle}>
+              Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
+            </Text>
+          </TouchableOpacity>
 
           {/* Status strip: HP + Rover + Resources */}
           <View style={styles.statusStrip}>

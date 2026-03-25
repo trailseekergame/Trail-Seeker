@@ -61,6 +61,7 @@ type GameAction =
   | { type: 'USE_SCAN'; payload: ScanResult }
   | { type: 'SET_ACTIVE_GEAR'; payload: GearSlotId[] }
   | { type: 'LOCK_GEAR_TODAY' }
+  | { type: 'DEV_UNLOCK_GEAR' }
   | { type: 'ADVANCE_STREAK' }
   | { type: 'REFRESH_DAILY_SCANS'; payload: number }
   | { type: 'CLEAR_TILE'; payload: string }
@@ -311,6 +312,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         seekerScans: { ...state.seekerScans, gearLockedToday: true },
+      };
+    }
+
+    case 'DEV_UNLOCK_GEAR': {
+      // Dev-only: reset gear lock so loadout can be changed mid-session
+      return {
+        ...state,
+        seekerScans: { ...state.seekerScans, gearLockedToday: false },
       };
     }
 
@@ -582,23 +591,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'ADD_GEAR_ITEM': {
       const newGear = action.payload;
-      // Replace existing item in same slot if present, otherwise add
-      const existing = state.seekerScans.gearInventory.findIndex(g => g.slotId === newGear.slotId);
-      let updatedInventory;
-      if (existing >= 0) {
-        // Only replace if new item is higher quality
-        const qualityOrder: Record<string, number> = { standard: 0, enhanced: 1, perfected: 2, ultra: 3 };
-        const oldQ = qualityOrder[state.seekerScans.gearInventory[existing].quality] ?? 0;
-        const newQ = qualityOrder[newGear.quality] ?? 0;
-        if (newQ > oldQ) {
-          updatedInventory = [...state.seekerScans.gearInventory];
-          updatedInventory[existing] = newGear;
-        } else {
-          return state; // Already have equal or better
-        }
-      } else {
-        updatedInventory = [...state.seekerScans.gearInventory, newGear];
-      }
+      // Check if we already own this exact item (same name + slotId + quality)
+      const alreadyOwned = state.seekerScans.gearInventory.some(
+        g => g.slotId === newGear.slotId && g.quality === newGear.quality && g.name === newGear.name
+      );
+      if (alreadyOwned) return state; // Skip true duplicates
+
+      // Add to inventory — multiple items per slot are allowed (zone system handles equip)
+      const updatedInventory = [...state.seekerScans.gearInventory, newGear];
       return {
         ...state,
         seekerScans: { ...state.seekerScans, gearInventory: updatedInventory },
