@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Imag
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
-import { resolveScan, getEffectiveWhiffRate, computeScanRewards, rollUltraDrop, rollEnhancedDrop } from '../../systems/scanEngine';
+import { resolveScan, getEffectiveWhiffRate, getStreakRareBoost, computeScanRewards, rollUltraDrop, rollEnhancedDrop } from '../../systems/scanEngine';
 import { BROKEN_OVERPASS_TILES, RELAY_FIELD_TILES } from '../../data/authoredTiles';
 import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
@@ -17,6 +17,7 @@ import CoachMark, { COACH, hasBeenShown } from '../../components/common/CoachMar
 import AudioManager from '../../services/audioManager';
 import MicroEvent, { rollMicroEvent, MicroEventData, MicroEventEffect } from '../../components/scans/MicroEvent';
 import { MAP_DEFS, MapId } from '../../data/sectorMaps';
+import gameBalance from '../../config/gameBalance.json';
 import { saveGameState } from '../../services/storage';
 import { checkMilestones, applyResourceBoost, applyDamageReduction } from '../../systems/skrEconomy';
 
@@ -934,9 +935,103 @@ export default function ScanScreen({ route }: any) {
                 </Text>
               </View>
             )}
-            <Text style={[styles.confirmWhiff, { color: SCAN_COLORS[selectedScan] }]}>
-              {Math.round(whiffRates[selectedScan] * 100)}% miss chance
-            </Text>
+            {/* ─── Gear-modified stats breakdown ─── */}
+            {(() => {
+              const baseWhiff = (gameBalance.risk_tiers as any)[selectedScan]?.whiff_rate || 0;
+              const effectiveWhiff = whiffRates[selectedScan];
+              const baseWhiffPct = Math.round(baseWhiff * 100);
+              const effectiveWhiffPct = Math.round(effectiveWhiff * 100);
+              const whiffReduced = baseWhiffPct > effectiveWhiffPct;
+
+              // Collect active gear modifiers for this scan
+              const mods: { icon: string; label: string; value: string; color: string }[] = [];
+
+              // Grip Gauntlets reduce whiff
+              if (ss.activeGearSlots.includes('grip_gauntlets') && selectedScan !== 'scout') {
+                const g = ss.gearInventory.find(g => g.slotId === 'grip_gauntlets');
+                if (g) {
+                  const red = (gameBalance.gear_stats.grip_gauntlets as any)[g.quality]?.whiff_reduction || 0;
+                  if (red > 0) mods.push({ icon: 'hand-back-fist', label: g.name, value: `-${Math.round(red * 100)}% miss`, color: colors.neonGreen });
+                }
+              }
+
+              // Optics Rig boosts rare chance
+              if (ss.activeGearSlots.includes('optics_rig')) {
+                const g = ss.gearInventory.find(g => g.slotId === 'optics_rig');
+                if (g) {
+                  const boost = (gameBalance.gear_stats.optics_rig as any)[g.quality]?.rare_boost || 0;
+                  if (boost > 0) mods.push({ icon: 'binoculars', label: g.name, value: `+${Math.round(boost * 100)}% rare`, color: colors.neonCyan });
+                }
+              }
+
+              // Cortex Link boosts Gambit legendary
+              if (selectedScan === 'gambit' && ss.activeGearSlots.includes('cortex_link')) {
+                const g = ss.gearInventory.find(g => g.slotId === 'cortex_link');
+                if (g) {
+                  const boost = (gameBalance.gear_stats.cortex_link as any)[g.quality]?.gambit_legendary_boost || 0;
+                  if (boost > 0) mods.push({ icon: 'brain', label: g.name, value: `+${Math.round(boost * 100)}% legendary`, color: colors.neonPurple });
+                }
+              }
+
+              // Salvage Drone refund chance
+              if (ss.activeGearSlots.includes('salvage_drone')) {
+                const g = ss.gearInventory.find(g => g.slotId === 'salvage_drone');
+                if (g) {
+                  const chance = (gameBalance.gear_stats.salvage_drone as any)[g.quality]?.refund_chance || 0;
+                  if (chance > 0) mods.push({ icon: 'drone', label: g.name, value: `${Math.round(chance * 100)}% refund`, color: colors.neonAmber });
+                }
+              }
+
+              // Nav Boots sector bonus
+              if (ss.activeGearSlots.includes('nav_boots')) {
+                const g = ss.gearInventory.find(g => g.slotId === 'nav_boots');
+                if (g) {
+                  const bonus = (gameBalance.gear_stats.nav_boots as any)[g.quality]?.sector_bonus || 0;
+                  if (bonus > 0) mods.push({ icon: 'shoe-print', label: g.name, value: `+${bonus} ground`, color: colors.neonCyan });
+                }
+              }
+
+              // Streak rare boost
+              const streakRare = getStreakRareBoost(ss.streakDay);
+
+              return (
+                <View style={styles.confirmStatsBlock}>
+                  {/* Miss chance with breakdown */}
+                  <View style={styles.confirmStatRow}>
+                    <Text style={[styles.confirmStatLabel, { color: colors.textMuted }]}>DEAD SIGNAL RISK</Text>
+                    <Text style={[styles.confirmStatValue, { color: SCAN_COLORS[selectedScan] }]}>
+                      {whiffReduced ? `${baseWhiffPct}% → ` : ''}{effectiveWhiffPct}%
+                    </Text>
+                  </View>
+
+                  {/* Streak rare boost */}
+                  {streakRare > 0 && (
+                    <View style={styles.confirmStatRow}>
+                      <Text style={[styles.confirmStatLabel, { color: colors.textMuted }]}>STREAK BONUS</Text>
+                      <Text style={[styles.confirmStatValue, { color: colors.neonGreen }]}>+{Math.round(streakRare * 100)}% rare</Text>
+                    </View>
+                  )}
+
+                  {/* Gear modifiers */}
+                  {mods.length > 0 && (
+                    <View style={styles.confirmGearMods}>
+                      {mods.map((mod, i) => (
+                        <View key={i} style={styles.confirmModRow}>
+                          <MaterialCommunityIcons name={mod.icon as any} size={12} color={mod.color} />
+                          <Text style={[styles.confirmModLabel, { color: colors.textMuted }]}>{mod.label}</Text>
+                          <Text style={[styles.confirmModValue, { color: mod.color }]}>{mod.value}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* No gear hint */}
+                  {mods.length === 0 && ss.gearInventory.length > 0 && (
+                    <Text style={styles.confirmNoGearHint}>No gear modifiers active for this scan.</Text>
+                  )}
+                </View>
+              );
+            })()}
             {selectedScan === 'gambit' && (
               <CoachMark
                 id={COACH.GAMBIT_INTRO}
@@ -1734,6 +1829,60 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: spacing.lg,
     fontFamily: fontMono,
+  },
+  confirmStatsBlock: {
+    width: '100%',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  confirmStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  confirmStatLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    fontFamily: fontMono,
+  },
+  confirmStatValue: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    fontFamily: fontMono,
+  },
+  confirmGearMods: {
+    borderTopWidth: 1,
+    borderTopColor: colors.panelBorder,
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+  },
+  confirmModRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 2,
+  },
+  confirmModLabel: {
+    fontSize: 10,
+    fontFamily: fontMono,
+    flex: 1,
+  },
+  confirmModValue: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: fontMono,
+  },
+  confirmNoGearHint: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    fontStyle: 'italic',
+    marginTop: spacing.xs,
   },
   confirmButtons: {
     flexDirection: 'row',
