@@ -327,6 +327,7 @@ export const INITIAL_GAME_STATE: GameState = {
     lastRefreshDate: new Date().toISOString().split('T')[0],
     shieldedNextScan: false,
     boostedNextScan: false,
+    newGearIds: [],
   },
   currentMapId: 'camp',
   unlockedMapIds: ['camp', 'broken_overpass'],
@@ -452,6 +453,7 @@ export interface SeekerScanState {
   lastRefreshDate: string; // tracks when scans were last refreshed to prevent mid-session resets
   shieldedNextScan: boolean;  // next scan skips whiff roll
   boostedNextScan: boolean;   // next scan outcome upgraded one tier
+  newGearIds: string[];       // gear names not yet viewed in Equipment (for NEW tag)
 }
 
 export const MAX_FREE_MOVES = 3;

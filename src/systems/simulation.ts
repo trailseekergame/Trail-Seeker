@@ -49,6 +49,7 @@ function createTestState(
     lastRefreshDate: new Date().toISOString().split('T')[0],
     shieldedNextScan: false,
     boostedNextScan: false,
+    newGearIds: [],
   };
 }
 

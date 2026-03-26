@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../../context/GameContext';
+import { ALL_GEAR_ITEMS } from '../../data/gearItems';
 import cosmeticItems from '../../data/cosmetics';
 import { colors, spacing, fontSize, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
@@ -106,6 +107,34 @@ export default function WardrobeScreen() {
   const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
   const [cosmeticSlot, setCosmeticSlot] = useState<CosmeticSlot>('headgear');
   const [activeTab, setActiveTab] = useState<'rig' | 'look'>('rig');
+  const [showCatalog, setShowCatalog] = useState(false);
+
+  // ─── NEW gear helper ───
+  const isNewGear = (gear: GearItem) =>
+    ss.newGearIds.includes(`${gear.name}:${gear.quality}`);
+
+  // Mark all new gear as seen after 3 seconds on this screen
+  useEffect(() => {
+    if (ss.newGearIds.length === 0) return;
+    const timer = setTimeout(() => {
+      dispatch({ type: 'MARK_GEAR_SEEN', payload: [...ss.newGearIds] });
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // ─── Catalog: all items grouped by zone, with owned status ───
+  const catalogByZone = useMemo(() => {
+    const zones: Record<GearZone, { item: GearItem; owned: boolean; isNew: boolean }[]> = {
+      sensor: [], core: [], drive: [],
+    };
+    for (const item of ALL_GEAR_ITEMS) {
+      const owned = ss.gearInventory.some(
+        g => g.name === item.name && g.quality === item.quality && g.slotId === item.slotId
+      );
+      zones[item.zone].push({ item, owned, isNew: isNewGear(item) });
+    }
+    return zones;
+  }, [ss.gearInventory, ss.newGearIds]);
 
   // ─── Installed items by zone ───
   const installedByZone = useMemo(() => {
@@ -251,6 +280,7 @@ export default function WardrobeScreen() {
   const renderBackpackItem = (gear: GearItem) => {
     const qualityColor = QUALITY_COLORS[gear.quality] || colors.textSecondary;
     const selected = selectedGear?.slotId === gear.slotId && selectedGear?.quality === gear.quality;
+    const newItem = isNewGear(gear);
 
     return (
       <TouchableOpacity
@@ -259,6 +289,7 @@ export default function WardrobeScreen() {
           styles.backpackCard,
           { borderLeftColor: qualityColor, borderLeftWidth: 3 },
           selected && { borderColor: qualityColor },
+          newItem && { borderColor: colors.neonAmber + '60' },
         ]}
         onPress={() => {
           AudioManager.playSfx('ui_tap');
@@ -267,6 +298,11 @@ export default function WardrobeScreen() {
         }}
         activeOpacity={0.7}
       >
+        {newItem && (
+          <View style={styles.newTag}>
+            <Text style={styles.newTagText}>NEW</Text>
+          </View>
+        )}
         <MaterialCommunityIcons name={gear.icon as any} size={20} color={qualityColor} />
         <Text style={styles.backpackName} numberOfLines={2}>{gear.name}</Text>
       </TouchableOpacity>
@@ -432,10 +468,71 @@ export default function WardrobeScreen() {
               </View>
             )}
 
-            {ss.gearInventory.length > 0 && ss.gearInventory.length < 4 && (
-              <View style={styles.futureGearHint}>
-                <MaterialCommunityIcons name="radar" size={14} color={colors.textMuted} />
-                <Text style={styles.futureGearText}>New rigs show up as you earn them.</Text>
+            {/* ─── GEAR CATALOG ─── */}
+            <TouchableOpacity
+              style={styles.catalogToggle}
+              onPress={() => setShowCatalog(!showCatalog)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name={showCatalog ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={colors.textMuted}
+              />
+              <Text style={styles.catalogToggleText}>
+                {showCatalog ? 'HIDE CATALOG' : 'ALL RIGS'} ({ss.gearInventory.length}/{ALL_GEAR_ITEMS.length} found)
+              </Text>
+            </TouchableOpacity>
+
+            {showCatalog && (
+              <View style={styles.catalogContainer}>
+                {(['sensor', 'core', 'drive'] as GearZone[]).map(zone => (
+                  <View key={zone} style={styles.catalogZone}>
+                    <Text style={[styles.catalogZoneLabel, { color: ZONE_COLORS[zone] }]}>
+                      {ZONE_LABELS[zone]}
+                    </Text>
+                    {catalogByZone[zone].map(({ item, owned, isNew }) => {
+                      const qColor = QUALITY_COLORS[item.quality] || colors.textSecondary;
+                      return (
+                        <View
+                          key={`${item.name}-${item.quality}`}
+                          style={[styles.catalogItem, !owned && styles.catalogItemLocked]}
+                        >
+                          <MaterialCommunityIcons
+                            name={item.icon as any}
+                            size={16}
+                            color={owned ? qColor : colors.textMuted + '40'}
+                          />
+                          <View style={styles.catalogItemInfo}>
+                            <Text style={[
+                              styles.catalogItemName,
+                              { color: owned ? colors.textPrimary : colors.textMuted },
+                            ]} numberOfLines={1}>
+                              {item.name}
+                            </Text>
+                            <Text style={[styles.catalogItemEffect, { color: owned ? qColor : colors.textMuted + '60' }]}>
+                              {GEAR_STAT_LINE[item.slotId](item.quality)}
+                            </Text>
+                          </View>
+                          <View style={styles.catalogItemRight}>
+                            {isNew && (
+                              <View style={styles.newTag}>
+                                <Text style={styles.newTagText}>NEW</Text>
+                              </View>
+                            )}
+                            {owned ? (
+                              <Text style={[styles.catalogTierBadge, { color: qColor }]}>
+                                {item.quality.charAt(0).toUpperCase() + item.quality.slice(1)}
+                              </Text>
+                            ) : (
+                              <MaterialCommunityIcons name="lock-outline" size={12} color={colors.textMuted + '40'} />
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
               </View>
             )}
           </>
@@ -1092,5 +1189,94 @@ const styles = StyleSheet.create({
   cosmeticActions: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+
+  // ─── NEW tag ───
+  newTag: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: colors.neonAmber,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    zIndex: 2,
+  },
+  newTagText: {
+    fontSize: 7,
+    fontWeight: '800',
+    color: colors.background,
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+
+  // ─── Gear Catalog ───
+  catalogToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
+    borderStyle: 'dashed',
+  },
+  catalogToggleText: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    letterSpacing: 2,
+  },
+  catalogContainer: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.sm,
+  },
+  catalogZone: {
+    marginBottom: spacing.md,
+  },
+  catalogZoneLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 2,
+    fontFamily: fontMono,
+    marginBottom: spacing.xs,
+  },
+  catalogItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    marginBottom: 3,
+  },
+  catalogItemLocked: {
+    opacity: 0.45,
+  },
+  catalogItemInfo: {
+    flex: 1,
+  },
+  catalogItemName: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: fontMono,
+  },
+  catalogItemEffect: {
+    fontSize: 9,
+    fontFamily: fontMono,
+    marginTop: 1,
+  },
+  catalogItemRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  catalogTierBadge: {
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: fontMono,
   },
 });

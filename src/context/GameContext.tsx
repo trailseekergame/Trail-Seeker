@@ -90,6 +90,7 @@ type GameAction =
   | { type: 'RPS_LOSS' }
   | { type: 'RPS_DRAW' }
   | { type: 'ADD_GEAR_ITEM'; payload: GearItem }
+  | { type: 'MARK_GEAR_SEEN'; payload: string[] }
   | { type: 'SET_ACCENT_COLOR'; payload: string };
 
 // ─── Reducer ───
@@ -597,11 +598,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       );
       if (alreadyOwned) return state; // Skip true duplicates
 
-      // Add to inventory — multiple items per slot are allowed (zone system handles equip)
+      // Add to inventory + mark as new
       const updatedInventory = [...state.seekerScans.gearInventory, newGear];
+      const gearKey = `${newGear.name}:${newGear.quality}`;
       return {
         ...state,
-        seekerScans: { ...state.seekerScans, gearInventory: updatedInventory },
+        seekerScans: {
+          ...state.seekerScans,
+          gearInventory: updatedInventory,
+          newGearIds: [...state.seekerScans.newGearIds, gearKey],
+        },
+      };
+    }
+
+    case 'MARK_GEAR_SEEN': {
+      const idsToRemove = new Set(action.payload);
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          newGearIds: state.seekerScans.newGearIds.filter(id => !idsToRemove.has(id)),
+        },
       };
     }
 
