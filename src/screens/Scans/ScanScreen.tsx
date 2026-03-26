@@ -108,6 +108,12 @@ export default function ScanScreen({ route }: any) {
   const resolveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phraseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Rarity-based result effects
+  const resultGlow = useRef(new Animated.Value(0)).current;
+  const resultFlash = useRef(new Animated.Value(0)).current;
+  const [resultRevealed, setResultRevealed] = useState(true);
+  const [legendaryTeaser, setLegendaryTeaser] = useState(false);
+
   // Set scan ambient music + cleanup timers
   useEffect(() => {
     AudioManager.setMusic('ambient_scan');
@@ -227,6 +233,47 @@ export default function ScanScreen({ route }: any) {
     if (phraseTimerRef.current) {
       clearInterval(phraseTimerRef.current);
       phraseTimerRef.current = null;
+    }
+  };
+
+  // ─── Rarity result effects ───
+  const fireResultEffects = (outcome: ScanOutcome) => {
+    resultGlow.setValue(0);
+    resultFlash.setValue(0);
+    setLegendaryTeaser(false);
+
+    if (outcome === 'rare') {
+      // Rare: double haptic + cyan glow pulse
+      setResultRevealed(true);
+      AudioManager.vibrate('medium');
+      setTimeout(() => AudioManager.vibrate('light'), 120);
+      Animated.sequence([
+        Animated.timing(resultGlow, { toValue: 1, duration: 200, useNativeDriver: false }),
+        Animated.timing(resultGlow, { toValue: 0.3, duration: 600, useNativeDriver: false }),
+      ]).start();
+    } else if (outcome === 'legendary' || outcome === 'component') {
+      // Legendary/Component: delay reveal, gold flash, heavy haptic
+      setResultRevealed(false);
+      setLegendaryTeaser(true);
+      AudioManager.vibrate('heavy');
+      // Gold flash
+      Animated.sequence([
+        Animated.timing(resultFlash, { toValue: 1, duration: 150, useNativeDriver: false }),
+        Animated.timing(resultFlash, { toValue: 0, duration: 300, useNativeDriver: false }),
+        Animated.timing(resultFlash, { toValue: 0.7, duration: 100, useNativeDriver: false }),
+        Animated.timing(resultFlash, { toValue: 0, duration: 200, useNativeDriver: false }),
+      ]).start();
+      // Reveal after 600ms
+      setTimeout(() => {
+        setLegendaryTeaser(false);
+        setResultRevealed(true);
+        AudioManager.vibrate('heavy');
+        // Glow stays
+        Animated.timing(resultGlow, { toValue: 0.5, duration: 400, useNativeDriver: false }).start();
+      }, 600);
+    } else {
+      // Common/Uncommon/Whiff: no special effect
+      setResultRevealed(true);
     }
   };
 
@@ -431,6 +478,7 @@ export default function ScanScreen({ route }: any) {
       if (selectedScan === 'gambit' && result.outcome !== 'whiff') {
         setShowSkillCheck(true);
       } else {
+        fireResultEffects(result.outcome);
         setShowResult(true);
       }
 
@@ -441,6 +489,7 @@ export default function ScanScreen({ route }: any) {
   // ─── Gambit skill check result handler ───
   const handleGambitSkillCheck = (success: boolean) => {
     setShowSkillCheck(false);
+    let effectiveOutcome: ScanOutcome = lastResult?.outcome || 'common';
     if (success) {
       // Skill check passed — upgrade loot tier
       AudioManager.playSfx('gambit_win');
@@ -449,6 +498,7 @@ export default function ScanScreen({ route }: any) {
         const upgraded = TIER_UPGRADE[lastResult.outcome];
         if (upgraded) {
           setDisplayOutcome(upgraded);
+          effectiveOutcome = upgraded;
         }
       }
     } else {
@@ -456,7 +506,9 @@ export default function ScanScreen({ route }: any) {
       AudioManager.playSfx('gambit_whiff');
       AudioManager.vibrate('medium');
       setDisplayOutcome('whiff');
+      effectiveOutcome = 'whiff';
     }
+    fireResultEffects(effectiveOutcome);
     setShowResult(true);
   };
 
@@ -953,12 +1005,47 @@ export default function ScanScreen({ route }: any) {
       {/* ─── RESULT POPUP ─── */}
       <Modal visible={showResult} transparent animationType="fade">
         <View style={styles.overlay}>
-          <View style={styles.resultCard}>
+          {/* Rarity flash overlay */}
+          <Animated.View
+            style={[
+              styles.rarityFlash,
+              { opacity: resultFlash },
+            ]}
+            pointerEvents="none"
+          />
+          <Animated.View style={[
+            styles.resultCard,
+            {
+              borderColor: resultGlow.interpolate({
+                inputRange: [0, 0.3, 1],
+                outputRange: [colors.panelBorder, colors.neonCyan + '40', colors.neonCyan],
+              }),
+              shadowOpacity: resultGlow.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 0.6],
+              }),
+              shadowColor: colors.neonCyan,
+              shadowRadius: 20,
+            },
+          ]}>
             {lastResult && (() => {
               const effectiveOutcome = displayOutcome || lastResult.outcome;
               const display = OUTCOME_DISPLAY[effectiveOutcome];
+              const isLegendaryEffect = effectiveOutcome === 'legendary' || effectiveOutcome === 'component';
+              const glowColor = isLegendaryEffect ? '#FFD700' : colors.neonCyan;
               return (
                 <>
+                  {/* Legendary teaser before reveal */}
+                  {legendaryTeaser && (
+                    <View style={styles.teaserContainer}>
+                      <MaterialCommunityIcons name="alert-decagram" size={40} color="#FFD700" />
+                      <Text style={styles.teaserText}>SIGNAL BREACH</Text>
+                    </View>
+                  )}
+
+                  {/* Main result content — hidden during teaser */}
+                  {resultRevealed && (
+                    <>
                   {/* Scan type badge */}
                   <View style={[styles.resultTypeBadge, { backgroundColor: SCAN_COLORS[lastResult.scanType] + '30', borderColor: SCAN_COLORS[lastResult.scanType] }]}>
                     <Text style={[styles.resultTypeBadgeText, { color: SCAN_COLORS[lastResult.scanType] }]}>
@@ -1161,7 +1248,11 @@ export default function ScanScreen({ route }: any) {
                     )}
                   </View>
 
-                  {/* Action button */}
+                  {/* Close resultRevealed wrapper */}
+                  </>
+                  )}
+
+                  {/* Action button — always visible */}
                   <View style={styles.resultActions}>
                     {sessionDone ? (
                       <NeonButton
@@ -1181,7 +1272,7 @@ export default function ScanScreen({ route }: any) {
                 </>
               );
             })()}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
 
@@ -1654,6 +1745,11 @@ const styles = StyleSheet.create({
   },
 
   // ─── Result Popup ───
+  rarityFlash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFD700',
+    zIndex: 10,
+  },
   resultCard: {
     width: '100%',
     maxWidth: 340,
@@ -1663,6 +1759,20 @@ const styles = StyleSheet.create({
     borderColor: colors.panelBorder,
     padding: spacing.xl,
     alignItems: 'center',
+    elevation: 8,
+  },
+  teaserContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl,
+  },
+  teaserText: {
+    fontSize: fontSize.xxl,
+    fontWeight: '700',
+    color: '#FFD700',
+    fontFamily: fontMono,
+    letterSpacing: 4,
+    marginTop: spacing.md,
   },
   resultTypeBadge: {
     paddingHorizontal: spacing.md,
