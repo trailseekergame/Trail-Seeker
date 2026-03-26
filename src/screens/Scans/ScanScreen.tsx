@@ -1164,10 +1164,10 @@ export default function ScanScreen({ route }: any) {
                     </View>
                   )}
 
-                  {/* Loot with rarity label — hide on whiff (failed Gambit shows no loot) */}
+                  {/* Loot salvage name — hide on whiff */}
                   {lastResult.lootName && effectiveOutcome !== 'whiff' && (
-                    <Text style={[styles.resultLoot, { color: display.color }]}>
-                      {effectiveOutcome.charAt(0).toUpperCase() + effectiveOutcome.slice(1)}: {lastResult.lootName}
+                    <Text style={styles.resultLootName}>
+                      {lastResult.lootName}
                     </Text>
                   )}
 
@@ -1951,6 +1951,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: spacing.sm,
     fontFamily: fontMono,
+  },
+  resultLootName: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontFamily: fontMono,
+    fontStyle: 'italic',
+    marginBottom: spacing.sm,
   },
   resultProgressRow: {
     backgroundColor: colors.surfaceHighlight,
