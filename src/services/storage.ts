@@ -1,5 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GameState, INITIAL_GAME_STATE, LeaderboardEntry } from '../types';
+import { GameState, INITIAL_GAME_STATE, LeaderboardEntry, GearItem } from '../types';
+import { ALL_GEAR_ITEMS } from '../data/gearItems';
+
+/** Migrate old gear items that are missing zone/lore fields */
+function migrateGearItem(item: any): GearItem {
+  if (item.zone && item.lore) return item as GearItem;
+  // Try to find matching item in catalog by name + slotId
+  const catalogMatch = ALL_GEAR_ITEMS.find(
+    g => g.name === item.name && g.slotId === item.slotId
+  );
+  if (catalogMatch) return { ...catalogMatch, quality: item.quality };
+  // Fallback: infer zone from slotId
+  const ZONE_MAP: Record<string, string> = {
+    optics_rig: 'sensor', cortex_link: 'sensor',
+    exo_vest: 'core', grip_gauntlets: 'core',
+    nav_boots: 'drive', salvage_drone: 'drive',
+  };
+  return {
+    ...item,
+    zone: ZONE_MAP[item.slotId] || 'core',
+    lore: item.lore || 'Salvaged from the wastes. Origin unknown.',
+  };
+}
 
 const STORAGE_KEYS = {
   GAME_STATE: '@trail_seeker_game_state',
@@ -22,8 +44,16 @@ export async function loadGameState(): Promise<GameState> {
     const json = await AsyncStorage.getItem(STORAGE_KEYS.GAME_STATE);
     if (json) {
       const saved = JSON.parse(json) as Partial<GameState>;
-      // Merge with defaults to handle schema upgrades
-      return { ...INITIAL_GAME_STATE, ...saved };
+      // Deep-merge seekerScans so new fields get defaults
+      const mergedScans = {
+        ...INITIAL_GAME_STATE.seekerScans,
+        ...(saved.seekerScans || {}),
+        // Ensure new array fields exist even if saved state predates them
+        newGearIds: saved.seekerScans?.newGearIds ?? [],
+        // Migrate old gear items that are missing zone/lore
+        gearInventory: (saved.seekerScans?.gearInventory || []).map(migrateGearItem),
+      };
+      return { ...INITIAL_GAME_STATE, ...saved, seekerScans: mergedScans };
     }
   } catch (e) {
     console.error('Failed to load game state:', e);

@@ -110,14 +110,15 @@ export default function WardrobeScreen() {
   const [showCatalog, setShowCatalog] = useState(false);
 
   // ─── NEW gear helper ───
+  const newGearIds = ss.newGearIds || [];
   const isNewGear = (gear: GearItem) =>
-    ss.newGearIds.includes(`${gear.name}:${gear.quality}`);
+    newGearIds.includes(`${gear.name}:${gear.quality}`);
 
   // Mark all new gear as seen after 3 seconds on this screen
   useEffect(() => {
-    if (ss.newGearIds.length === 0) return;
+    if (!newGearIds.length) return;
     const timer = setTimeout(() => {
-      dispatch({ type: 'MARK_GEAR_SEEN', payload: [...ss.newGearIds] });
+      dispatch({ type: 'MARK_GEAR_SEEN', payload: [...newGearIds] });
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
@@ -134,7 +135,7 @@ export default function WardrobeScreen() {
       zones[item.zone].push({ item, owned, isNew: isNewGear(item) });
     }
     return zones;
-  }, [ss.gearInventory, ss.newGearIds]);
+  }, [ss.gearInventory, newGearIds]);
 
   // ─── Installed items by zone ───
   const installedByZone = useMemo(() => {
@@ -420,7 +421,7 @@ export default function WardrobeScreen() {
                     <View style={styles.infoPanelBadges}>
                       <View style={[styles.zoneBadge, { borderColor: ZONE_COLORS[selectedGear.zone] + '60' }]}>
                         <Text style={[styles.zoneBadgeText, { color: ZONE_COLORS[selectedGear.zone] }]}>
-                          {ZONE_LABELS[selectedGear.zone]}
+                          {ZONE_LABELS[selectedGear.zone] || 'UNKNOWN'}
                         </Text>
                       </View>
                       <View style={[styles.qualityBadgeInline, { borderColor: (QUALITY_COLORS[selectedGear.quality] || colors.textSecondary) + '60' }]}>
@@ -435,9 +436,9 @@ export default function WardrobeScreen() {
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.infoPanelStat}>
-                  {GEAR_STAT_LINE[selectedGear.slotId](selectedGear.quality)}
+                  {GEAR_STAT_LINE[selectedGear.slotId]?.(selectedGear.quality) || 'No stats available'}
                 </Text>
-                <Text style={styles.infoPanelLore}>{selectedGear.lore}</Text>
+                <Text style={styles.infoPanelLore}>{selectedGear.lore || 'Salvaged from the wastes.'}</Text>
                 {ss.gearLockedToday ? (
                   <Text style={styles.infoPanelLocked}>GEAR LOCKED — first scan locks loadout for the day</Text>
                 ) : (
@@ -511,7 +512,7 @@ export default function WardrobeScreen() {
                               {item.name}
                             </Text>
                             <Text style={[styles.catalogItemEffect, { color: owned ? qColor : colors.textMuted + '60' }]}>
-                              {GEAR_STAT_LINE[item.slotId](item.quality)}
+                              {GEAR_STAT_LINE[item.slotId]?.(item.quality) || '—'}
                             </Text>
                           </View>
                           <View style={styles.catalogItemRight}>
