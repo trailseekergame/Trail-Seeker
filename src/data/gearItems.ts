@@ -18,6 +18,9 @@ const GEAR_IMAGES: Record<string, any> = {
   'Grimline Boots': require('../assets/gear/gear_grimline_boots.png'),
   'Scrap Hawk': require('../assets/gear/gear_scrap_hawk.png'),
   'Echo Drone Mk.III': require('../assets/gear/gear_echo_drone.png'),
+  'Pipe Wrench': require('../assets/gear/gear_pipe_wrench.png'),
+  'Shiv Blade': require('../assets/gear/gear_shiv_blade.png'),
+  'Arc Pistol': require('../assets/gear/gear_arc_pistol.png'),
 };
 
 
@@ -234,6 +237,43 @@ export const GEAR_ECHO_DRONE: GearItem = {
 };
 
 // ═══════════════════════════════════════════════════════
+// WEAPON ZONE — sidearm slot
+// ═══════════════════════════════════════════════════════
+
+export const GEAR_PIPE_WRENCH: GearItem = {
+  slotId: 'sidearm',
+  quality: 'standard',
+  name: 'Pipe Wrench',
+  shortDesc: 'Heavy swing. Bonus scrap from broken targets.',
+  icon: 'wrench',
+  zone: 'weapon',
+  lore: 'A two-foot section of reactor pipe with a grip wrapped in electrical tape. It was a tool once. Now it\'s an argument-ender.',
+  image: GEAR_IMAGES['Pipe Wrench'],
+};
+
+export const GEAR_SHIV_BLADE: GearItem = {
+  slotId: 'sidearm',
+  quality: 'enhanced',
+  name: 'Shiv Blade',
+  shortDesc: 'Quick draw, clean cut. Reduced damage taken on risky scans.',
+  icon: 'knife-military',
+  zone: 'weapon',
+  lore: 'Mono-edged blade forged from a Directorate bulkhead panel. The previous owner etched kill marks into the handle. You stopped counting.',
+  image: GEAR_IMAGES['Shiv Blade'],
+};
+
+export const GEAR_ARC_PISTOL: GearItem = {
+  slotId: 'sidearm',
+  quality: 'ultra',
+  name: 'Arc Pistol',
+  shortDesc: 'Electromagnetic sidearm. Big damage bonus + scrap on kill.',
+  icon: 'pistol',
+  zone: 'weapon',
+  lore: 'Pre-collapse electromagnetic sidearm. The capacitor whine gives away your position, but nothing survives the discharge. The Directorate banned these. That\'s a selling point.',
+  image: GEAR_IMAGES['Arc Pistol'],
+};
+
+// ═══════════════════════════════════════════════════════
 // COLLECTIONS
 // ═══════════════════════════════════════════════════════
 
@@ -259,6 +299,10 @@ export const ALL_GEAR_ITEMS: GearItem[] = [
   GEAR_OVERCLOCKED_VEST,
   GEAR_GRIMLINE_BOOTS,
   GEAR_ECHO_DRONE,
+  // Weapon
+  GEAR_PIPE_WRENCH,
+  GEAR_SHIV_BLADE,
+  GEAR_ARC_PISTOL,
 ];
 
 /** Items that can drop from Broken Overpass authored tiles */
@@ -269,6 +313,7 @@ export const OVERPASS_DROPS: GearItem[] = [
   GEAR_DUSTWALKER_LENS,
   GEAR_STEADY_GRIPS,
   GEAR_SCRAP_HAWK,
+  GEAR_PIPE_WRENCH,
 ];
 
 /** Items that can drop from Relay Field (enhanced tier) */
@@ -279,6 +324,7 @@ export const RELAY_FIELD_DROPS: GearItem[] = [
   GEAR_NEURAL_TAP_PLUS,
   GEAR_TRAILRUNNERS,
   GEAR_NEURAL_TAP,
+  GEAR_SHIV_BLADE,
 ];
 
 /** Ultra-rare drops (anomaly/boss, streak >= 5) */
@@ -287,6 +333,7 @@ export const ULTRA_DROPS: GearItem[] = [
   GEAR_OVERCLOCKED_VEST,
   GEAR_GRIMLINE_BOOTS,
   GEAR_ECHO_DRONE,
+  GEAR_ARC_PISTOL,
 ];
 
 export const DEFAULT_ACTIVE_GEAR: GearSlotId[] = ['optics_rig', 'exo_vest', 'grip_gauntlets'];

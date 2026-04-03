@@ -347,11 +347,11 @@ export const INITIAL_GAME_STATE: GameState = {
 // ─── Seeker Scan System ───
 export type ScanType = 'scout' | 'seeker' | 'gambit';
 export type ScanOutcome = 'whiff' | 'common' | 'uncommon' | 'rare' | 'legendary' | 'component';
-export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boots' | 'cortex_link' | 'salvage_drone';
+export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boots' | 'cortex_link' | 'salvage_drone' | 'sidearm';
 export type GearQuality = 'standard' | 'enhanced' | 'perfected' | 'ultra';
 export type TileType = 'unknown' | 'resource' | 'anomaly' | 'boss' | 'cleared';
 
-export type GearZone = 'sensor' | 'core' | 'drive';
+export type GearZone = 'sensor' | 'core' | 'drive' | 'weapon';
 
 export interface GearItem {
   slotId: GearSlotId;

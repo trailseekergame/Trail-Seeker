@@ -78,6 +78,11 @@
       "enhanced":  { "refund_chance": 0.15 },
       "perfected": { "refund_chance": 0.25 },
       "ultra":     { "refund_chance": 0.30 }
+    },
+    "sidearm": {
+      "standard":  { "damage_bonus": 0.05, "scrap_bonus": 1 },
+      "enhanced":  { "damage_bonus": 0.10, "scrap_bonus": 2 },
+      "ultra":     { "damage_bonus": 0.20, "scrap_bonus": 4 }
     }
   },
 

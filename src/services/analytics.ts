@@ -39,7 +39,7 @@ const REPORT_DAY = 0; // Sunday (0=Sun, 1=Mon, etc.)
 
 export type ScanType = 'scout' | 'seeker' | 'gambit';
 export type ScanOutcome = 'whiff' | 'common' | 'uncommon' | 'rare' | 'legendary' | 'component';
-export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boots' | 'cortex_link' | 'salvage_drone';
+export type GearSlotId = 'optics_rig' | 'exo_vest' | 'grip_gauntlets' | 'nav_boots' | 'cortex_link' | 'salvage_drone' | 'sidearm';
 export type SkrPurchaseType = 'streak_shield' | 'whiff_protection' | 'rare_boost' | 'gear_reroll' | 'scan_recharge';
 export type MinigameType = 'signal_decode' | 'scrap_rush' | 'trail_flier' | 'gambit_roulette';
 

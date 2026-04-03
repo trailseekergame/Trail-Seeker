@@ -354,7 +354,7 @@ export function rollEnhancedDrop(
 ): GearItem | undefined {
   if (mapId !== 'relay_field') return undefined;
   if (tileType !== 'anomaly' && tileType !== 'resource' && tileType !== 'boss') return undefined;
-  if (Math.random() > 0.05) return undefined; // 5%
+  if (Math.random() > 0.12) return undefined; // 12%
   return RELAY_FIELD_DROPS[Math.floor(Math.random() * RELAY_FIELD_DROPS.length)];
 }
 
@@ -369,7 +369,7 @@ export function rollUltraDrop(
 ): GearItem | undefined {
   if (streakDay < 3) return undefined;
   if (tileType !== 'anomaly' && tileType !== 'boss') return undefined;
-  if (Math.random() > 0.018) return undefined; // 1.8%
+  if (Math.random() > 0.04) return undefined; // 4%
   return ULTRA_DROPS[Math.floor(Math.random() * ULTRA_DROPS.length)];
 }
 

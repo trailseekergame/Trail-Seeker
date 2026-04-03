@@ -15,6 +15,7 @@ function migrateGearItem(item: any): GearItem {
     optics_rig: 'sensor', cortex_link: 'sensor',
     exo_vest: 'core', grip_gauntlets: 'core',
     nav_boots: 'drive', salvage_drone: 'drive',
+    sidearm: 'weapon',
   };
   return {
     ...item,

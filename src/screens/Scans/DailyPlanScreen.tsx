@@ -27,6 +27,7 @@ const GEAR_SHORT: Record<GearSlotId, string> = {
   nav_boots: '+Sector',
   cortex_link: 'Legend+',
   salvage_drone: 'Refund',
+  sidearm: '+Dmg',
 };
 
 export default function DailyPlanScreen() {

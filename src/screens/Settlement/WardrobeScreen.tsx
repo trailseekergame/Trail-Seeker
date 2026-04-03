@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../../context/GameContext';
 import { ALL_GEAR_ITEMS } from '../../data/gearItems';
@@ -43,6 +43,12 @@ const GEAR_STAT_LINE: Record<GearSlotId, (q: string) => string> = {
     const v = (gameBalance.gear_stats.salvage_drone as any)[q]?.refund_chance || 0;
     return `${Math.round(v * 100)}% whiff refund chance`;
   },
+  sidearm: (q) => {
+    const s = (gameBalance.gear_stats as any).sidearm?.[q];
+    const dmg = s?.damage_bonus || 0;
+    const scrap = s?.scrap_bonus || 0;
+    return `+${Math.round(dmg * 100)}% damage · +${scrap} scrap on kill`;
+  },
 };
 
 const QUALITY_COLORS: Record<string, string> = {
@@ -63,15 +69,17 @@ const ZONE_COLORS: Record<GearZone, string> = {
   sensor: colors.neonCyan,
   core: colors.neonGreen,
   drive: colors.neonAmber,
+  weapon: colors.neonRed,
 };
 
 const ZONE_LABELS: Record<GearZone, string> = {
   sensor: 'SENSOR',
   core: 'CORE',
   drive: 'DRIVE',
+  weapon: 'WEAPON',
 };
 
-const HARDPOINT_ORDER: GearZone[] = ['sensor', 'core', 'drive'];
+const HARDPOINT_ORDER: GearZone[] = ['sensor', 'core', 'drive', 'weapon'];
 
 // ─── Cosmetic constants ───
 const COSMETIC_SLOT_LABELS: Record<CosmeticSlot, string> = {
@@ -126,7 +134,7 @@ export default function WardrobeScreen() {
   // ─── Catalog: all items grouped by zone, with owned status ───
   const catalogByZone = useMemo(() => {
     const zones: Record<GearZone, { item: GearItem; owned: boolean; isNew: boolean }[]> = {
-      sensor: [], core: [], drive: [],
+      sensor: [], core: [], drive: [], weapon: [],
     };
     for (const item of ALL_GEAR_ITEMS) {
       const owned = ss.gearInventory.some(
@@ -139,7 +147,7 @@ export default function WardrobeScreen() {
 
   // ─── Installed items by zone ───
   const installedByZone = useMemo(() => {
-    const map: Record<GearZone, GearItem | null> = { sensor: null, core: null, drive: null };
+    const map: Record<GearZone, GearItem | null> = { sensor: null, core: null, drive: null, weapon: null };
     for (const gear of ss.gearInventory) {
       if (ss.activeGearSlots.includes(gear.slotId)) {
         map[gear.zone] = gear;
@@ -265,7 +273,11 @@ export default function WardrobeScreen() {
           </View>
         </View>
         <View style={styles.hardpointContent}>
-          <MaterialCommunityIcons name={gear.icon as any} size={22} color={colors.neonGreen} />
+          {gear.image ? (
+            <Image source={gear.image} style={styles.gearImage} />
+          ) : (
+            <MaterialCommunityIcons name={gear.icon as any} size={22} color={colors.neonGreen} />
+          )}
           <Text style={styles.hardpointName} numberOfLines={1}>{gear.name}</Text>
           <View style={[styles.qualityBadge, { borderColor: qualityColor + '60' }]}>
             <Text style={[styles.qualityBadgeText, { color: qualityColor }]}>
@@ -304,7 +316,11 @@ export default function WardrobeScreen() {
             <Text style={styles.newTagText}>NEW</Text>
           </View>
         )}
-        <MaterialCommunityIcons name={gear.icon as any} size={20} color={qualityColor} />
+        {gear.image ? (
+          <Image source={gear.image} style={styles.backpackImage} />
+        ) : (
+          <MaterialCommunityIcons name={gear.icon as any} size={20} color={qualityColor} />
+        )}
         <Text style={styles.backpackName} numberOfLines={2}>{gear.name}</Text>
       </TouchableOpacity>
     );
@@ -374,6 +390,20 @@ export default function WardrobeScreen() {
               {state.backstory && (
                 <Text style={styles.silhouetteOrigin}>{state.backstory.archetype}</Text>
               )}
+              {/* ── Equipped gear overlay ── */}
+              {Object.values(installedByZone).some(g => g?.image) && (
+                <View style={styles.gearOverlayRow}>
+                  {HARDPOINT_ORDER.map(zone => {
+                    const gear = installedByZone[zone];
+                    if (!gear?.image) return null;
+                    return (
+                      <View key={zone} style={styles.gearOverlaySlot}>
+                        <Image source={gear.image} style={styles.gearOverlayImage} />
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
           );
         })()}
@@ -385,7 +415,7 @@ export default function WardrobeScreen() {
               {ss.gearLockedToday ? (
                 <Text style={styles.lockedBadge}>LOADOUT LOCKED</Text>
               ) : (
-                <Text style={styles.rigStatus}>{ss.activeGearSlots.length}/3 HARDPOINTS ACTIVE</Text>
+                <Text style={styles.rigStatus}>{ss.activeGearSlots.length}/4 HARDPOINTS ACTIVE</Text>
               )}
             </View>
 
@@ -409,11 +439,15 @@ export default function WardrobeScreen() {
             {selectedGear && (
               <View style={styles.infoPanel}>
                 <View style={styles.infoPanelHeader}>
-                  <MaterialCommunityIcons
-                    name={selectedGear.icon as any}
-                    size={28}
-                    color={QUALITY_COLORS[selectedGear.quality] || colors.textSecondary}
-                  />
+                  {selectedGear.image ? (
+                    <Image source={selectedGear.image} style={styles.infoPanelImage} />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name={selectedGear.icon as any}
+                      size={28}
+                      color={QUALITY_COLORS[selectedGear.quality] || colors.textSecondary}
+                    />
+                  )}
                   <View style={styles.infoPanelTitle}>
                     <Text style={[styles.infoPanelName, { color: QUALITY_COLORS[selectedGear.quality] || colors.textPrimary }]}>
                       {selectedGear.name}
@@ -487,7 +521,7 @@ export default function WardrobeScreen() {
 
             {showCatalog && (
               <View style={styles.catalogContainer}>
-                {(['sensor', 'core', 'drive'] as GearZone[]).map(zone => (
+                {(['sensor', 'core', 'drive', 'weapon'] as GearZone[]).map(zone => (
                   <View key={zone} style={styles.catalogZone}>
                     <Text style={[styles.catalogZoneLabel, { color: ZONE_COLORS[zone] }]}>
                       {ZONE_LABELS[zone]}
@@ -499,11 +533,15 @@ export default function WardrobeScreen() {
                           key={`${item.name}-${item.quality}`}
                           style={[styles.catalogItem, !owned && styles.catalogItemLocked]}
                         >
-                          <MaterialCommunityIcons
-                            name={item.icon as any}
-                            size={16}
-                            color={owned ? qColor : colors.textMuted + '40'}
-                          />
+                          {item.image ? (
+                            <Image source={item.image} style={[styles.catalogImage, !owned && { opacity: 0.3 }]} />
+                          ) : (
+                            <MaterialCommunityIcons
+                              name={item.icon as any}
+                              size={16}
+                              color={owned ? qColor : colors.textMuted + '40'}
+                            />
+                          )}
                           <View style={styles.catalogItemInfo}>
                             <Text style={[
                               styles.catalogItemName,
@@ -1279,5 +1317,49 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     fontFamily: fontMono,
+  },
+
+  // ─── Pixel art images ───
+  gearImage: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  backpackImage: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
+  },
+  infoPanelImage: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+  },
+  catalogImage: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
+
+  // ─── Gear overlay on silhouette ───
+  gearOverlayRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  gearOverlaySlot: {
+    width: 28,
+    height: 28,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gearOverlayImage: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
 });

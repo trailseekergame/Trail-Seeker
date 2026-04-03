@@ -325,7 +325,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         seekerScans: {
           ...state.seekerScans,
-          activeGearSlots: action.payload.slice(0, state.seekerScans.gearLockedToday ? state.seekerScans.activeGearSlots.length : 3),
+          activeGearSlots: action.payload.slice(0, state.seekerScans.gearLockedToday ? state.seekerScans.activeGearSlots.length : 4),
         },
       };
     }
