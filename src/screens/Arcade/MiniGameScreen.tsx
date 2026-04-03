@@ -14,31 +14,26 @@ import { colors, spacing, fontSize } from '../../theme';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GAME_HEIGHT = SCREEN_HEIGHT - 200;
 const PLAYER_SIZE = 30;
-const GRAVITY = 0.6;
-const JUMP_FORCE = -10;
+const GRAVITY = 0.35;
+const JUMP_FORCE = -8;
 const OBSTACLE_WIDTH = 50;
-const INITIAL_GAP_SIZE = 160;
-const MIN_GAP_SIZE = 100;
+const INITIAL_GAP_SIZE = 180;
+const MIN_GAP_SIZE = 120;
 const INITIAL_OBSTACLE_SPEED = 3;
 const MAX_OBSTACLE_SPEED = 6;
 const INITIAL_SPAWN_INTERVAL = 90; // frames
 const MIN_SPAWN_INTERVAL = 50;
 
 // ─── Reward Config ───
-// Per-obstacle rewards scale with difficulty tiers
+const DAILY_REWARD_CAP = 30; // max scrap earnable per day from Trail Flier
 const REWARDS = {
-  // Scrap earned per obstacle cleared, by tier
-  scrapPerObstacle: [1, 1, 2, 2, 3],  // tiers 0-4
-  // Bonus scrap for milestone obstacles
-  milestoneEvery: 5,     // every 5th obstacle
-  milestoneBonus: 3,     // +3 bonus scrap
-  // Streak bonuses
-  streakThreshold: 3,    // after 3 in a row without dying
-  streakMultiplier: 1.5, // 1.5x scrap while on streak
-  // High score bonus
+  scrapPerObstacle: [1, 1, 2, 2, 3],
+  milestoneEvery: 5,
+  milestoneBonus: 3,
+  streakThreshold: 3,
+  streakMultiplier: 1.5,
   newHighScoreBonus: 10,
-  // Supply bonuses at milestones
-  supplyMilestones: [10, 20, 30], // at these obstacle counts
+  supplyMilestones: [10, 20, 30],
   supplyReward: 2,
 };
 
@@ -58,6 +53,10 @@ export default function MiniGameScreen({ navigation }: any) {
   const [obstaclesCleared, setObstaclesCleared] = useState(0);
   const [scrapEarned, setScrapEarned] = useState(0);
   const [currentTier, setCurrentTier] = useState(0);
+
+  // Daily reward cap tracking (persists across plays within a session)
+  const dailyScrapAwarded = useRef(0);
+  const rewardsCapped = dailyScrapAwarded.current >= DAILY_REWARD_CAP;
 
   // Game state refs
   const playerY = useRef(GAME_HEIGHT / 2);
@@ -125,6 +124,13 @@ export default function MiniGameScreen({ navigation }: any) {
   }, []);
 
   const awardScrap = useCallback((cleared: number) => {
+    // Check daily cap — still count for display but don't dispatch
+    const remaining = DAILY_REWARD_CAP - dailyScrapAwarded.current;
+    if (remaining <= 0) {
+      // Capped — still show obstacle count but no scrap
+      return 0;
+    }
+
     const tier = getDifficultyTier(cleared);
     let scrap = REWARDS.scrapPerObstacle[Math.min(tier, REWARDS.scrapPerObstacle.length - 1)];
 
@@ -132,6 +138,9 @@ export default function MiniGameScreen({ navigation }: any) {
     if (cleared > 0 && cleared % REWARDS.milestoneEvery === 0) {
       scrap += REWARDS.milestoneBonus;
     }
+
+    // Clamp to remaining daily cap
+    scrap = Math.min(scrap, remaining);
 
     scrapEarnedRef.current += scrap;
     setScrapEarned(scrapEarnedRef.current);
@@ -175,26 +184,35 @@ export default function MiniGameScreen({ navigation }: any) {
       },
     });
 
-    // Calculate total rewards
-    let totalScrap = finalScrap;
+    // Calculate total rewards (respecting daily cap)
+    const remaining = DAILY_REWARD_CAP - dailyScrapAwarded.current;
+    let totalScrap = Math.min(finalScrap, remaining);
     let supplyReward = 0;
 
-    // Supply milestones
-    for (const milestone of REWARDS.supplyMilestones) {
-      if (finalCleared >= milestone) {
-        supplyReward += REWARDS.supplyReward;
+    // Supply milestones (only if not capped)
+    if (remaining > 0) {
+      for (const milestone of REWARDS.supplyMilestones) {
+        if (finalCleared >= milestone) {
+          supplyReward += REWARDS.supplyReward;
+        }
+      }
+
+      // High score bonus
+      if (compositeScore > state.highScore) {
+        totalScrap = Math.min(totalScrap + REWARDS.newHighScoreBonus, remaining);
       }
     }
 
-    // High score bonus
-    if (compositeScore > state.highScore) {
-      totalScrap += REWARDS.newHighScoreBonus;
-    }
+    // Track daily total
+    dailyScrapAwarded.current += totalScrap;
 
-    dispatch({
-      type: 'APPLY_RESOURCE_CHANGES',
-      payload: { scrap: totalScrap, supplies: supplyReward },
-    });
+    // Only dispatch if there are actual rewards
+    if (totalScrap > 0 || supplyReward > 0) {
+      dispatch({
+        type: 'APPLY_RESOURCE_CHANGES',
+        payload: { scrap: totalScrap, supplies: supplyReward },
+      });
+    }
   }, [dispatch, state.playerName, state.highScore]);
 
   const update = useCallback(() => {
@@ -353,7 +371,13 @@ export default function MiniGameScreen({ navigation }: any) {
             <View style={styles.overlay}>
               <Text style={styles.overlayTitle}>TRAIL FLIER</Text>
               <Text style={styles.overlaySubtitle}>Tap to fly. Dodge the debris.</Text>
-              <Text style={styles.overlayHint}>Each obstacle cleared = scrap earned</Text>
+              {rewardsCapped ? (
+                <Text style={styles.overlayCapNotice}>DAILY REWARDS MAXED — playing for fun</Text>
+              ) : (
+                <Text style={styles.overlayHint}>
+                  {DAILY_REWARD_CAP - dailyScrapAwarded.current} scrap earnable today
+                </Text>
+              )}
               <Text style={styles.overlayAction}>TAP TO START</Text>
             </View>
           )}
@@ -438,6 +462,7 @@ const styles = StyleSheet.create({
   overlayTitle: { fontSize: fontSize.hero, fontWeight: '700', color: colors.neonGreen, letterSpacing: 4, textShadowColor: colors.neonGreen, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 },
   overlaySubtitle: { fontSize: fontSize.md, color: colors.textSecondary, marginTop: spacing.sm },
   overlayHint: { fontSize: fontSize.sm, color: colors.neonAmber, marginTop: spacing.xs },
+  overlayCapNotice: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: spacing.xs, fontStyle: 'italic' },
   overlayAction: { fontSize: fontSize.lg, color: colors.neonAmber, fontWeight: '600', marginTop: spacing.xl, letterSpacing: 2 },
   overlayDistance: { fontSize: 56, fontWeight: '700', color: colors.neonCyan, marginTop: spacing.md },
 

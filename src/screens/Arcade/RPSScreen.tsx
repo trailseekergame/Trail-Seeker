@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import ScrapBoyFrame from '../../components/arcade/ScrapBoyFrame';
@@ -36,11 +36,15 @@ const RESULT_CONFIG = {
   draw: { label: '>> DRAW <<', color: '#FFAA00', pixel: '=' },
 };
 
+const RPS_DAILY_REWARD_CAP = 20; // max scrap earnable per day from RPS
+
 export default function RPSScreen() {
   const { state, dispatch } = useGame();
   const [view, setView] = useState<ScreenView>('menu');
   const [match, setMatch] = useState<RpsMatch | null>(null);
   const [leaderboard, setLeaderboard] = useState<RpsLeaderEntry[]>([]);
+  const dailyRpsScrap = useRef(0);
+  const rpsRewardsCapped = dailyRpsScrap.current >= RPS_DAILY_REWARD_CAP;
 
   const handleFindMatch = async () => {
     AudioManager.playSfx('scan_press');
@@ -72,7 +76,11 @@ export default function RPSScreen() {
       if (resolved.result === 'win') {
         AudioManager.playSfx('gambit_win');
         AudioManager.vibrate('heavy');
-        dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: 2 } });
+        if (dailyRpsScrap.current < RPS_DAILY_REWARD_CAP) {
+          const reward = Math.min(2, RPS_DAILY_REWARD_CAP - dailyRpsScrap.current);
+          dailyRpsScrap.current += reward;
+          dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: reward } });
+        }
       } else if (resolved.result === 'lose') {
         AudioManager.playSfx('gambit_whiff');
         AudioManager.vibrate('medium');
@@ -208,7 +216,11 @@ export default function RPSScreen() {
             </View>
 
             {match.result === 'win' && (
-              <Text style={s.rewardLine}>+2 SCRAP</Text>
+              rpsRewardsCapped ? (
+                <Text style={s.capNotice}>DAILY REWARDS MAXED</Text>
+              ) : (
+                <Text style={s.rewardLine}>+2 SCRAP</Text>
+              )
             )}
 
             <View style={s.pixelDivider} />
@@ -448,6 +460,14 @@ const s = StyleSheet.create({
     fontFamily: 'monospace',
     letterSpacing: 2,
     marginTop: spacing.md,
+  },
+  capNotice: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+    marginTop: spacing.md,
+    fontStyle: 'italic',
   },
 
   // Leaderboard

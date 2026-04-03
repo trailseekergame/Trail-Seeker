@@ -93,13 +93,12 @@ export default function ArcadeScreen({ navigation }: any) {
         {/* Rewards Info */}
         <Card title="Payouts" icon="cog">
           <Text style={styles.gameDesc}>
-            Time in the sim pays out:
+            Play unlimited. Rewards capped daily:
           </Text>
           <View style={styles.rewardsList}>
-            <Text style={styles.rewardItem}>• Play a round: +1 Scrap</Text>
-            <Text style={styles.rewardItem}>• Reach 500m: +3 Scrap</Text>
-            <Text style={styles.rewardItem}>• Reach 1000m: +5 Scrap, +2 Supplies</Text>
-            <Text style={styles.rewardItem}>• New high score: +3 Supplies</Text>
+            <Text style={styles.rewardItem}>• Trail Flier: up to 30 scrap/day</Text>
+            <Text style={styles.rewardItem}>• Trail Standoff: up to 20 scrap/day</Text>
+            <Text style={styles.rewardItem}>• After cap: play for fun + leaderboard</Text>
           </View>
         </Card>
       </ScrollView>
