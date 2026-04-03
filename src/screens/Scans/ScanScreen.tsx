@@ -776,11 +776,12 @@ export default function ScanScreen({ route }: any) {
                       scannable && styles.tileScannable,
                       !scannable && !isCleared && styles.tileFog,
                       isSelected && styles.tileSelected,
-                      // Hardened tile border
-                      scannable && !isCleared && (tile.maxDurability ?? 1) > 1 && {
-                        borderColor: (tile.durability ?? 1) === (tile.maxDurability ?? 1)
-                          ? colors.neonAmber + '80'
-                          : colors.neonGreen + '60',
+                      // Tough tile border (hardened/anomaly/boss — 3+ max durability)
+                      scannable && !isCleared && (tile.maxDurability ?? 1) >= 3 && {
+                        borderColor: tile.type === 'boss' ? colors.neonRed + '60'
+                          : tile.type === 'anomaly' ? colors.neonAmber + '60'
+                          : colors.neonAmber + '40',
+                        borderWidth: 2,
                       },
                     ]}
                     onPress={() => handleTileSelect(tile)}
@@ -790,7 +791,7 @@ export default function ScanScreen({ route }: any) {
                     {(isCleared || scannable) && (
                       <MaterialCommunityIcons
                         name={(isCleared ? TILE_ICONS.cleared : (tile.flavor?.icon || TILE_ICONS[tile.type])) as any}
-                        size={18}
+                        size={16}
                         color={
                           isCleared ? colors.textMuted :
                           tile.type === 'boss' && scannable ? colors.neonRed :
@@ -802,8 +803,25 @@ export default function ScanScreen({ route }: any) {
                         style={isCleared ? { opacity: 0.5 } : undefined}
                       />
                     )}
-                    {/* Durability pips for hardened tiles */}
-                    {scannable && !isCleared && (tile.maxDurability ?? 1) > 1 && (
+                    {/* Type label for scannable tiles */}
+                    {scannable && !isCleared && (
+                      <Text style={[
+                        styles.tileTypeLabel,
+                        { color:
+                          tile.type === 'boss' ? colors.neonRed :
+                          tile.type === 'anomaly' ? colors.neonAmber :
+                          tile.type === 'resource' ? colors.neonCyan :
+                          colors.neonGreen + '80'
+                        }
+                      ]}>
+                        {tile.type === 'boss' ? 'BOSS' :
+                         tile.type === 'anomaly' ? 'ANOM' :
+                         tile.type === 'resource' ? 'RES' :
+                         `${tile.durability}/${tile.maxDurability}`}
+                      </Text>
+                    )}
+                    {/* Durability pips for tough tiles (3+ max durability) */}
+                    {scannable && !isCleared && (tile.maxDurability ?? 1) >= 3 && (
                       <View style={styles.durabilityPips}>
                         {Array.from({ length: tile.maxDurability ?? 1 }, (_, i) => (
                           <View
@@ -1697,6 +1715,13 @@ const styles = StyleSheet.create({
   tileClearedIcon: {
     color: colors.textMuted,
     opacity: 0.5,
+  },
+  tileTypeLabel: {
+    fontSize: 6,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 0.5,
+    marginTop: 1,
   },
   durabilityPips: {
     position: 'absolute',
