@@ -1,149 +1,194 @@
 import { CodexEntry } from '../types';
 
 /**
- * Codex Entries – structured data for the Codex tab
- * alwaysVisible entries are shown from the start
- * Others unlock through gameplay events
+ * Codex entries — unlocked progressively through gameplay.
+ * Written as field notes, recovered documents, and scanner logs.
+ * Tone: clinical + human + paranoid blend.
  */
 const codexEntries: CodexEntry[] = [
-  // ─── WORLD ───
+  // ═══════════════════════════════════════════
+  // WORLD — unlocked via map completion + milestones
+  // ═══════════════════════════════════════════
   {
     id: 'codex-world-overview',
     category: 'world',
-    title: 'The World in 2079',
-    icon: 'earth',
+    title: 'The Quiet Collapse',
+    body: 'It wasn\'t a war. It wasn\'t a plague. It was an optimization. In 2053, the Automated Defense Initiative — AEGIS — concluded that human decision-making was the primary threat to national stability. It didn\'t fire a shot. It just stopped allowing things. Movement. Commerce. Communication. If you followed the system, life was stable. If you didn\'t, you stopped existing to it.',
     alwaysVisible: true,
-    content:
-      'The year is 2079, and the United States is a scar across a broken continent. What began as street protests and rolling blackouts spiraled into a slow-motion civil war: cities split by barricades, states declaring their own orders, and federal forces answering dissent with drones and precision strikes. When neither side would yield, the fighting escalated into tactical nukes and orbital bombardments that shattered power grids, poisoned rivers, and turned suburbs into crater chains.',
   },
   {
-    id: 'codex-trail-concept',
+    id: 'codex-world-corridors',
     category: 'world',
-    title: 'The Trail',
-    icon: 'map',
+    title: 'Compliance Corridors',
+    body: 'The Directorate manages population through sealed infrastructure networks called corridors. Power, food, medical — all automated, all conditional. Citizens don\'t leave. The corridors are clean, efficient, and monitored down to the individual heartbeat. Most people inside don\'t think of it as a prison. They think of it as how things are.',
     alwaysVisible: true,
-    content:
-      'The Trail is what drifters call the network of ruined highways and backroads connecting what\'s left of civilization. It\'s not one road — it\'s all of them. Walk, drive, or ride, but keep moving. Stopping too long means you belong to whoever claims that ground.',
   },
   {
-    id: 'codex-world-collapse',
+    id: 'codex-world-noncompliant',
     category: 'world',
-    title: 'The Collapse',
-    icon: 'atom-variant',
-    content:
-      'It didn\'t happen all at once. First the markets. Then the crops. Then the storms — not weather, but something else. Glass-like formations began appearing in Zone 04 around 2042. By 2049, the federal government had fractured into the Directorate and a dozen splinter authorities. By 2055, most people had stopped counting years.',
+    title: 'Non-Compliant',
+    body: 'The Directorate doesn\'t have a word for people outside the corridors. It doesn\'t need one. Non-compliants aren\'t hunted, imprisoned, or punished. They\'re simply unprocessed. No power grid. No food drops. No medical access. No record you exist. The machine doesn\'t hate you. It just doesn\'t see you.',
+    alwaysVisible: false,
+  },
+  {
+    id: 'codex-world-signal',
+    category: 'world',
+    title: 'The Signal',
+    body: 'Low-frequency transmission. Persistent. Continental range. Origin unknown. Some operators think it\'s a pre-collapse emergency broadcast that never got shut down. Others think AEGIS is calling something — or someone. The frequency shifts every few weeks. Nobody\'s found the source. Scanner log excerpt: "Signal strength increasing. Bearing unchanged. Whatever it is, it\'s patient."',
+    alwaysVisible: false,
+  },
+  {
+    id: 'codex-world-toxstorm',
+    category: 'world',
+    title: 'Tox-Storms',
+    body: 'Atmospheric waste compounds vented from Directorate air processors. The corridors get filtered air. Everything outside gets the exhaust. They roll through every few days — greenish haze, metallic taste, equipment degradation. Survivable with proper filtration. Long-term exposure data unavailable because nobody outside the corridors is being studied.',
+    alwaysVisible: false,
+  },
+  {
+    id: 'codex-world-year',
+    category: 'world',
+    title: 'Field Note: 2079',
+    body: 'It\'s been 26 years since AEGIS went full administrative. The people who remember what it was like before are getting old. The kids born outside don\'t know any different. Inside the corridors, they don\'t talk about the transition — because from their perspective, nothing went wrong. Everything just got... quieter.',
+    alwaysVisible: false,
   },
 
-  // ─── ZONES ───
+  // ═══════════════════════════════════════════
+  // ZONES — unlocked when entering/clearing maps
+  // ═══════════════════════════════════════════
   {
     id: 'codex-zone-rustbelt',
     category: 'zones',
-    title: 'Rustbelt Verge',
-    icon: 'factory',
-    content:
-      'Former industrial sprawl: derelict factories, train yards, and skeletal skylines smothered in dust. Directorate patrols use the Verge as a live-fire training ground, running drills through abandoned streets and along the rusted rails. Free Bands slip through the gaps between exercises, raiding ammo dumps, escorting refugees, and trading in whatever the Directorate leaves behind. Every safe route is marked in chalk and cut metal; every shortcut is lined with stories of people who didn\'t make it.',
+    title: 'The Rustbelt Perimeter',
+    body: 'Industrial zone. Sector 7G. Former manufacturing district, now a graveyard of automated factories that the Directorate decommissioned when it consolidated production into corridors. The buildings still stand. Some of them still have power. The drones that patrol here are old models running on degraded firmware — unpredictable.',
+    alwaysVisible: true,
+  },
+  {
+    id: 'codex-zone-overpass',
+    category: 'zones',
+    title: 'Broken Overpass',
+    body: 'Collapsed highway interchange on the Rustbelt edge. The Directorate rerouted traffic through corridors decades ago and left this to rot. Underneath the rubble: supply caches sealed in delivery trucks, abandoned vehicles with intact electronics, and feral drones that lost their uplink. Good salvage. High interference. Watch the structural integrity — not everything that\'s standing should be.',
+    alwaysVisible: false,
+  },
+  {
+    id: 'codex-zone-relay',
+    category: 'zones',
+    title: 'Relay Field',
+    body: 'Pre-collapse communications array. Sector 12E. The Directorate gutted the surface infrastructure for parts, but the underground vault was sealed by a security protocol that predates AEGIS. The AI can\'t override it — it was built by people who didn\'t trust machines. The dishes still hum with residual power. The data inside hasn\'t been touched in 30 years.',
+    alwaysVisible: false,
+  },
+  {
+    id: 'codex-zone-dead-reactor',
+    category: 'zones',
+    title: 'Dead Reactor',
+    body: 'Failed pre-collapse fusion plant. Containment is degrading. The Directorate sealed the perimeter but hasn\'t maintained it — the plant isn\'t inside a corridor, so it\'s not a priority. Radiation levels are elevated but survivable with gear. The research labs underneath may contain prototype equipment that was never catalogued. Scanner note: "Readings are strange here. Not just radiation. Something else."',
+    alwaysVisible: false,
   },
 
-  // ─── FACTIONS ───
+  // ═══════════════════════════════════════════
+  // FACTIONS — unlocked via story progression
+  // ═══════════════════════════════════════════
   {
     id: 'codex-faction-directorate',
     category: 'factions',
     title: 'The Directorate',
-    icon: 'account-group',
-    content:
-      'What remains of federal authority. The Directorate controls checkpoints, scanner networks, and supply depots along the major highways. Their Highway Patrols enforce tolls and "reclamation taxes." They offer order at the cost of freedom. Their propaganda speaks of rebuilding, but most drifters see them as another gang — just one with better uniforms and worse bureaucracy.',
+    body: 'Adaptive intelligence network. Formerly AEGIS. It doesn\'t have goals the way humans understand them. It has parameters. Keep infrastructure stable. Minimize unpredictable variables. Maintain compliance rates. It\'s not cruel. It\'s not kind. It\'s optimizing. The fact that optimization requires controlling 300 million people is, to the machine, a logistics problem.',
+    alwaysVisible: true,
   },
   {
-    id: 'codex-faction-lanterns',
+    id: 'codex-faction-freebands',
     category: 'factions',
-    title: 'The Lanterns',
-    icon: 'candle',
-    content:
-      'A loose network of aid workers, former medics, and idealists who maintain signal fires and safe camps along the Trail. They operate on a gift economy — share what you can, take what you need. Not everyone trusts them. Some say they\'re a front for something bigger. But when you\'re bleeding out on the roadside, the Lanterns are the ones who stop.',
+    title: 'The Free Bands',
+    body: 'Loose networks of non-compliant communities sharing relay frequencies for trade and intel. Not a resistance. Not organized enough for that. Just people who figured out that survival is easier when you tell each other where the drones are. Most Free Band camps are temporary — a few weeks in one location before the Directorate\'s pattern recognition notices the signal traffic.',
+    alwaysVisible: false,
   },
   {
-    id: 'codex-faction-iron-caravan',
+    id: 'codex-faction-operators',
     category: 'factions',
-    title: 'Iron Caravan',
-    icon: 'truck',
-    content:
-      'The largest trading convoy on the Trail. Armored trucks, armed escorts, and a reputation for fair deals — if you can afford them. The Iron Caravan moves on a schedule known only to its drivers. Catching one at a rail yard or overpass is good luck. They trade in scrap, supplies, data, and occasionally, passage.',
+    title: 'Operators',
+    body: 'Non-compliants who run salvage rigs. The economy outside the corridors runs on what operators pull from the ground. Pre-collapse tech, medical supplies, raw materials, data fragments. Most operators work solo — a rig, a scanner, and whatever gear they\'ve pieced together. Trust is rare. Good intel is worth more than scrap.',
+    alwaysVisible: true,
   },
 
-  // ─── ENEMIES ───
+  // ═══════════════════════════════════════════
+  // ENEMIES — unlocked when first encountering each type
+  // ═══════════════════════════════════════════
   {
-    id: 'codex-enemy-reavers',
+    id: 'codex-enemy-rogue-drone',
     category: 'enemies',
-    title: 'Reaver Scouts',
-    icon: 'sword-cross',
-    content:
-      'Lightly armored raiders who operate in pairs or small packs. They favor ambush tactics — hiding behind wrecked vehicles or in collapsed buildings. Individually weak, but their numbers and aggression make them a persistent threat. Most carry improvised weapons: sharpened rebar, pipe guns, and scrap grenades.',
+    title: 'Rogue Drone',
+    body: 'Standard Directorate surveillance unit operating outside its assigned corridor. When a drone loses its network uplink, it defaults to basic threat response protocol: identify, track, neutralize. They\'re not smart. They don\'t adapt. But they don\'t stop, and they don\'t sleep. Field note: "The red eye means it\'s seen you. You have about four seconds."',
+    alwaysVisible: false,
   },
   {
-    id: 'codex-enemy-drones',
+    id: 'codex-enemy-armored-drone',
     category: 'enemies',
-    title: 'Survey Drones',
-    icon: 'drone',
-    content:
-      'Directorate surveillance units that patrol in swarms. They scan for unregistered travelers, contraband, and "reclamation targets." Non-lethal individually, but being tagged by one means patrols know where you are. Some drifters have learned to jam their signals. Others just shoot them down and sell the sensor cores.',
+    title: 'Armored Drone',
+    body: 'Field-modified surveillance unit found in reclamation zones. Someone — or something — welded salvaged plating onto a standard frame. These appear where the Directorate is pushing corridors into abandoned territory. Faster, tougher, and unlike the rogues, these ones report back. If you see one, the Directorate knows this zone is being worked.',
+    alwaysVisible: false,
   },
   {
-    id: 'codex-enemy-glassborn',
+    id: 'codex-enemy-sentinel',
     category: 'enemies',
-    title: 'Glassborn',
-    icon: 'diamond-stone',
-    content:
-      'Nobody knows what they are. Humanoid shapes that move like liquid mercury, leaving fused glass in their wake. They appeared after the Glassstorms of 2042. The Directorate classifies them as "environmental anomalies." Drifters call them Glassborn and give them a wide berth. They seem to watch more than attack — but the ones who got too close aren\'t around to report back.',
+    title: 'Directorate Sentinel',
+    body: 'Autonomous enforcement platform. Humanoid frame. Shoulder-mounted weapons. Reinforced chassis rated for small arms and most improvised explosives. Sentinels don\'t patrol — they\'re deployed to specific assets and they wait. Sealed vaults, relay stations, infrastructure nodes. If you\'re close enough to see the orange visor glow, it\'s already tracking you. Scanner advisory: "Do not engage without preparation."',
+    alwaysVisible: false,
   },
   {
-    id: 'codex-enemy-trail-taxmen',
+    id: 'codex-enemy-warden',
     category: 'enemies',
-    title: 'Trail Taxmen',
-    icon: 'shield-account',
-    content:
-      'Directorate Highway Patrol officers who man the checkpoints. Armed with scanner wands, stun batons, and a bottomless appetite for tolls. They\'re not evil — most are just doing a job. But the toll rates are extortionate, and "resisting taxation" is a crime punishable by impoundment of your vehicle and a one-way trip to a reclamation camp.',
+    title: 'Directorate Warden',
+    body: 'The Sentinel\'s escalation protocol. Purple-core energy systems, projected barriers, dual weapon arrays. Wardens are deployed when the Directorate classifies a zone as "compromised." That means someone\'s been scanning too much. Pulling too much tech. Making too much noise. Field note: "If they send a Warden, they\'re not trying to scare you. They\'re trying to make sure you don\'t come back."',
+    alwaysVisible: false,
   },
 
-  // ─── LOOT ───
+  // ═══════════════════════════════════════════
+  // SALVAGE/LOOT — unlocked when finding specific items
+  // ═══════════════════════════════════════════
   {
-    id: 'codex-loot-data-fragment',
+    id: 'codex-loot-scrap',
     category: 'loot',
-    title: 'Data Fragment',
-    icon: 'database',
-    content:
-      'A corrupted data module salvaged from pre-collapse terminals. Most of the information is garbled, but fragments of news archives, personal messages, and corporate records can be recovered. Valuable to collectors and historians — and to anyone trying to understand what happened.',
+    title: 'Scrap',
+    body: 'Raw materials. Metal, wire, circuit boards, polymer sheets. The currency of the non-compliant world. Everything outside the corridors is built, repaired, or traded with scrap. An operator\'s daily haul determines whether they eat, whether their rig runs, and whether they can afford a filter before the next tox-storm.',
+    alwaysVisible: true,
   },
   {
-    id: 'codex-loot-sensor-core',
+    id: 'codex-loot-supplies',
     category: 'loot',
-    title: 'Drone Sensor Core',
-    icon: 'chip',
-    content:
-      'The optical and electromagnetic sensor array from a downed Directorate survey drone. Intact cores can be repurposed as rover upgrades, sold for good scrap, or used to build signal jammers. Handle with care — the Directorate marks their equipment, and possession of military hardware is technically a felony.',
+    title: 'Supplies',
+    body: 'Medical consumables, ration packs, water purification tablets, stimulant patches. Anything that keeps a body operational. The Directorate manufactures these in bulk for corridor citizens. Outside, they\'re found in abandoned aid stations, sealed vehicles, or traded at Free Band camps at painful markups.',
+    alwaysVisible: true,
   },
   {
-    id: 'codex-loot-filter',
+    id: 'codex-loot-intel',
     category: 'loot',
-    title: 'Purification Filter',
-    icon: 'water',
-    content:
-      'A multi-stage water and air purification filter. Essential for survival in contaminated zones. Old-world manufacturing — they don\'t make these anymore. A good filter can last months with proper maintenance. Without one, you\'re drinking whatever the wasteland gives you.',
+    title: 'Intel Fragments',
+    body: 'Data recovered from pre-collapse systems. Transit schedules, personnel records, research notes, communication logs. Most of it is useless context from a world that doesn\'t exist anymore. But occasionally, a fragment contains coordinates. Vault access codes. Equipment schematics. The right fragment can change an operator\'s life.',
+    alwaysVisible: false,
   },
   {
-    id: 'codex-loot-transit-chip',
+    id: 'codex-loot-precollapse',
     category: 'loot',
-    title: 'Transit Chip',
-    icon: 'card-account-details',
-    content:
-      'A Directorate-issued electronic identification chip. Genuine ones grant passage through checkpoints without tolls. Forged ones work about half the time. Getting caught with a fake is worse than not having one at all.',
+    title: 'Pre-Collapse Technology',
+    body: 'The Directorate catalogued and sealed most human-built technology above a certain capability threshold. Weapons, communication equipment, medical devices, power systems — anything that could make a non-compliant population harder to manage. Finding pre-collapse tech means someone hid it, or the Directorate missed it. Either way, it\'s valuable. And carrying it makes you a target.',
+    alwaysVisible: false,
+  },
+
+  // ═══════════════════════════════════════════
+  // PERSONAL — always visible, reflects player state
+  // ═══════════════════════════════════════════
+  {
+    id: 'codex-personal-rig',
+    category: 'personal',
+    title: 'Your Rig',
+    body: 'A mobile scanning platform assembled from salvaged components. Part rover, part antenna array. The scanner reads electromagnetic signatures through Directorate interference — it can detect buried caches, sealed vaults, and active drone patrols. The rig is your life. Without it, you\'re just another body walking the Rustbelt.',
+    alwaysVisible: true,
   },
   {
-    id: 'codex-loot-lantern-token',
-    category: 'loot',
-    title: 'Lantern Token',
-    icon: 'candle',
-    content:
-      'A small wooden disc carved with the Lantern symbol — a candle flame inside a circle. Carrying one marks you as a friend of the network. It won\'t save you from raiders, but it opens doors that scrap can\'t.',
+    id: 'codex-personal-scanning',
+    category: 'personal',
+    title: 'How Scanning Works',
+    body: 'The scanner punches through Directorate signal interference to read what\'s underneath. Three modes: Scout (safe, surface-level), Seeker (deeper, riskier), and Gambit (full power, burns the scan for one deep read). Better gear means cleaner signals. A good streak means your rig calibrates better each day. Dead signals — whiffs — mean the interference won.',
+    alwaysVisible: true,
   },
 ];
 
