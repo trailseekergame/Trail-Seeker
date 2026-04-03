@@ -361,6 +361,7 @@ export interface GearItem {
   icon: string;
   zone: GearZone;
   lore: string;
+  image?: any; // require() pixel art icon — optional for migration safety
 }
 
 /** Authored tile flavor — overrides generic tile behavior with specific content */
