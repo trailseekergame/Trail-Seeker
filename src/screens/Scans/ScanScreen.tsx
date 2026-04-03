@@ -1516,21 +1516,24 @@ export default function ScanScreen({ route }: any) {
             <View style={styles.sessionEndDivider} />
             <Text style={styles.sessionEndSummary}>
               {failReason === 'hp_zero'
-                ? 'You pushed too hard. The signal\'s gone and so is your footing. Forced return to camp — lost a day, kept partial loot.'
+                ? 'You pushed too hard. The signal\'s gone and so is your footing. Sector progress wiped. You keep what you already carried back to camp.'
                 : 'The rover\'s done. Limping back to camp on fumes. Repair it with Scrap before the next run.'}
             </Text>
+            {failReason === 'hp_zero' && (
+              <Text style={[styles.sessionEndSummary, { color: colors.neonRed, fontWeight: '700', marginTop: spacing.sm }]}>
+                SECTOR RESET — all tile progress in this zone has been wiped.
+              </Text>
+            )}
             <NeonButton
               title="Limp back to camp"
               onPress={() => {
                 setShowFailedMission(false);
-                // Increment day as penalty for HP zero
                 if (failReason === 'hp_zero') {
                   dispatch({ type: 'INCREMENT_DAY' });
-                  // Restore to 20 HP so player isn't stuck
-                  dispatch({ type: 'HEAL', payload: 20 });
+                  dispatch({ type: 'RESET_SECTOR' }); // Wipe tile progress
+                  dispatch({ type: 'HEAL', payload: 20 }); // Restore to 20 HP
                 }
                 dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
-                // Explicit save on failed mission
                 setTimeout(() => saveGameState(state), 100);
                 nav.goBack();
               }}

@@ -217,6 +217,24 @@ export default function DailyPlanScreen() {
           delay={600}
         />
 
+        {/* ─── Critical HP warning ─── */}
+        {state.playerHealth <= 25 && state.playerHealth > 0 && (
+          <View style={styles.criticalWarning}>
+            <MaterialCommunityIcons name="alert" size={16} color={colors.neonRed} />
+            <Text style={styles.criticalWarningText}>
+              HP CRITICAL ({state.playerHealth}). Death resets your sector progress. Heal before scanning.
+            </Text>
+          </View>
+        )}
+        {state.playerHealth === 0 && (
+          <View style={styles.criticalWarning}>
+            <MaterialCommunityIcons name="skull" size={16} color={colors.neonRed} />
+            <Text style={styles.criticalWarningText}>
+              OPERATOR DOWN. Heal at camp before you can run again.
+            </Text>
+          </View>
+        )}
+
         {/* ─── 1b. DAILY OBJECTIVE ─── */}
         <View style={styles.objectiveCard}>
           <Text style={styles.objectiveBrief}>{objective.brief}</Text>
@@ -894,6 +912,24 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  criticalWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.neonRed + '12',
+    borderWidth: 1.5,
+    borderColor: colors.neonRed + '40',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  criticalWarningText: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.neonRed,
+    fontFamily: fontMono,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   warningText: {
     fontSize: fontSize.sm,

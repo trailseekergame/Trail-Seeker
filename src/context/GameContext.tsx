@@ -52,6 +52,7 @@ type GameAction =
   | { type: 'COMPLETE_EVENT'; payload: string }
   | { type: 'ADD_LEADERBOARD_ENTRY'; payload: LeaderboardEntry }
   | { type: 'INCREMENT_DAY' }
+  | { type: 'RESET_SECTOR' }
   | { type: 'REVEAL_NODE'; payload: string }
   | { type: 'ADJUST_ALIGNMENT'; payload: Partial<FactionAlignment> }
   | { type: 'SET_ALIGNMENT_FLAG'; payload: AlignmentFlag }
@@ -219,6 +220,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'INCREMENT_DAY':
       return { ...state, dayNumber: state.dayNumber + 1 };
 
+    case 'RESET_SECTOR': {
+      // Death penalty: wipe all tile progress in the current sector
+      const resetTiles = state.seekerScans.currentSector.tiles.map(tile => ({
+        ...tile,
+        cleared: false,
+        durability: tile.maxDurability, // restore durability
+      }));
+      return {
+        ...state,
+        seekerScans: {
+          ...state.seekerScans,
+          currentSector: {
+            ...state.seekerScans.currentSector,
+            tiles: resetTiles,
+            completed: false,
+          },
+        },
+      };
+    }
+
     case 'REVEAL_NODE': {
       // This is handled via zone data, but we track visited for now
       return state;
@@ -340,8 +361,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         newStreak = Math.max(1, newStreak - (daysDiff - 1));
       }
 
+      // Daily attrition: HP drain (tox-storm exposure) + scrap upkeep (rover fuel)
+      const DAILY_HP_DRAIN = 5;
+      const DAILY_SCRAP_COST = 3;
+      const newHp = Math.max(0, state.playerHealth - DAILY_HP_DRAIN);
+      const newScrap = Math.max(0, state.resources.scrap - DAILY_SCRAP_COST);
+
       return {
         ...state,
+        playerHealth: newHp,
+        resources: { ...state.resources, scrap: newScrap },
         seekerScans: {
           ...state.seekerScans,
           streakDay: newStreak,
