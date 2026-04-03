@@ -64,7 +64,7 @@ const DEFAULT_SETTINGS: AudioSettings = {
 class AudioManagerClass {
   private settings: AudioSettings = { ...DEFAULT_SETTINGS };
   private sfxCache: Map<string, any> = new Map();
-  private currentMusic: any = null;
+  private musicPool: Map<string, any> = new Map(); // preloaded music tracks
   private currentMusicName: string | null = null;
   private initialized = false;
 
@@ -92,6 +92,9 @@ class AudioManagerClass {
     } catch (_) {
       // Settings load failed — use defaults
     }
+
+    // Preload music tracks into memory
+    await this.preloadMusic();
   }
 
   // ─── SFX ───
@@ -136,6 +139,24 @@ class AudioManagerClass {
 
   // ─── Music ───
 
+  /** Preload all music tracks into memory. Call once on init. */
+  private async preloadMusic(): Promise<void> {
+    if (!Audio) return;
+    for (const [name, asset] of Object.entries(MUSIC_ASSETS)) {
+      if (this.musicPool.has(name)) continue;
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          asset,
+          { volume: 0, isLooping: true, shouldPlay: false }
+        );
+        this.musicPool.set(name, sound);
+        if (__DEV__) console.log(`[Audio] Music preloaded: ${name}`);
+      } catch (e) {
+        if (__DEV__) console.warn(`[Audio] Music preload failed: ${name}`, e);
+      }
+    }
+  }
+
   async setMusic(name: string): Promise<void> {
     if (!Audio) return;
     if (!this.settings.musicEnabled) {
@@ -143,61 +164,61 @@ class AudioManagerClass {
       return;
     }
     if (!MUSIC_ASSETS[name]) return;
-    if (this.currentMusicName === name && this.currentMusic) return;
+    if (this.currentMusicName === name) return;
 
-    // Fade out current
-    if (this.currentMusic) {
-      await this.fadeOutMusic(this.currentMusic);
-    }
-
+    const prevName = this.currentMusicName;
     this.currentMusicName = name;
 
-    try {
-      const { sound } = await Audio.Sound.createAsync(
-        MUSIC_ASSETS[name],
-        { volume: 0, isLooping: true, shouldPlay: true }
-      );
-      this.currentMusic = sound;
+    // Preload if not yet loaded
+    if (!this.musicPool.has(name)) {
+      await this.preloadMusic();
+    }
 
-      // Fade in
-      const steps = 10;
-      const stepMs = CROSSFADE_MS / steps;
-      for (let i = 1; i <= steps; i++) {
-        await new Promise(r => setTimeout(r, stepMs));
-        try {
-          await sound.setVolumeAsync((i / steps) * MUSIC_VOLUME);
-        } catch (_) { break; }
-      }
-    } catch (_) {
-      this.currentMusic = null;
+    // Crossfade: fade out previous, fade in new (in parallel)
+    const fadeSteps = 10;
+    const stepMs = CROSSFADE_MS / fadeSteps;
+    const prevSound = prevName ? this.musicPool.get(prevName) : null;
+    const nextSound = this.musicPool.get(name);
+
+    // Start the new track playing from where it was (or beginning)
+    if (nextSound) {
+      try {
+        await nextSound.setVolumeAsync(0);
+        await nextSound.playAsync();
+      } catch (_) {}
+    }
+
+    // Parallel crossfade
+    for (let i = 1; i <= fadeSteps; i++) {
+      await new Promise(r => setTimeout(r, stepMs));
+      const progress = i / fadeSteps;
+      try {
+        if (nextSound) await nextSound.setVolumeAsync(progress * MUSIC_VOLUME);
+      } catch (_) {}
+      try {
+        if (prevSound) await prevSound.setVolumeAsync((1 - progress) * MUSIC_VOLUME);
+      } catch (_) {}
+    }
+
+    // Pause (not unload) the previous track so it can resume later
+    if (prevSound) {
+      try { await prevSound.pauseAsync(); } catch (_) {}
     }
   }
 
   async stopMusic(): Promise<void> {
     if (!Audio) return;
-    if (this.currentMusic) {
-      await this.fadeOutMusic(this.currentMusic);
-    }
-    this.currentMusic = null;
-    this.currentMusicName = null;
-  }
-
-  private async fadeOutMusic(sound: any): Promise<void> {
-    try {
-      const steps = 10;
-      const stepMs = CROSSFADE_MS / steps;
-      for (let i = steps - 1; i >= 0; i--) {
+    const sound = this.currentMusicName ? this.musicPool.get(this.currentMusicName) : null;
+    if (sound) {
+      const fadeSteps = 10;
+      const stepMs = CROSSFADE_MS / fadeSteps;
+      for (let i = fadeSteps - 1; i >= 0; i--) {
         await new Promise(r => setTimeout(r, stepMs));
-        try {
-          await sound.setVolumeAsync((i / steps) * MUSIC_VOLUME);
-        } catch (_) { break; }
+        try { await sound.setVolumeAsync((i / fadeSteps) * MUSIC_VOLUME); } catch (_) {}
       }
-      await sound.stopAsync();
-      await sound.unloadAsync();
-    } catch (_) {
-      // Fade out failed — just try to unload
-      try { await sound.unloadAsync(); } catch (_) {}
+      try { await sound.pauseAsync(); } catch (_) {}
     }
+    this.currentMusicName = null;
   }
 
   // ─── Haptics ───
@@ -237,17 +258,15 @@ class AudioManagerClass {
     await this.persistSettings();
 
     if (enabled && this.currentMusicName) {
-      // Resume music
+      // Resume music from pool
       const name = this.currentMusicName;
       this.currentMusicName = null; // Reset so setMusic doesn't short-circuit
       await this.setMusic(name);
-    } else if (!enabled && this.currentMusic) {
-      // Stop music
-      try {
-        await this.currentMusic.stopAsync();
-        await this.currentMusic.unloadAsync();
-      } catch (_) {}
-      this.currentMusic = null;
+    } else if (!enabled) {
+      // Pause all music tracks
+      for (const sound of this.musicPool.values()) {
+        try { await sound.pauseAsync(); } catch (_) {}
+      }
     }
   }
 
@@ -272,10 +291,10 @@ class AudioManagerClass {
     }
     this.sfxCache.clear();
 
-    if (this.currentMusic) {
-      try { await this.currentMusic.unloadAsync(); } catch (_) {}
-      this.currentMusic = null;
+    for (const sound of this.musicPool.values()) {
+      try { await sound.unloadAsync(); } catch (_) {}
     }
+    this.musicPool.clear();
     this.currentMusicName = null;
   }
 }
