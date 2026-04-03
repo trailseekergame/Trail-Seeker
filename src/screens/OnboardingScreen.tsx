@@ -477,8 +477,8 @@ export default function OnboardingScreen() {
 
   const renderAvatar = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.sectionLabel}>OPERATOR_SELECT</Text>
-      <Text style={styles.sectionHint}>Choose your operator.</Text>
+      <Text style={styles.stepLabel}>OPERATOR_SELECT</Text>
+      <Text style={styles.stepSubtext}>Choose your operator.</Text>
       <View style={styles.avatarRow}>
         {AVATAR_OPTIONS.map((av) => (
           <TouchableOpacity
