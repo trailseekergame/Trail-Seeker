@@ -1630,6 +1630,7 @@ export default function ScanScreen({ route }: any) {
           playerMaxHp={100}
           gearInventory={ss.gearInventory}
           activeGearSlots={ss.activeGearSlots}
+          mapBackground={mapDef?.background}
           onVictory={handleCombatVictory}
           onDefeat={handleCombatDefeat}
         />

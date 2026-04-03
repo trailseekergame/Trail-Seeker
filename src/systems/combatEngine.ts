@@ -3,6 +3,14 @@ import gameBalance from '../config/gameBalance.json';
 
 export type CombatAction = 'attack' | 'defend' | 'scan';
 
+// Enemy sprite images
+const ENEMY_IMAGES = {
+  rogue_drone: require('../assets/enemies/enemy_rogue_drone.png'),
+  armored_drone: require('../assets/enemies/enemy_armored_drone.png'),
+  sentinel: require('../assets/enemies/enemy_sentinel.png'),
+  warden: require('../assets/enemies/enemy_warden.png'),
+};
+
 export interface Enemy {
   name: string;
   maxHp: number;
@@ -13,6 +21,7 @@ export interface Enemy {
   supplyReward: number;
   type: 'anomaly' | 'boss';
   icon: string;
+  image: any;
 }
 
 export interface CombatTurnResult {
@@ -37,6 +46,7 @@ export function createEnemy(tileType: 'anomaly' | 'boss', hardMode: boolean = fa
       supplyReward: Math.round(3 * scale),
       type: 'boss',
       icon: 'robot-angry',
+      image: hardMode ? ENEMY_IMAGES.warden : ENEMY_IMAGES.sentinel,
     };
   }
   return {
@@ -49,6 +59,7 @@ export function createEnemy(tileType: 'anomaly' | 'boss', hardMode: boolean = fa
     supplyReward: hardMode ? 1 : 0,
     type: 'anomaly',
     icon: 'drone',
+    image: hardMode ? ENEMY_IMAGES.armored_drone : ENEMY_IMAGES.rogue_drone,
   };
 }
 

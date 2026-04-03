@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontMono } from '../../theme';
 import NeonButton from '../common/NeonButton';
@@ -17,6 +17,7 @@ interface Props {
   playerMaxHp: number;
   gearInventory: GearItem[];
   activeGearSlots: GearSlotId[];
+  mapBackground: any;
   onVictory: (bonusScrap: number, bonusSupplies: number, lootBonus: number) => void;
   onDefeat: (hpLost: number) => void;
 }
@@ -25,7 +26,7 @@ type Phase = 'intro' | 'player_turn' | 'resolving' | 'victory' | 'defeat';
 
 export default function CombatOverlay({
   visible, enemy: initialEnemy, playerHp, playerMaxHp,
-  gearInventory, activeGearSlots, onVictory, onDefeat,
+  gearInventory, activeGearSlots, mapBackground, onVictory, onDefeat,
 }: Props) {
   const [phase, setPhase] = useState<Phase>('intro');
   const [enemy, setEnemy] = useState<Enemy>({ ...initialEnemy });
@@ -139,181 +140,178 @@ export default function CombatOverlay({
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={s.overlay}>
-        <View style={s.container}>
-          {/* Enemy section */}
-          <View style={s.enemySection}>
-            <MaterialCommunityIcons name={enemy.icon as any} size={48} color={enemy.type === 'boss' ? colors.neonRed : colors.neonAmber} />
-            <Text style={[s.enemyName, { color: enemy.type === 'boss' ? colors.neonRed : colors.neonAmber }]}>
-              {enemy.name}
-            </Text>
-            <View style={s.hpBarTrack}>
-              <View style={[s.hpBarFill, { width: `${enemyHpPct}%`, backgroundColor: enemy.type === 'boss' ? colors.neonRed : colors.neonAmber }]} />
-            </View>
-            <Text style={s.hpText}>{enemy.hp}/{enemy.maxHp} HP</Text>
-            {shownIntent && phase === 'player_turn' && (
-              <View style={[s.intentBadge, {
-                borderColor: shownIntent === 'targeting' ? colors.neonRed + '60'
-                  : shownIntent === 'exposed' ? colors.neonGreen + '60'
-                  : colors.neonAmber + '60',
-                backgroundColor: shownIntent === 'targeting' ? colors.neonRed + '10'
-                  : shownIntent === 'exposed' ? colors.neonGreen + '10'
-                  : colors.neonAmber + '10',
-              }]}>
-                <Text style={[s.intentText, {
-                  color: shownIntent === 'targeting' ? colors.neonRed
-                    : shownIntent === 'exposed' ? colors.neonGreen
-                    : colors.neonAmber,
-                }]}>
-                  {shownIntent === 'targeting' ? 'TARGETING...'
-                    : shownIntent === 'exposed' ? 'EXPOSED...'
-                    : 'SCANNING YOU...'}
-                </Text>
-                <Text style={s.intentHint}>
-                  {shownIntent === 'targeting' ? 'Counter: DEFEND'
-                    : shownIntent === 'exposed' ? 'Counter: ATTACK'
-                    : 'Counter: SCAN'}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Turn log */}
-          <View style={s.logSection}>
-            {phase === 'intro' && (
-              <>
-                <Text style={s.introText}>HOSTILE CONTACT</Text>
-                <Text style={s.introSubtext}>{enemy.name} blocks the signal path.</Text>
-              </>
-            )}
-            {turnLog.map((line, i) => (
-              <Text key={i} style={s.logLine}>{line}</Text>
-            ))}
-            {lootBonus > 0 && phase === 'player_turn' && (
-              <Text style={s.lootBonusText}>Scan bonus: +{lootBonus * 2} scrap on kill</Text>
-            )}
-          </View>
-
-          {/* Player HP */}
-          <View style={s.playerSection}>
-            <View style={s.hpBarTrack}>
-              <View style={[s.hpBarFill, { width: `${playerHpPct}%`, backgroundColor: playerHpPct > 30 ? colors.neonGreen : colors.neonRed }]} />
-            </View>
-            <Text style={s.hpText}>YOU: {currentPlayerHp}/{playerMaxHp} HP</Text>
-          </View>
-
-          {/* Actions */}
+      <ImageBackground source={mapBackground} style={s.battleBg} resizeMode="cover">
+        <View style={s.overlay}>
+          {/* PHASE: INTRO */}
           {phase === 'intro' && (
-            <NeonButton title="ENGAGE" onPress={startCombat} variant="primary" size="lg" />
-          )}
-
-          {phase === 'player_turn' && (
-            <View style={s.actionRow}>
-              <TouchableOpacity style={[s.actionBtn, s.actionAttack]} onPress={() => handleAction('attack')}>
-                <MaterialCommunityIcons name="sword-cross" size={20} color={colors.neonRed} />
-                <Text style={[s.actionLabel, { color: colors.neonRed }]}>ATTACK</Text>
-                <Text style={s.actionHint}>{weaponDamage} dmg</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.actionBtn, s.actionDefend]} onPress={() => handleAction('defend')}>
-                <MaterialCommunityIcons name="shield-half-full" size={20} color={colors.neonCyan} />
-                <Text style={[s.actionLabel, { color: colors.neonCyan }]}>DEFEND</Text>
-                <Text style={s.actionHint}>-50% dmg</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.actionBtn, s.actionScan]} onPress={() => handleAction('scan')}>
-                <MaterialCommunityIcons name="radar" size={20} color={colors.neonAmber} />
-                <Text style={[s.actionLabel, { color: colors.neonAmber }]}>SCAN</Text>
-                <Text style={s.actionHint}>+loot</Text>
-              </TouchableOpacity>
+            <View style={s.introOverlay}>
+              <Text style={s.introLabel}>HOSTILE CONTACT</Text>
+              <Image source={enemy.image} style={s.introEnemyImage} resizeMode="contain" />
+              <Text style={s.introEnemyName}>{enemy.name}</Text>
+              <Text style={s.introSubtext}>{enemy.type === 'boss' ? 'BOSS ENCOUNTER' : 'THREAT DETECTED'}</Text>
+              <NeonButton title="ENGAGE" onPress={startCombat} variant="primary" size="lg" style={{ marginTop: 24 }} />
             </View>
           )}
 
-          {phase === 'resolving' && (
-            <Text style={s.resolvingText}>...</Text>
+          {/* PHASE: COMBAT (player_turn + resolving) */}
+          {(phase === 'player_turn' || phase === 'resolving') && (
+            <>
+              {/* Enemy area — top */}
+              <View style={s.enemyArea}>
+                <View style={s.enemyInfoBox}>
+                  <Text style={s.enemyNameSmall}>{enemy.name}</Text>
+                  <View style={s.hpTrack}>
+                    <View style={[s.hpFill, { width: `${enemyHpPct}%`, backgroundColor: enemy.type === 'boss' ? colors.neonRed : colors.neonAmber }]} />
+                  </View>
+                  <Text style={s.hpLabel}>{enemy.hp}/{enemy.maxHp}</Text>
+                  {/* Intent badge */}
+                  {shownIntent && phase === 'player_turn' && (
+                    <View style={[s.intentBadge, {
+                      borderColor: shownIntent === 'targeting' ? colors.neonRed + '80'
+                        : shownIntent === 'exposed' ? colors.neonGreen + '80'
+                        : colors.neonAmber + '80',
+                    }]}>
+                      <Text style={[s.intentText, {
+                        color: shownIntent === 'targeting' ? colors.neonRed
+                          : shownIntent === 'exposed' ? colors.neonGreen
+                          : colors.neonAmber,
+                      }]}>
+                        {shownIntent === 'targeting' ? '\u25B6 TARGETING'
+                          : shownIntent === 'exposed' ? '\u25B6 EXPOSED'
+                          : '\u25B6 SCANNING'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Image source={enemy.image} style={s.enemySprite} resizeMode="contain" />
+              </View>
+
+              {/* Player area — middle */}
+              <View style={s.playerArea}>
+                <View style={s.playerInfoBox}>
+                  <Text style={s.playerLabel}>YOU</Text>
+                  <View style={s.hpTrack}>
+                    <View style={[s.hpFill, { width: `${playerHpPct}%`, backgroundColor: playerHpPct > 30 ? colors.neonGreen : colors.neonRed }]} />
+                  </View>
+                  <Text style={s.hpLabel}>{currentPlayerHp}/{playerMaxHp}</Text>
+                </View>
+              </View>
+
+              {/* Turn log */}
+              <View style={s.logBox}>
+                {turnLog.map((line, i) => (
+                  <Text key={i} style={s.logLine}>{line}</Text>
+                ))}
+                {turnLog.length === 0 && <Text style={s.logLine}>Choose your action.</Text>}
+              </View>
+
+              {/* Action panel — bottom */}
+              <View style={s.actionPanel}>
+                {phase === 'player_turn' ? (
+                  <View style={s.actionRow}>
+                    <TouchableOpacity style={[s.actionBtn, { borderColor: colors.neonRed + '60' }]} onPress={() => handleAction('attack')}>
+                      <MaterialCommunityIcons name="sword-cross" size={24} color={colors.neonRed} />
+                      <Text style={[s.actionLabel, { color: colors.neonRed }]}>ATTACK</Text>
+                      <Text style={s.actionHint}>{weaponDamage} dmg</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[s.actionBtn, { borderColor: colors.neonCyan + '60' }]} onPress={() => handleAction('defend')}>
+                      <MaterialCommunityIcons name="shield-half-full" size={24} color={colors.neonCyan} />
+                      <Text style={[s.actionLabel, { color: colors.neonCyan }]}>DEFEND</Text>
+                      <Text style={s.actionHint}>-50% dmg</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[s.actionBtn, { borderColor: colors.neonAmber + '60' }]} onPress={() => handleAction('scan')}>
+                      <MaterialCommunityIcons name="radar" size={24} color={colors.neonAmber} />
+                      <Text style={[s.actionLabel, { color: colors.neonAmber }]}>SCAN</Text>
+                      <Text style={s.actionHint}>+loot</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <Text style={s.resolvingDots}>...</Text>
+                )}
+                {turnCount > 0 && <Text style={s.turnNum}>TURN {turnCount}</Text>}
+                {lootBonus > 0 && <Text style={s.lootBonus}>SCAN BONUS: +{lootBonus * 2} scrap</Text>}
+              </View>
+            </>
           )}
 
+          {/* PHASE: VICTORY */}
           {phase === 'victory' && (
-            <View style={s.resultSection}>
-              <Text style={s.victoryText}>HOSTILE ELIMINATED</Text>
-              <Text style={s.rewardText}>+{enemy.scrapReward + (lootBonus * 2) + weaponScrapBonus} Scrap</Text>
-              {enemy.supplyReward > 0 && <Text style={s.rewardText}>+{enemy.supplyReward} Supplies</Text>}
-              {lootBonus > 0 && <Text style={[s.rewardText, { color: colors.neonAmber }]}>Scan bonus applied (+{lootBonus * 2})</Text>}
-              <NeonButton title="COLLECT" onPress={handleVictory} variant="primary" size="lg" style={{ marginTop: spacing.md }} />
+            <View style={s.resultOverlay}>
+              <Text style={s.victoryTitle}>HOSTILE ELIMINATED</Text>
+              <View style={s.rewardBox}>
+                <Text style={s.rewardLine}>+{enemy.scrapReward + (lootBonus * 2) + weaponScrapBonus} SCRAP</Text>
+                {enemy.supplyReward > 0 && <Text style={s.rewardLine}>+{enemy.supplyReward} SUPPLIES</Text>}
+                {lootBonus > 0 && <Text style={[s.rewardLine, { color: colors.neonAmber }]}>Scan bonus: +{lootBonus * 2}</Text>}
+              </View>
+              <NeonButton title="COLLECT" onPress={handleVictory} variant="primary" size="lg" style={{ marginTop: 20 }} />
             </View>
           )}
 
+          {/* PHASE: DEFEAT */}
           {phase === 'defeat' && (
-            <View style={s.resultSection}>
-              <Text style={s.defeatText}>OPERATOR OVERWHELMED</Text>
-              <Text style={s.defeatSubtext}>Forced retreat. -{enemy.type === 'boss' ? 25 : 15} HP. Session over.</Text>
-              <NeonButton title="RETREAT" onPress={handleDefeat} variant="primary" size="lg" style={{ marginTop: spacing.md }} />
+            <View style={s.resultOverlay}>
+              <Text style={s.defeatTitle}>OPERATOR OVERWHELMED</Text>
+              <Text style={s.defeatSub}>Forced retreat. -{enemy.type === 'boss' ? 25 : 15} HP</Text>
+              <Text style={s.defeatSub}>Session over. Tile remains.</Text>
+              <NeonButton title="RETREAT" onPress={handleDefeat} variant="primary" size="lg" style={{ marginTop: 20 }} />
             </View>
-          )}
-
-          {/* Turn counter */}
-          {turnCount > 0 && phase !== 'victory' && phase !== 'defeat' && (
-            <Text style={s.turnCounter}>Turn {turnCount}</Text>
           )}
         </View>
-      </View>
+      </ImageBackground>
     </Modal>
   );
 }
 
 const s = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  container: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.panelBorder,
-    padding: spacing.lg,
-    alignItems: 'center',
-  },
+  battleBg: { flex: 1 },
+  overlay: { flex: 1, backgroundColor: 'rgba(6, 10, 14, 0.75)' },
 
-  // Enemy
-  enemySection: { alignItems: 'center', marginBottom: spacing.md, width: '100%' },
-  enemyName: { fontSize: fontSize.lg, fontWeight: '700', fontFamily: fontMono, letterSpacing: 2, marginTop: spacing.xs },
-  hpBarTrack: { width: '100%', height: 6, backgroundColor: colors.panelBorder, marginTop: spacing.sm },
-  hpBarFill: { height: '100%' },
-  hpText: { fontSize: 10, color: colors.textMuted, fontFamily: fontMono, marginTop: 4 },
-  intentBadge: { borderWidth: 1.5, padding: spacing.sm, marginTop: spacing.sm, alignItems: 'center', width: '100%' },
-  intentText: { fontSize: fontSize.md, fontWeight: '800', fontFamily: fontMono, letterSpacing: 3 },
-  intentHint: { fontSize: 9, color: colors.textMuted, fontFamily: fontMono, letterSpacing: 1, marginTop: 2 },
+  // Intro
+  introOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  introLabel: { fontSize: 14, color: colors.neonRed, fontWeight: '800', fontFamily: fontMono, letterSpacing: 4 },
+  introEnemyImage: { width: 200, height: 200, marginVertical: spacing.lg },
+  introEnemyName: { fontSize: fontSize.xl, color: colors.textPrimary, fontWeight: '700', fontFamily: fontMono, letterSpacing: 2 },
+  introSubtext: { fontSize: 11, color: colors.textMuted, fontFamily: fontMono, letterSpacing: 2, marginTop: 4 },
+
+  // Enemy area
+  enemyArea: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: spacing.md, paddingTop: spacing.xl, flex: 0.4 },
+  enemyInfoBox: { flex: 1, paddingRight: spacing.sm },
+  enemyNameSmall: { fontSize: fontSize.md, color: colors.textPrimary, fontWeight: '700', fontFamily: fontMono, letterSpacing: 1 },
+  enemySprite: { width: 140, height: 140 },
+
+  // HP bars
+  hpTrack: { height: 5, backgroundColor: colors.panelBorder, marginTop: 6, width: '100%' },
+  hpFill: { height: '100%' },
+  hpLabel: { fontSize: 9, color: colors.textMuted, fontFamily: fontMono, marginTop: 3 },
+
+  // Intent
+  intentBadge: { borderWidth: 1.5, paddingHorizontal: spacing.sm, paddingVertical: 4, marginTop: spacing.sm },
+  intentText: { fontSize: 11, fontWeight: '800', fontFamily: fontMono, letterSpacing: 2 },
+
+  // Player area
+  playerArea: { paddingHorizontal: spacing.md, flex: 0.15, justifyContent: 'center' },
+  playerInfoBox: { alignSelf: 'flex-end', width: '60%' },
+  playerLabel: { fontSize: fontSize.sm, color: colors.neonGreen, fontWeight: '700', fontFamily: fontMono, letterSpacing: 2 },
 
   // Log
-  logSection: { width: '100%', minHeight: 60, borderWidth: 1, borderColor: colors.panelBorder, padding: spacing.sm, marginBottom: spacing.md, backgroundColor: colors.background },
-  introText: { fontSize: fontSize.md, color: colors.neonRed, fontWeight: '700', fontFamily: fontMono, letterSpacing: 3, textAlign: 'center' },
-  introSubtext: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs },
+  logBox: { marginHorizontal: spacing.md, borderWidth: 1, borderColor: colors.panelBorder, padding: spacing.sm, backgroundColor: colors.background + 'CC', flex: 0.15, justifyContent: 'center' },
   logLine: { fontSize: fontSize.sm, color: colors.textPrimary, fontFamily: fontMono, lineHeight: 20 },
-  lootBonusText: { fontSize: fontSize.xs, color: colors.neonAmber, fontFamily: fontMono, marginTop: spacing.xs },
 
-  // Player
-  playerSection: { width: '100%', marginBottom: spacing.md },
-
-  // Actions
-  actionRow: { flexDirection: 'row', gap: spacing.sm, width: '100%' },
-  actionBtn: { flex: 1, borderWidth: 1.5, borderColor: colors.panelBorder, padding: spacing.sm, alignItems: 'center', backgroundColor: colors.background },
-  actionAttack: { borderColor: colors.neonRed + '40' },
-  actionDefend: { borderColor: colors.neonCyan + '40' },
-  actionScan: { borderColor: colors.neonAmber + '40' },
+  // Action panel
+  actionPanel: { backgroundColor: colors.surface + 'F0', borderTopWidth: 1.5, borderTopColor: colors.panelBorder, padding: spacing.md, flex: 0.3, justifyContent: 'center' },
+  actionRow: { flexDirection: 'row', gap: spacing.sm },
+  actionBtn: { flex: 1, borderWidth: 1.5, padding: spacing.sm, alignItems: 'center', backgroundColor: colors.background },
   actionLabel: { fontSize: 10, fontWeight: '800', fontFamily: fontMono, letterSpacing: 1, marginTop: 4 },
   actionHint: { fontSize: 8, color: colors.textMuted, fontFamily: fontMono, marginTop: 2 },
+  resolvingDots: { fontSize: fontSize.xl, color: colors.textMuted, fontFamily: fontMono, textAlign: 'center' },
+  turnNum: { fontSize: 9, color: colors.textMuted, fontFamily: fontMono, textAlign: 'center', marginTop: spacing.sm, letterSpacing: 2 },
+  lootBonus: { fontSize: 9, color: colors.neonAmber, fontFamily: fontMono, textAlign: 'center', marginTop: 2 },
 
   // Results
-  resultSection: { alignItems: 'center', width: '100%' },
-  victoryText: { fontSize: fontSize.lg, color: colors.neonGreen, fontWeight: '700', fontFamily: fontMono, letterSpacing: 3 },
-  rewardText: { fontSize: fontSize.md, color: colors.neonCyan, fontFamily: fontMono, marginTop: spacing.xs },
-  defeatText: { fontSize: fontSize.lg, color: colors.neonRed, fontWeight: '700', fontFamily: fontMono, letterSpacing: 2 },
-  defeatSubtext: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs },
-
-  // Turn counter
-  resolvingText: { fontSize: fontSize.lg, color: colors.textMuted, fontFamily: fontMono },
-  turnCounter: { fontSize: 9, color: colors.textMuted, fontFamily: fontMono, marginTop: spacing.md },
+  resultOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, backgroundColor: 'rgba(6, 10, 14, 0.9)' },
+  victoryTitle: { fontSize: 16, color: colors.neonGreen, fontWeight: '800', fontFamily: fontMono, letterSpacing: 4 },
+  rewardBox: { marginTop: spacing.md, alignItems: 'center' },
+  rewardLine: { fontSize: fontSize.md, color: colors.neonCyan, fontFamily: fontMono, marginTop: 4 },
+  defeatTitle: { fontSize: 16, color: colors.neonRed, fontWeight: '800', fontFamily: fontMono, letterSpacing: 3 },
+  defeatSub: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs },
 });
