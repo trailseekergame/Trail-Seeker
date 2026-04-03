@@ -20,6 +20,8 @@ import { MAP_DEFS, MapId } from '../../data/sectorMaps';
 import gameBalance from '../../config/gameBalance.json';
 import { saveGameState } from '../../services/storage';
 import { checkMilestones, applyResourceBoost, applyDamageReduction } from '../../systems/skrEconomy';
+import CombatOverlay from '../../components/scans/CombatOverlay';
+import { createEnemy, Enemy } from '../../systems/combatEngine';
 
 // ─── Constants ───
 
@@ -114,6 +116,11 @@ export default function ScanScreen({ route }: any) {
   const resultFlash = useRef(new Animated.Value(0)).current;
   const [resultRevealed, setResultRevealed] = useState(true);
   const [legendaryTeaser, setLegendaryTeaser] = useState(false);
+
+  // Combat state
+  const [showCombat, setShowCombat] = useState(false);
+  const [combatEnemy, setCombatEnemy] = useState<Enemy | null>(null);
+  const [combatTileId, setCombatTileId] = useState<string | null>(null);
 
   // Set scan ambient music + cleanup timers
   useEffect(() => {
@@ -375,6 +382,15 @@ export default function ScanScreen({ route }: any) {
       }
     }
 
+    // Check for combat encounter on boss/anomaly tiles (non-whiff scans only)
+    if (result.outcome !== 'whiff' && (selectedTile.type === 'boss' || selectedTile.type === 'anomaly')) {
+      const combatEnemyData = createEnemy(selectedTile.type as 'boss' | 'anomaly');
+      setCombatEnemy(combatEnemyData);
+      setCombatTileId(selectedTile.id);
+      setShowCombat(true);
+      return; // Combat will handle tile clearing, loot, etc.
+    }
+
     // Roll for enhanced gear drop (Relay Field, 5% on eligible tiles)
     if (result.outcome !== 'whiff' && !result.gearDropItem) {
       const enhancedDrop = rollEnhancedDrop(mapId, tileType);
@@ -599,6 +615,48 @@ export default function ScanScreen({ route }: any) {
     setShowSessionEnd(false);
     saveGameState(state);
     nav.goBack();
+  };
+
+  // ─── Combat handlers ───
+  const handleCombatVictory = (bonusScrap: number, bonusSupplies: number, lootBonus: number) => {
+    setShowCombat(false);
+    if (!combatTileId) return;
+
+    // Clear the tile completely
+    dispatch({ type: 'CLEAR_TILE', payload: combatTileId });
+
+    // Award resources
+    dispatch({ type: 'APPLY_RESOURCE_CHANGES', payload: { scrap: bonusScrap, supplies: bonusSupplies } });
+
+    // Roll for gear drop based on enemy type
+    const enemyType = combatEnemy?.type || 'anomaly';
+    const enhancedDrop = rollEnhancedDrop(mapId, enemyType);
+    if (enhancedDrop) dispatch({ type: 'ADD_GEAR_ITEM', payload: enhancedDrop });
+    const ultraDrop = rollUltraDrop(enemyType, ss.streakDay);
+    if (ultraDrop) dispatch({ type: 'ADD_GEAR_ITEM', payload: ultraDrop });
+
+    AudioManager.playSfx('sector_complete');
+    setCombatEnemy(null);
+    setCombatTileId(null);
+
+    saveGameState(state);
+  };
+
+  const handleCombatDefeat = (hpLost: number) => {
+    setShowCombat(false);
+
+    dispatch({ type: 'TAKE_DAMAGE', payload: hpLost });
+
+    AudioManager.playSfx('scan_loss');
+    setCombatEnemy(null);
+    setCombatTileId(null);
+
+    if (state.playerHealth - hpLost <= 0) {
+      setFailReason('hp_zero');
+      setShowFailedMission(true);
+    } else {
+      handleSessionComplete();
+    }
   };
 
   const remainingAfterLast = lastResult
@@ -1561,6 +1619,20 @@ export default function ScanScreen({ route }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* Combat Encounter */}
+      {combatEnemy && (
+        <CombatOverlay
+          visible={showCombat}
+          enemy={combatEnemy}
+          playerHp={state.playerHealth}
+          playerMaxHp={100}
+          gearInventory={ss.gearInventory}
+          activeGearSlots={ss.activeGearSlots}
+          onVictory={handleCombatVictory}
+          onDefeat={handleCombatDefeat}
+        />
+      )}
     </ScreenWrapper>
   );
 }
