@@ -128,6 +128,16 @@ export default function ScanScreen({ route }: any) {
   const totalTiles = ss.currentSector.tiles.length;
   const gridSize = ss.currentSector.gridSize || 5;
 
+  // Immediate save after every scan completes (scansRemaining changes)
+  // This ensures map progress, resources, and gear survive app kills
+  const prevScansRef = useRef(ss.scansRemaining);
+  useEffect(() => {
+    if (prevScansRef.current !== ss.scansRemaining) {
+      prevScansRef.current = ss.scansRemaining;
+      saveGameState(state);
+    }
+  }, [ss.scansRemaining, state]);
+
   // ─── Effective whiff rates (live with gear + streak) ───
   const whiffRates: Record<ScanType, number> = {
     scout: getEffectiveWhiffRate('scout', ss.streakDay, ss.activeGearSlots, ss.gearInventory),
