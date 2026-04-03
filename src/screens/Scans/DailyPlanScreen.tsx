@@ -34,6 +34,7 @@ export default function DailyPlanScreen() {
   const { state, dispatch } = useGame();
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
+  const accent = state.accentColor || colors.neonGreen;
 
   // ─── Dev shortcut: 3 taps (3s window) OR long-press to unlock 99 scans ───
   const devTapCount = useRef(0);
@@ -192,10 +193,10 @@ export default function DailyPlanScreen() {
                 key={i}
                 style={[
                   styles.streakDot,
-                  i < ss.streakDay && styles.streakDotActive,
+                  i < ss.streakDay && { ...styles.streakDotActive, borderColor: accent, backgroundColor: accent + '20' },
                 ]}
               >
-                <Text style={[styles.streakDotText, i < ss.streakDay && styles.streakDotTextActive]}>
+                <Text style={[styles.streakDotText, i < ss.streakDay && { color: accent }]}>
                   {i + 1}
                 </Text>
               </View>
@@ -245,7 +246,7 @@ export default function DailyPlanScreen() {
         {/* ─── 2. SCANS & MODIFIERS ─── */}
         <View style={styles.scanCard}>
           <View style={styles.scanCardTop}>
-            <Text style={styles.scanNumber}>{ss.scansRemaining}</Text>
+            <Text style={[styles.scanNumber, { color: accent }]}>{ss.scansRemaining}</Text>
             <View style={styles.scanLabelCol}>
               <Text style={styles.scanLabel}>Scans</Text>
               <Text style={styles.scanLabelSub}>Before the signal resets</Text>

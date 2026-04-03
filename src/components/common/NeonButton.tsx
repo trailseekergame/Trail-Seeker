@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { useGame } from '../../context/GameContext';
 import AudioManager from '../../services/audioManager';
 
 interface Props {
@@ -25,11 +26,14 @@ export default function NeonButton({
   textStyle,
   icon,
 }: Props) {
+  const { state } = useGame();
+  const accent = state?.accentColor || colors.neonGreen;
+
   const variantStyles = {
     primary: {
-      bg: colors.neonGreen + '15',
-      text: colors.neonGreen,
-      border: colors.neonGreen,
+      bg: accent + '15',
+      text: accent,
+      border: accent,
     },
     secondary: {
       bg: 'transparent',

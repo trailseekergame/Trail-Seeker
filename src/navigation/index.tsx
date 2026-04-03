@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../context/GameContext';
 import { useNotifications } from '../hooks/useNotifications';
@@ -55,15 +55,17 @@ const screenOptions = {
 };
 
 function TabIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
+  const { state } = useGame();
+  const accent = state?.accentColor || colors.tabActive;
   return (
     <View style={tabIconStyles.container}>
       <MaterialCommunityIcons
         name={icon as any}
         size={focused ? 24 : 22}
-        color={focused ? colors.tabActive : colors.tabInactive}
+        color={focused ? accent : colors.tabInactive}
       />
       <Text
-        style={[tabIconStyles.label, focused && tabIconStyles.labelActive]}
+        style={[tabIconStyles.label, focused && { ...tabIconStyles.labelActive, color: accent }]}
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.8}
@@ -239,8 +241,19 @@ export default function AppNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.neonGreen, fontSize: fontSize.xl }}>Loading...</Text>
+      <View style={{ flex: 1, backgroundColor: '#060A0E', alignItems: 'center', justifyContent: 'center' }}>
+        <Image
+          source={require('../assets/splash_banner.jpg')}
+          style={{ width: '90%', height: undefined, aspectRatio: 3.5, marginBottom: 24 }}
+          resizeMode="contain"
+        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 6, height: 6, backgroundColor: colors.neonGreen, opacity: 0.6 }} />
+          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: 'monospace', letterSpacing: 3 }}>
+            INITIALIZING
+          </Text>
+          <View style={{ width: 6, height: 6, backgroundColor: colors.neonGreen, opacity: 0.6 }} />
+        </View>
       </View>
     );
   }
