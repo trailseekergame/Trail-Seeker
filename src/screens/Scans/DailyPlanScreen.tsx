@@ -34,22 +34,35 @@ export default function DailyPlanScreen() {
   const nav = useNavigation<any>();
   const ss = state.seekerScans;
 
-  // ─── Dev shortcut: tap header 5x to unlock 99 scans ───
+  // ─── Dev shortcut: 3 taps (3s window) OR long-press to unlock 99 scans ───
   const devTapCount = useRef(0);
   const devTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerDevMode = useCallback(() => {
+    console.log('[DEV] ✅ Dev mode triggered — unlocking 99 scans + gear');
+    dispatch({ type: 'UPDATE_SCAN_TOTAL', payload: 99 });
+    dispatch({ type: 'DEV_UNLOCK_GEAR' });
+    AudioManager.playSfx('sector_complete');
+    AudioManager.vibrate('heavy');
+  }, [dispatch]);
   const handleDevTap = useCallback(() => {
     if (!__DEV__) return;
     devTapCount.current += 1;
+    console.log(`[DEV] Tap ${devTapCount.current}/3`);
     if (devTapTimer.current) clearTimeout(devTapTimer.current);
-    devTapTimer.current = setTimeout(() => { devTapCount.current = 0; }, 1500);
-    if (devTapCount.current >= 5) {
+    devTapTimer.current = setTimeout(() => {
+      console.log('[DEV] Tap timer reset');
       devTapCount.current = 0;
-      dispatch({ type: 'UPDATE_SCAN_TOTAL', payload: 99 });
-      dispatch({ type: 'DEV_UNLOCK_GEAR' });
-      AudioManager.playSfx('sector_complete');
-      AudioManager.vibrate('heavy');
+    }, 3000);
+    if (devTapCount.current >= 3) {
+      devTapCount.current = 0;
+      triggerDevMode();
     }
-  }, [dispatch]);
+  }, [triggerDevMode]);
+  const handleDevLongPress = useCallback(() => {
+    if (!__DEV__) return;
+    console.log('[DEV] Long-press detected');
+    triggerDevMode();
+  }, [triggerDevMode]);
 
   // Initialize gear & sector if empty
   useEffect(() => {
@@ -125,7 +138,14 @@ export default function DailyPlanScreen() {
             style={styles.headerAvatar}
             resizeMode="cover"
           />
-          <TouchableOpacity onPress={handleDevTap} activeOpacity={1}>
+          <TouchableOpacity
+            onPress={handleDevTap}
+            onLongPress={handleDevLongPress}
+            delayLongPress={800}
+            activeOpacity={1}
+            style={styles.devTapZone}
+            hitSlop={{ top: 16, bottom: 16, left: 24, right: 24 }}
+          >
             <Text style={styles.headerTitle}>
               Day <Text style={styles.headerDayNum}>{ss.streakDay}</Text> — Running Dark
             </Text>
@@ -457,6 +477,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neonGreen + '40',
     marginBottom: spacing.sm,
+  },
+  devTapZone: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   headerTitle: {
     fontSize: fontSize.xl,
