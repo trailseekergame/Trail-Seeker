@@ -60,7 +60,7 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
       'A collapsed highway interchange. Directorate patrols avoid the wreckage, which means there\'s salvage underneath.',
     background: require('../assets/backgrounds/bg_broken_overpass.jpg'),
     icon: 'road-variant',
-    gridSize: 5,
+    gridSize: 6,
     hardenedRate: 0.22,
     anomalyRate: 0.12,
     resourceRate: 0.20,
@@ -80,7 +80,7 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
       'An abandoned communications array. The dishes still hum with residual power — and buried data.',
     background: require('../assets/backgrounds/bg_relay_field.jpg'),
     icon: 'satellite-uplink',
-    gridSize: 5,
+    gridSize: 6,
     hardenedRate: 0.25,
     anomalyRate: 0.16,
     resourceRate: 0.16,
@@ -137,11 +137,12 @@ export function generateSectorForMap(mapId: MapId): Sector {
       if (col < gridSize - 1) adjacentTo.push(`tile-${row}-${col + 1}`);
 
       // Durability based on tile type + map hardened rate
-      let dur = 1;
+      // Base durability 2 for longer maps (~21 days per map)
+      let dur = 2;
       if (type === 'cleared') dur = 0;
-      else if (type === 'boss') dur = 3;
-      else if (type === 'anomaly') dur = 2;
-      else if (Math.random() < mapDef.hardenedRate) dur = 2;
+      else if (type === 'boss') dur = 4;
+      else if (type === 'anomaly') dur = 3;
+      else if (Math.random() < mapDef.hardenedRate) dur = 3;
 
       const maxDur = type === 'cleared' ? 1 : dur;
 
