@@ -384,7 +384,8 @@ export default function ScanScreen({ route }: any) {
 
     // Check for combat encounter on boss/anomaly tiles (non-whiff scans only)
     if (result.outcome !== 'whiff' && (selectedTile.type === 'boss' || selectedTile.type === 'anomaly')) {
-      const combatEnemyData = createEnemy(selectedTile.type as 'boss' | 'anomaly');
+      const isHardMode = state.currentMapId.includes('_hard');
+      const combatEnemyData = createEnemy(selectedTile.type as 'boss' | 'anomaly', isHardMode);
       setCombatEnemy(combatEnemyData);
       setCombatTileId(selectedTile.id);
       setShowCombat(true);

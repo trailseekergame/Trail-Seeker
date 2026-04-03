@@ -6,7 +6,8 @@ import { BROKEN_OVERPASS_TILES, RELAY_FIELD_TILES, AuthoredTileDef } from './aut
  * Each map has a background, grid config, unlock rule, and story context.
  */
 
-export type MapId = 'camp' | 'broken_overpass' | 'relay_field';
+import { MapId } from '../types';
+export { MapId };
 
 export interface MapDef {
   id: MapId;
@@ -90,10 +91,46 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     debriefing:
       'Vault cracked. The data cores are yours. Back to camp — your gear needs recalibrating after running that deep.',
   },
+  broken_overpass_hard: {
+    id: 'broken_overpass_hard',
+    name: 'Broken Overpass [HARDENED]',
+    subtitle: 'Sector 7G — Hardened Zone',
+    description:
+      'The wreckage has been picked over. What\'s left is guarded by heavier patrols and tougher drones. Better drops for those who survive.',
+    background: require('../assets/backgrounds/bg_broken_overpass.jpg'),
+    icon: 'road-variant',
+    gridSize: 6,
+    hardenedRate: 0.35,
+    anomalyRate: 0.22,
+    resourceRate: 0.15,
+    requiresCompleted: ['broken_overpass'],
+    briefing:
+      'Hardened mode. Same overpass, worse company. The Directorate sent reinforcements. Enemies hit harder, tiles take more hits, but the salvage is worth it.',
+    debriefing:
+      'You made it back. Again. The overpass has nothing left to give. Time to move on.',
+  },
+  relay_field_hard: {
+    id: 'relay_field_hard',
+    name: 'Relay Field [HARDENED]',
+    subtitle: 'Sector 12E — Hardened Zone',
+    description:
+      'The underground vault has been breached. Directorate countermeasures are active. Armored sentinels patrol the corridors.',
+    background: require('../assets/backgrounds/bg_relay_field.jpg'),
+    icon: 'satellite-uplink',
+    gridSize: 6,
+    hardenedRate: 0.40,
+    anomalyRate: 0.25,
+    resourceRate: 0.12,
+    requiresCompleted: ['relay_field'],
+    briefing:
+      'Hardened mode. Directorate Wardens guard every corridor. Your scanner will need to cut through active jamming.',
+    debriefing:
+      'The vault is empty now. Whatever was worth taking, you took it. Season complete.',
+  },
 };
 
 /** Ordered list of mission maps (excludes camp) */
-export const MISSION_MAPS: MapId[] = ['broken_overpass', 'relay_field'];
+export const MISSION_MAPS: MapId[] = ['broken_overpass', 'relay_field', 'broken_overpass_hard', 'relay_field_hard'];
 
 /** Pick N random items from an array without replacement */
 function pickN<T>(arr: T[], n: number): T[] {

@@ -184,7 +184,7 @@ export type TrailOverReason = 'hp_zero' | 'run_complete';
 
 export type AvatarId = 'operator_a' | 'operator_b';
 
-export type MapId = 'camp' | 'broken_overpass' | 'relay_field';
+export type MapId = 'camp' | 'broken_overpass' | 'relay_field' | 'broken_overpass_hard' | 'relay_field_hard';
 
 export interface GameState {
   // Player identity

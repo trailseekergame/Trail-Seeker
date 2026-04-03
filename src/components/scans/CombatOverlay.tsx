@@ -5,8 +5,8 @@ import { colors, spacing, fontSize, fontMono } from '../../theme';
 import NeonButton from '../common/NeonButton';
 import AudioManager from '../../services/audioManager';
 import {
-  Enemy, CombatAction,
-  resolveTurn, getWeaponDamage, getWeaponScrapBonus,
+  Enemy, CombatAction, EnemyIntent,
+  resolveTurn, getWeaponDamage, getWeaponScrapBonus, rollEnemyIntent,
 } from '../../systems/combatEngine';
 import { GearItem, GearSlotId } from '../../types';
 
@@ -32,8 +32,9 @@ export default function CombatOverlay({
   const [currentPlayerHp, setCurrentPlayerHp] = useState(playerHp);
   const [lootBonus, setLootBonus] = useState(0);
   const [turnLog, setTurnLog] = useState<string[]>([]);
-  const [isEnemyCharging, setIsEnemyCharging] = useState(false);
   const [turnCount, setTurnCount] = useState(0);
+  const [shownIntent, setShownIntent] = useState<EnemyIntent | null>(null);
+  const [realIntent, setRealIntent] = useState<EnemyIntent>('targeting');
 
   const weaponDamage = getWeaponDamage(gearInventory, activeGearSlots);
   const weaponScrapBonus = getWeaponScrapBonus(gearInventory, activeGearSlots);
@@ -46,14 +47,21 @@ export default function CombatOverlay({
       setCurrentPlayerHp(playerHp);
       setLootBonus(0);
       setTurnLog([]);
-      setIsEnemyCharging(false);
       setTurnCount(0);
+      setShownIntent(null);
     }
   }, [visible]);
+
+  const rollNextIntent = () => {
+    const intent = rollEnemyIntent();
+    setShownIntent(intent.shown);
+    setRealIntent(intent.real);
+  };
 
   const startCombat = () => {
     AudioManager.playSfx('scan_press');
     AudioManager.vibrate('medium');
+    rollNextIntent();
     setPhase('player_turn');
   };
 
@@ -61,42 +69,43 @@ export default function CombatOverlay({
     setPhase('resolving');
     AudioManager.vibrate('light');
 
-    const result = resolveTurn(action, enemy, weaponDamage, isEnemyCharging);
+    const result = resolveTurn(action, enemy, weaponDamage, realIntent);
 
-    // Update enemy HP
     const newEnemyHp = result.enemyHpAfter;
     setEnemy(prev => ({ ...prev, hp: newEnemyHp }));
 
-    // Update player HP
     const newPlayerHp = Math.max(0, currentPlayerHp - result.enemyDamageDealt);
     setCurrentPlayerHp(newPlayerHp);
 
-    // Track scan loot bonus
-    if (action === 'scan') {
-      setLootBonus(prev => prev + 1);
+    if (action === 'scan') setLootBonus(prev => prev + 1);
+
+    // Build turn log with telegraph context
+    const logs: string[] = [];
+    if (action === 'attack' && realIntent === 'exposed') {
+      logs.push(`CRITICAL! You hit the opening for ${result.playerDamageDealt} damage.`);
+    } else if (action === 'attack') {
+      logs.push(`You strike for ${result.playerDamageDealt} damage.`);
+    }
+    if (action === 'defend') logs.push('You brace for impact.');
+    if (action === 'scan' && realIntent === 'scanning') {
+      logs.push('You disrupt the scan — enemy signal jammed. (+1 loot)');
+    } else if (action === 'scan') {
+      logs.push('You scan for weaknesses. (+1 loot bonus)');
     }
 
-    // Track enemy charging
-    setIsEnemyCharging(result.enemyAction === 'charge');
-
-    // Build turn log
-    const logs: string[] = [];
-    if (action === 'attack') logs.push(`You strike for ${result.playerDamageDealt} damage.`);
-    if (action === 'defend') logs.push('You brace for impact.');
-    if (action === 'scan') logs.push('You scan for weaknesses. (+1 loot bonus)');
-
-    if (result.enemyAction === 'charge') {
-      logs.push(`${enemy.name} charges up...`);
-    } else if (result.enemyAction === 'heavy') {
-      logs.push(`${enemy.name} lands a HEAVY hit! ${result.playerDefending ? `Blocked: ${result.enemyDamageDealt}` : result.enemyDamageDealt} damage.`);
+    // Enemy result
+    if (result.enemyDamageDealt === 0) {
+      logs.push(`${enemy.name} missed!`);
+    } else if (realIntent === 'targeting') {
+      logs.push(`${enemy.name} fires a focused shot! ${result.playerDefending ? `Blocked: ${result.enemyDamageDealt}` : result.enemyDamageDealt} damage.`);
     } else {
       logs.push(`${enemy.name} attacks. ${result.playerDefending ? `Blocked: ${result.enemyDamageDealt}` : result.enemyDamageDealt} damage.`);
     }
 
     setTurnLog(logs);
     setTurnCount(prev => prev + 1);
+    setShownIntent(null); // clear telegraph for resolving phase
 
-    // Resolve outcome after a brief pause
     setTimeout(() => {
       if (newEnemyHp <= 0) {
         AudioManager.playSfx('gambit_win');
@@ -107,10 +116,11 @@ export default function CombatOverlay({
         AudioManager.vibrate('heavy');
         setPhase('defeat');
       } else {
+        rollNextIntent(); // roll next telegraph
         setPhase('player_turn');
       }
     }, 800);
-  }, [enemy, currentPlayerHp, weaponDamage, isEnemyCharging]);
+  }, [enemy, currentPlayerHp, weaponDamage, realIntent]);
 
   const handleVictory = () => {
     const totalScrap = enemy.scrapReward + (lootBonus * 2) + weaponScrapBonus;
@@ -141,8 +151,30 @@ export default function CombatOverlay({
               <View style={[s.hpBarFill, { width: `${enemyHpPct}%`, backgroundColor: enemy.type === 'boss' ? colors.neonRed : colors.neonAmber }]} />
             </View>
             <Text style={s.hpText}>{enemy.hp}/{enemy.maxHp} HP</Text>
-            {isEnemyCharging && phase === 'player_turn' && (
-              <Text style={s.chargingText}>CHARGING...</Text>
+            {shownIntent && phase === 'player_turn' && (
+              <View style={[s.intentBadge, {
+                borderColor: shownIntent === 'targeting' ? colors.neonRed + '60'
+                  : shownIntent === 'exposed' ? colors.neonGreen + '60'
+                  : colors.neonAmber + '60',
+                backgroundColor: shownIntent === 'targeting' ? colors.neonRed + '10'
+                  : shownIntent === 'exposed' ? colors.neonGreen + '10'
+                  : colors.neonAmber + '10',
+              }]}>
+                <Text style={[s.intentText, {
+                  color: shownIntent === 'targeting' ? colors.neonRed
+                    : shownIntent === 'exposed' ? colors.neonGreen
+                    : colors.neonAmber,
+                }]}>
+                  {shownIntent === 'targeting' ? 'TARGETING...'
+                    : shownIntent === 'exposed' ? 'EXPOSED...'
+                    : 'SCANNING YOU...'}
+                </Text>
+                <Text style={s.intentHint}>
+                  {shownIntent === 'targeting' ? 'Counter: DEFEND'
+                    : shownIntent === 'exposed' ? 'Counter: ATTACK'
+                    : 'Counter: SCAN'}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -251,7 +283,9 @@ const s = StyleSheet.create({
   hpBarTrack: { width: '100%', height: 6, backgroundColor: colors.panelBorder, marginTop: spacing.sm },
   hpBarFill: { height: '100%' },
   hpText: { fontSize: 10, color: colors.textMuted, fontFamily: fontMono, marginTop: 4 },
-  chargingText: { fontSize: fontSize.sm, color: colors.neonAmber, fontWeight: '700', fontFamily: fontMono, letterSpacing: 2, marginTop: spacing.xs },
+  intentBadge: { borderWidth: 1.5, padding: spacing.sm, marginTop: spacing.sm, alignItems: 'center', width: '100%' },
+  intentText: { fontSize: fontSize.md, fontWeight: '800', fontFamily: fontMono, letterSpacing: 3 },
+  intentHint: { fontSize: 9, color: colors.textMuted, fontFamily: fontMono, letterSpacing: 1, marginTop: 2 },
 
   // Log
   logSection: { width: '100%', minHeight: 60, borderWidth: 1, borderColor: colors.panelBorder, padding: spacing.sm, marginBottom: spacing.md, backgroundColor: colors.background },

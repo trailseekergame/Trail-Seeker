@@ -24,28 +24,29 @@ export interface CombatTurnResult {
   playerDefending: boolean;
 }
 
-export function createEnemy(tileType: 'anomaly' | 'boss'): Enemy {
+export function createEnemy(tileType: 'anomaly' | 'boss', hardMode: boolean = false): Enemy {
+  const scale = hardMode ? 1.5 : 1;
   if (tileType === 'boss') {
     return {
-      name: 'Directorate Sentinel',
-      maxHp: 50,
-      hp: 50,
-      minDamage: 8,
-      maxDamage: 14,
-      scrapReward: 12,
-      supplyReward: 3,
+      name: hardMode ? 'Directorate Warden' : 'Directorate Sentinel',
+      maxHp: Math.round(50 * scale),
+      hp: Math.round(50 * scale),
+      minDamage: Math.round(8 * scale),
+      maxDamage: Math.round(14 * scale),
+      scrapReward: Math.round(12 * scale),
+      supplyReward: Math.round(3 * scale),
       type: 'boss',
       icon: 'robot-angry',
     };
   }
   return {
-    name: 'Rogue Drone',
-    maxHp: 25,
-    hp: 25,
-    minDamage: 5,
-    maxDamage: 8,
-    scrapReward: 5,
-    supplyReward: 0,
+    name: hardMode ? 'Armored Drone' : 'Rogue Drone',
+    maxHp: Math.round(25 * scale),
+    hp: Math.round(25 * scale),
+    minDamage: Math.round(5 * scale),
+    maxDamage: Math.round(8 * scale),
+    scrapReward: Math.round(5 * scale),
+    supplyReward: hardMode ? 1 : 0,
     type: 'anomaly',
     icon: 'drone',
   };
@@ -69,43 +70,62 @@ export function getWeaponScrapBonus(gearInventory: GearItem[], activeSlots: Gear
   return stats?.scrap_bonus || 0;
 }
 
-export function rollEnemyAction(isCharging: boolean): 'attack' | 'heavy' | 'charge' {
-  if (isCharging) return 'heavy'; // charged attack always fires as heavy on next turn
-  const roll = Math.random();
-  if (roll < 0.10) return 'charge';
-  if (roll < 0.30) return 'heavy';
-  return 'attack';
-}
+// ─── Telegraph system: enemy shows intent, player reads and counters ───
+export type EnemyIntent = 'targeting' | 'exposed' | 'scanning';
+export const FEINT_RATE = 0.20; // 20% chance telegraph is a lie
 
-export function computeEnemyDamage(enemy: Enemy, action: 'attack' | 'heavy' | 'charge'): number {
-  if (action === 'charge') return 0; // charging, no damage this turn
-  const base = enemy.minDamage + Math.floor(Math.random() * (enemy.maxDamage - enemy.minDamage + 1));
-  if (action === 'heavy') return Math.round(base * 1.5);
-  return base;
+export function rollEnemyIntent(): { shown: EnemyIntent; real: EnemyIntent } {
+  const intents: EnemyIntent[] = ['targeting', 'exposed', 'scanning'];
+  const real = intents[Math.floor(Math.random() * intents.length)];
+  const feint = Math.random() < FEINT_RATE;
+  const shown = feint ? intents[Math.floor(Math.random() * intents.length)] : real;
+  return { shown, real };
 }
 
 export function resolveTurn(
   playerAction: CombatAction,
   enemy: Enemy,
   weaponDamage: number,
-  isEnemyCharging: boolean,
+  realIntent: EnemyIntent,
 ): CombatTurnResult {
   // Player damage
   let playerDamageDealt = 0;
   if (playerAction === 'attack') {
-    // Small random variance: weaponDamage ± 20%
     const variance = 0.8 + Math.random() * 0.4;
     playerDamageDealt = Math.max(1, Math.round(weaponDamage * variance));
+    // Bonus damage if enemy is exposed
+    if (realIntent === 'exposed') {
+      playerDamageDealt = Math.round(playerDamageDealt * 1.5);
+    }
   }
 
-  // Enemy action
-  const enemyAction = rollEnemyAction(isEnemyCharging);
-  let enemyDamageDealt = computeEnemyDamage(enemy, enemyAction);
+  // Enemy damage based on real intent
+  const base = enemy.minDamage + Math.floor(Math.random() * (enemy.maxDamage - enemy.minDamage + 1));
+  let enemyDamageDealt: number;
+  let enemyAction: 'attack' | 'heavy' | 'charge';
 
-  // Defense halves incoming
+  if (realIntent === 'targeting') {
+    enemyDamageDealt = Math.round(base * 1.2); // focused attack
+    enemyAction = 'heavy';
+  } else if (realIntent === 'exposed') {
+    enemyDamageDealt = Math.round(base * 0.5); // weak attack
+    enemyAction = 'attack';
+  } else {
+    // scanning
+    enemyDamageDealt = Math.round(base * 0.8);
+    enemyAction = 'attack';
+  }
+
+  // Player counters
   const playerDefending = playerAction === 'defend';
   if (playerDefending && enemyDamageDealt > 0) {
     enemyDamageDealt = Math.max(1, Math.round(enemyDamageDealt * 0.5));
+  }
+
+  // Scan counter: if player scans when enemy scans, enemy misses
+  if (playerAction === 'scan' && realIntent === 'scanning') {
+    enemyDamageDealt = 0;
+    enemyAction = 'charge'; // reuse 'charge' to indicate miss in the log
   }
 
   return {
