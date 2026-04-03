@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Animated,
+  Image,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/common/ScreenWrapper';
@@ -18,9 +19,14 @@ import AudioManager from '../services/audioManager';
 
 // ─── Types ───
 
-type Step = 'boot' | 'callsign' | 'origin' | 'rig' | 'confirm';
+type Step = 'boot' | 'callsign' | 'origin' | 'rig' | 'avatar' | 'confirm';
 
-const STEPS: Step[] = ['boot', 'callsign', 'origin', 'rig', 'confirm'];
+const STEPS: Step[] = ['boot', 'callsign', 'origin', 'rig', 'avatar', 'confirm'];
+
+const AVATAR_OPTIONS = [
+  { id: 'operator_a' as const, label: 'OPERATOR A', desc: 'Relay Tech build. Lean, fast, cyan optics.', image: require('../assets/characters/operator_a.png') },
+  { id: 'operator_b' as const, label: 'OPERATOR B', desc: 'Wastes Drifter build. Heavy, armored, amber visor.', image: require('../assets/characters/operator_b.png') },
+];
 
 // ─── Random Callsign Generator ───
 
@@ -113,6 +119,7 @@ export default function OnboardingScreen() {
 
   // Step state
   const [step, setStep] = useState<Step>('boot');
+  const [selectedAvatar, setSelectedAvatar] = useState<'operator_a' | 'operator_b'>('operator_a');
   const [transitioning, setTransitioning] = useState(false);
 
   // Boot state
@@ -194,7 +201,7 @@ export default function OnboardingScreen() {
     AudioManager.vibrate('heavy');
 
     dispatch({ type: 'SET_PLAYER_NAME', payload: name });
-    dispatch({ type: 'SET_AVATAR', payload: 'operator_a' });
+    dispatch({ type: 'SET_AVATAR', payload: selectedAvatar });
 
     if (origin) {
       dispatch({
@@ -455,7 +462,7 @@ export default function OnboardingScreen() {
 
         <NeonButton
           title="> CALIBRATE"
-          onPress={() => goToStep('confirm')}
+          onPress={() => goToStep('avatar')}
           variant="primary"
           size="lg"
           style={styles.stepBtn}
@@ -465,7 +472,47 @@ export default function OnboardingScreen() {
   };
 
   // ═══════════════════════════════════════════
-  // STEP 5: CONFIRM
+  // STEP 5: AVATAR
+  // ═══════════════════════════════════════════
+
+  const renderAvatar = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.sectionLabel}>OPERATOR_SELECT</Text>
+      <Text style={styles.sectionHint}>Choose your operator.</Text>
+      <View style={styles.avatarRow}>
+        {AVATAR_OPTIONS.map((av) => (
+          <TouchableOpacity
+            key={av.id}
+            style={[
+              styles.avatarCard,
+              selectedAvatar === av.id && styles.avatarCardSelected,
+            ]}
+            onPress={() => {
+              setSelectedAvatar(av.id);
+              AudioManager.vibrate('light');
+            }}
+            activeOpacity={0.7}
+          >
+            <Image source={av.image} style={styles.avatarImage} resizeMode="contain" />
+            <Text style={[
+              styles.avatarLabel,
+              selectedAvatar === av.id && { color: colors.neonGreen },
+            ]}>{av.label}</Text>
+            <Text style={styles.avatarDesc}>{av.desc}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <NeonButton
+        title="Confirm operator"
+        onPress={() => goToStep('confirm')}
+        variant="primary"
+        style={{ marginTop: spacing.lg }}
+      />
+    </View>
+  );
+
+  // ═══════════════════════════════════════════
+  // STEP 6: CONFIRM
   // ═══════════════════════════════════════════
 
   const renderConfirm = () => {
@@ -541,6 +588,7 @@ export default function OnboardingScreen() {
       {!transitioning && step === 'callsign' && renderCallsign()}
       {!transitioning && step === 'origin' && renderOrigin()}
       {!transitioning && step === 'rig' && renderRig()}
+      {!transitioning && step === 'avatar' && renderAvatar()}
       {!transitioning && step === 'confirm' && renderConfirm()}
 
       {renderTransition()}
@@ -837,5 +885,43 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontStyle: 'italic',
     marginBottom: spacing.md,
+  },
+
+  // ─── Avatar selection ───
+  avatarRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  avatarCard: {
+    width: 140,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    padding: spacing.sm,
+    alignItems: 'center',
+  },
+  avatarCardSelected: {
+    borderColor: colors.neonGreen,
+    backgroundColor: colors.neonGreen + '08',
+  },
+  avatarImage: {
+    width: 100,
+    height: 130,
+    marginBottom: spacing.sm,
+  },
+  avatarLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 2,
+    color: colors.textMuted,
+  },
+  avatarDesc: {
+    fontSize: 8,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -232,6 +232,7 @@ function MainTabs() {
 
 export default function AppNavigator() {
   const { state, isLoading } = useGame();
+  const [splashDone, setSplashDone] = useState(false);
   useNotifications();
 
   useEffect(() => {
@@ -239,7 +240,13 @@ export default function AppNavigator() {
     return () => { AudioManager.cleanup(); };
   }, []);
 
-  if (isLoading) {
+  // Minimum 2s splash so the logo is always visible
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashDone(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading || !splashDone) {
     return (
       <View style={{ flex: 1, backgroundColor: '#060A0E', alignItems: 'center', justifyContent: 'center' }}>
         <Image
