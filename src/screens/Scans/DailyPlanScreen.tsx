@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -36,6 +36,31 @@ export default function DailyPlanScreen() {
   const ss = state.seekerScans;
   const accent = state.accentColor || colors.neonGreen;
 
+  // ─── Countdown to next scan reset (midnight local) ───
+  const [resetCountdown, setResetCountdown] = useState('');
+  useEffect(() => {
+    if (ss.scansRemaining > 0) return;
+    const tick = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+      if (diff <= 0) {
+        setResetCountdown('00:00:00');
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setResetCountdown(
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      );
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [ss.scansRemaining]);
+
   // ─── Dev shortcut: 3 taps (3s window) OR long-press to unlock 99 scans ───
   const devTapCount = useRef(0);
   const devTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,9 +92,9 @@ export default function DailyPlanScreen() {
     triggerDevMode();
   }, [triggerDevMode]);
 
-  // Initialize gear & sector if empty
+  // Initialize gear if somehow empty (should not happen — GameContext handles first boot)
   useEffect(() => {
-    if (ss.gearInventory.length === 0) {
+    if (ss.gearInventory.length === 0 && ss.currentSector.tiles.length === 0) {
       dispatch({
         type: 'INIT_SEEKER_SCANS',
         payload: { gearInventory: ALL_GEAR_ITEMS, sector: generateTestSector() },
@@ -136,11 +161,13 @@ export default function DailyPlanScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* ─── 1. HEADER: Avatar + Status + Streak ─── */}
         <View style={styles.header}>
-          <Image
-            source={AVATARS[state.avatarId].image}
-            style={styles.headerAvatar}
-            resizeMode="cover"
-          />
+          <View style={styles.headerAvatarClip}>
+            <Image
+              source={AVATARS[state.avatarId].image}
+              style={styles.headerAvatarImg}
+              resizeMode="cover"
+            />
+          </View>
           <TouchableOpacity
             onPress={handleDevTap}
             onLongPress={handleDevLongPress}
@@ -460,6 +487,13 @@ export default function DailyPlanScreen() {
               ? `Window closed. Day ${ss.streakDay} streak locked in — don't lose it tomorrow.`
               : 'Window closed. Signal resets at dawn.'}
           </Text>
+          {ss.scansRemaining <= 0 && resetCountdown !== '' && (
+            <View style={styles.resetTimerRow}>
+              <MaterialCommunityIcons name="clock-outline" size={14} color={colors.neonAmber} />
+              <Text style={styles.resetTimerLabel}>SIGNAL RESET IN</Text>
+              <Text style={styles.resetTimerValue}>{resetCountdown}</Text>
+            </View>
+          )}
           {ss.activeGearSlots.length === 0 && ss.gearInventory.length > 0 && (
             <Text style={styles.warningText}>Tip: Tap your gear above to equip it for bonus effects.</Text>
           )}
@@ -491,13 +525,21 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
-  headerAvatar: {
+  headerAvatarClip: {
     width: 48,
     height: 48,
     borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: colors.neonGreen + '40',
     marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  headerAvatarImg: {
+    width: 48,
+    height: 80,
+    position: 'absolute',
+    top: -4,
+    left: 0,
   },
   devTapZone: {
     paddingVertical: 8,
@@ -940,5 +982,30 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-
+  // ─── Reset timer ───
+  resetTimerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.neonAmber + '30',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  resetTimerLabel: {
+    fontSize: 9,
+    color: colors.neonAmber,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    letterSpacing: 2,
+  },
+  resetTimerValue: {
+    fontSize: fontSize.lg,
+    color: colors.neonAmber,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    letterSpacing: 2,
+  },
 });

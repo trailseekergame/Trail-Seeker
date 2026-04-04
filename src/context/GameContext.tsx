@@ -692,8 +692,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'REFRESH_MOVES' });
       }
 
-      // Initialize Seeker Scan system if not yet set up
-      if (!loaded.seekerScans || loaded.seekerScans.gearInventory.length === 0) {
+      // Initialize Seeker Scan system if not yet set up (truly fresh profile only)
+      const ss = loaded.seekerScans || INITIAL_GAME_STATE.seekerScans;
+      if (ss.gearInventory.length === 0 && ss.currentSector.tiles.length === 0) {
         // Fresh profile: start with starter gear only (1 basic vest)
         dispatch({
           type: 'INIT_SEEKER_SCANS',
@@ -703,7 +704,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       // Advance streak and conditionally refresh scans (only on new day)
       dispatch({ type: 'ADVANCE_STREAK' });
-      const scansState = loaded.seekerScans || INITIAL_GAME_STATE.seekerScans;
+      const scansState = ss;
       const today = new Date().toISOString().split('T')[0];
       if (scansState.lastRefreshDate !== today) {
         const totalScans = computeDailyScans(

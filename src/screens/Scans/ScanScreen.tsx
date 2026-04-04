@@ -723,18 +723,20 @@ export default function ScanScreen({ route }: any) {
       {/* ─── TOP BAR ─── */}
       <View style={styles.topBar}>
         <View style={styles.topBarLeft}>
-          <Text style={styles.sectorName}>{ss.currentSector.name}</Text>
-          <Text style={styles.tilesCount}>{tilesCleared}/{totalTiles} tiles cleared</Text>
+          <Text style={styles.sectorName} numberOfLines={1}>{ss.currentSector.name}</Text>
+          <Text style={styles.tilesCount}>{tilesCleared}/{totalTiles} tiles</Text>
+        </View>
+        <View style={styles.topBarCenter}>
+          <Text style={styles.scansNumber}>{ss.scansRemaining}</Text>
+          <Text style={styles.scansLabel}>scans</Text>
         </View>
         <View style={styles.topBarRight}>
-          <Text style={styles.scansRemaining}>
-            <Text style={styles.scansNumber}>{ss.scansRemaining}</Text> scans
-          </Text>
-          {/* HP + Rover mini status */}
           <View style={styles.topBarStatus}>
-            <MaterialCommunityIcons name="heart-pulse" size={11} color={state.playerHealth > 30 ? colors.neonGreen : colors.neonRed} />
+            <MaterialCommunityIcons name="heart-pulse" size={12} color={state.playerHealth > 30 ? colors.neonGreen : colors.neonRed} />
             <Text style={[styles.topBarStatusVal, { color: state.playerHealth > 30 ? colors.neonGreen : colors.neonRed }]}>{state.playerHealth}</Text>
-            <MaterialCommunityIcons name="car-side" size={11} color={state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber} style={{ marginLeft: 6 }} />
+          </View>
+          <View style={styles.topBarStatus}>
+            <MaterialCommunityIcons name="car-side" size={12} color={state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber} />
             <Text style={[styles.topBarStatusVal, { color: state.roverHealth > 30 ? colors.neonCyan : colors.neonAmber }]}>{state.roverHealth}</Text>
           </View>
         </View>
@@ -1688,42 +1690,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.surfaceLight,
     backgroundColor: colors.surface,
   },
-  topBarLeft: {},
-  topBarRight: { alignItems: 'flex-end' },
+  topBarLeft: {
+    flex: 1,
+    minWidth: 0,
+  },
+  topBarCenter: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  topBarRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
   topBarStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 2,
+    gap: 3,
   },
   topBarStatusVal: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
+    fontFamily: fontMono,
+    minWidth: 22,
+    textAlign: 'right',
   },
   sectorName: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     color: colors.textPrimary,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   tilesCount: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: 2,
+    fontFamily: fontMono,
   },
-  scansRemaining: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+  scansLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    letterSpacing: 1,
   },
   scansNumber: {
     fontSize: fontSize.xl,
     color: colors.neonGreen,
     fontWeight: '700',
+    fontFamily: fontMono,
   },
   scanTypeIcons: {
     flexDirection: 'row',
