@@ -15,14 +15,14 @@ const cosmeticItems: CosmeticItem[] = [
     unlocked: true,
   },
   {
-    id: 'cos-reaver-mask',
-    name: 'Reaver Half-Mask',
+    id: 'cos-raider-mask',
+    name: 'Raider Half-Mask',
     slot: 'headgear',
-    description: 'Scrap-metal face guard looted from a Reaver scout. Intimidating.',
+    description: 'Scrap-metal face guard looted from a raider scout. Intimidating.',
     icon: 'face-mask',
     rarity: 'uncommon',
     unlocked: false,
-    unlockCondition: 'Defeat Reaver Scouts 3 times',
+    unlockCondition: 'Defeat Raider Scouts 3 times',
   },
   {
     id: 'cos-directorate-visor',
@@ -66,14 +66,14 @@ const cosmeticItems: CosmeticItem[] = [
     unlockCondition: 'Trade with Iron Caravan 3 times',
   },
   {
-    id: 'cos-lantern-cloak',
-    name: 'Lantern Cloak',
+    id: 'cos-free-band-cloak',
+    name: 'Free Band Cloak',
     slot: 'coat',
-    description: 'A hooded cloak dyed in Lantern orange. Marks you as a friend.',
+    description: 'A hooded cloak dyed in Free Band orange. Marks you as a friend.',
     icon: 'wizard-hat',
     rarity: 'rare',
     unlocked: false,
-    unlockCondition: 'Help the Lanterns 3 times',
+    unlockCondition: 'Help the Free Bands 3 times',
   },
 
   // ─── BACK ITEM ───
@@ -140,7 +140,7 @@ const cosmeticItems: CosmeticItem[] = [
   },
   {
     id: 'cos-skull-decal',
-    name: 'Reaver Kill Marks',
+    name: 'Raider Kill Marks',
     slot: 'roverDecal',
     description: 'Tally marks scratched into the hull. Each one tells a story.',
     icon: 'skull',
@@ -192,13 +192,13 @@ const cosmeticItems: CosmeticItem[] = [
   },
   {
     id: 'cos-shiv-blade',
-    name: 'Reaver Shiv',
+    name: 'Raider Shiv',
     slot: 'weapon',
-    description: 'A jagged blade filed from a car spring. Reavers carry these as a rite of passage.',
+    description: 'A jagged blade filed from a car spring. Raiders carry these as a rite of passage.',
     icon: 'knife',
     rarity: 'uncommon',
     unlocked: false,
-    unlockCondition: 'Defeat Reaver Scouts',
+    unlockCondition: 'Defeat Raider Scouts',
   },
   {
     id: 'cos-arc-pistol',

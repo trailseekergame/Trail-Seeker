@@ -95,7 +95,7 @@ const zone01: Zone = {
       name: 'Overpass Camp',
       type: 'encounter',
       description:
-        'A Lantern outpost on the old I-80 overpass. They keep signal fires burning at night. Relatively safe — for a price.',
+        'A Free Band outpost on the old I-80 overpass. They keep signal fires burning at night. Relatively safe — for a price.',
       connections: ['node-03', 'node-03b', 'node-05', 'node-05b'],
       x: 30,
       y: 42,
@@ -132,7 +132,7 @@ const zone01: Zone = {
       name: 'Scrapfield',
       type: 'encounter',
       description:
-        'An open expanse of crushed vehicles and stripped machinery. Reaver Scouts have been spotted here. Good salvage if you survive.',
+        'An open expanse of crushed vehicles and stripped machinery. Raider scouts have been spotted here. Good salvage if you survive.',
       connections: ['node-05', 'node-07', 'node-07b'],
       x: 44,
       y: 38,
@@ -164,10 +164,10 @@ const zone01: Zone = {
     },
     {
       id: 'node-07b',
-      name: 'Reaver Den',
+      name: 'Raider Den',
       type: 'encounter',
       description:
-        'A fortified camp in a gutted shopping center. Reaver banners hang from every window. Dangerous, but they respect strength — and they trade.',
+        'A fortified camp in a gutted shopping center. Raider banners hang from every window. Dangerous, but they respect strength — and they trade.',
       connections: ['node-06', 'node-08'],
       x: 50,
       y: 48,
@@ -226,10 +226,10 @@ const zone01: Zone = {
     },
     {
       id: 'node-10b',
-      name: 'Lantern Waystation',
+      name: 'Free Band Waystation',
       type: 'settlement',
       description:
-        'A quiet Lantern encampment in the basement of a collapsed library. They offer shelter and healing to those who share their ideals — or their supplies.',
+        'A quiet Free Band encampment in the basement of a collapsed library. They offer shelter and healing to those who share their ideals — or their supplies.',
       connections: ['node-09b', 'node-11b'],
       x: 68,
       y: 60,
@@ -253,7 +253,7 @@ const zone01: Zone = {
       name: 'Tanker Graveyard',
       type: 'encounter',
       description:
-        'Rows of rusted fuel tankers, some still leaking. The smell is overwhelming. Reavers use them as cover; traders strip them for parts.',
+        'Rows of rusted fuel tankers, some still leaking. The smell is overwhelming. Raiders use them as cover; traders strip them for parts.',
       connections: ['node-10', 'node-10b', 'node-12b'],
       x: 74,
       y: 55,

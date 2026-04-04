@@ -13,11 +13,11 @@ import { GameEvent } from '../types';
 const zone01Events: GameEvent[] = [
   // ─── ENCOUNTERS ───
   {
-    id: 'evt-reaver-scouts',
-    title: 'Reaver Scouts',
+    id: 'evt-raider-scouts',
+    title: 'Raider Scouts',
     category: 'encounter',
     narration:
-      'Two figures peel out from behind a wrecked tanker, scrap-armor stitched together from license plates and riot shields. Reaver Scouts — young, desperate, and riding the edge between thrill and hunger. Your rover emits a warning chirp as they fan out, one high on the overpass, one low along the cracked shoulder.',
+      'Two figures peel out from behind a wrecked tanker, scrap-armor stitched together from license plates and riot shields. Raider scouts — young, desperate, and riding the edge between thrill and hunger. Your rover emits a warning chirp as they fan out, one high on the overpass, one low along the cracked shoulder.',
     choices: [
       {
         id: 'fight',
@@ -32,9 +32,9 @@ const zone01Events: GameEvent[] = [
           damage: 10,
           goodBonus: { scrap: 6 },
           badPenalty: { damage: 8 },
-          unlockCodex: ['codex-enemy-reavers'],
+          unlockCodex: ['codex-enemy-raiders'],
           alignmentChanges: { raiders: -15 },
-          setFlags: ['fought_reavers'],
+          setFlags: ['fought_raiders'],
         },
       },
       {
@@ -48,7 +48,7 @@ const zone01Events: GameEvent[] = [
           badNarration: 'You clip a support beam on the way through. The rover groans. You escape, but something\'s rattling now.',
           resourceChanges: { supplies: -2 },
           badPenalty: { damage: 5 },
-          unlockCodex: ['codex-enemy-reavers'],
+          unlockCodex: ['codex-enemy-raiders'],
         },
       },
       {
@@ -60,7 +60,7 @@ const zone01Events: GameEvent[] = [
             'You throw a pouch of parts at their feet. They rummage through it, grunting approval, and wave you on. Costly, but clean.',
           resourceChanges: { scrap: -5 },
           alignmentChanges: { raiders: 10 },
-          setFlags: ['bribed_reavers'],
+          setFlags: ['bribed_raiders'],
         },
       },
       {
@@ -75,7 +75,7 @@ const zone01Events: GameEvent[] = [
           goodBonus: { scrap: 5 },
           badPenalty: { damage: 8 },
           alignmentChanges: { raiders: -5 },
-          unlockCodex: ['codex-enemy-reavers'],
+          unlockCodex: ['codex-enemy-raiders'],
         },
       },
     ],
@@ -263,9 +263,9 @@ const zone01Events: GameEvent[] = [
         riskLevel: 'safe',
         outcome: {
           narration:
-            'You take what you need and mark the cache with a Lantern symbol. Maybe someone else will need it more.',
+            'You take what you need and mark the cache with a Free Band symbol. Maybe someone else will need it more.',
           resourceChanges: { supplies: 4 },
-          unlockCodex: ['codex-faction-lanterns'],
+          unlockCodex: ['codex-faction-free-bands'],
           alignmentChanges: { freeBands: 10 },
         },
       },
@@ -358,12 +358,12 @@ const zone01Events: GameEvent[] = [
     ],
   },
   {
-    id: 'evt-lantern-camp',
-    title: 'Lantern Signal Fire',
+    id: 'evt-free-band-camp',
+    title: 'Free Band Signal Fire',
     category: 'trade',
     nodeIds: ['node-04', 'node-10b'],
     narration:
-      'A signal fire burns atop the overpass — the Lanterns. A hooded figure beckons. "Rest here, friend. We ask only that you share what you can spare."',
+      'A signal fire burns atop the overpass — a Free Band outpost. A hooded figure beckons. "Rest here, friend. We ask only that you share what you can spare."',
     choices: [
       {
         id: 'share',
@@ -371,12 +371,12 @@ const zone01Events: GameEvent[] = [
         riskLevel: 'safe',
         outcome: {
           narration:
-            'You share a meal and sleep under guard. The Lanterns mend a crack in your rover\'s hull while you rest. Kindness still exists on the Trail.',
+            'You share a meal and sleep under guard. The Free Bands mend a crack in your rover\'s hull while you rest. Kindness still exists on the Trail.',
           resourceChanges: { supplies: -3 },
           heal: 15,
-          unlockCodex: ['codex-faction-lanterns'],
+          unlockCodex: ['codex-faction-free-bands'],
           alignmentChanges: { freeBands: 15 },
-          setFlags: ['shared_with_lanterns'],
+          setFlags: ['shared_with_free_bands'],
         },
       },
       {
@@ -387,23 +387,23 @@ const zone01Events: GameEvent[] = [
           narration:
             'They let you rest, but the warmth is noticeably less. Still — a safe night on the Trail is worth something.',
           heal: 5,
-          unlockCodex: ['codex-faction-lanterns'],
+          unlockCodex: ['codex-faction-free-bands'],
           alignmentChanges: { freeBands: 5 },
-          setFlags: ['helped_lanterns'],
+          setFlags: ['helped_free_bands'],
         },
       },
       {
-        id: 'lantern-ally',
-        text: 'Offer to run supplies for the Lanterns.',
+        id: 'free-band-ally',
+        text: 'Offer to run supplies for the Free Bands.',
         riskLevel: 'moderate',
-        requiresFlag: 'shared_with_lanterns',
+        requiresFlag: 'shared_with_free_bands',
         outcome: {
           narration: 'They recognize you. "Friend of the flame," the elder says. They outfit you properly — food, meds, and a safe route forward.',
           resourceChanges: { supplies: -5 },
           heal: 25,
           goodNarration: 'The elder clasps your hand. "You\'ve earned this." They open a locked chest — medical-grade supplies, pre-collapse.',
           goodBonus: { supplies: 8 },
-          unlockCodex: ['codex-faction-lanterns'],
+          unlockCodex: ['codex-faction-free-bands'],
           alignmentChanges: { freeBands: 20 },
         },
       },
@@ -730,7 +730,7 @@ const zone01Events: GameEvent[] = [
     category: 'trade',
     nodeIds: ['node-05', 'node-10', 'node-14'],
     narration:
-      'The Sunken Overpass hums with activity. Traders from three factions haggle under tarps. A mechanic offers rover repairs. A Lantern elder tends a cook fire. For a moment, it almost feels normal.',
+      'The Sunken Overpass hums with activity. Traders from three factions haggle under tarps. A mechanic offers rover repairs. A Free Band elder tends a cook fire. For a moment, it almost feels normal.',
     choices: [
       {
         id: 'repair',
@@ -759,7 +759,7 @@ const zone01Events: GameEvent[] = [
         outcome: {
           narration:
             'You listen to trader gossip. Someone mentions a "glass storm" moving through Zone 04. Another talks about a new Free Band route through the mountains.',
-          unlockCodex: ['codex-faction-lanterns', 'codex-faction-iron-caravan'],
+          unlockCodex: ['codex-faction-free-bands', 'codex-faction-iron-caravan'],
         },
       },
     ],

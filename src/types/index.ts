@@ -45,10 +45,10 @@ export type AlignmentFlag =
   | 'paid_directorate_toll'
   | 'bluffed_checkpoint'
   | 'ran_checkpoint'
-  | 'helped_lanterns'
-  | 'shared_with_lanterns'
-  | 'fought_reavers'
-  | 'bribed_reavers';
+  | 'helped_free_bands'
+  | 'shared_with_free_bands'
+  | 'fought_raiders'
+  | 'bribed_raiders';
 
 // ─── Trail Move Outcome System ───
 export type TrailOutcomeTier = 'good' | 'neutral' | 'bad';

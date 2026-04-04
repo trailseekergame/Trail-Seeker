@@ -79,7 +79,7 @@ const GOOD_OUTCOMES: Omit<TrailOutcome, 'tier'>[] = [
   },
   {
     title: 'Sheltered Cache',
-    narration: 'Someone left supplies in a sealed drainage pipe, marked with a Lantern glyph. Still good.',
+    narration: 'Someone left supplies in a sealed drainage pipe, marked with a Free Band glyph. Still good.',
     resourceChanges: { supplies: 4 },
   },
   {
