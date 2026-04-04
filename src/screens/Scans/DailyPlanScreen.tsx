@@ -359,57 +359,68 @@ export default function DailyPlanScreen() {
             )}
           </View>
 
-          {/* All gear — tappable to equip/unequip */}
+          {/* Best gear per slot — tappable to equip/unequip */}
           <View style={styles.gearGrid}>
-            {ss.gearInventory.map((gear) => {
-              const isActive = ss.activeGearSlots.includes(gear.slotId);
-              const canToggle = !ss.gearLockedToday;
-              const atMax = ss.activeGearSlots.length >= 3 && !isActive;
+            {(() => {
+              // Show only the best item per slotId (highest quality)
+              const QUALITY_RANK: Record<string, number> = { standard: 0, enhanced: 1, perfected: 2, ultra: 3 };
+              const bestBySlot = new Map<string, typeof ss.gearInventory[0]>();
+              for (const gear of ss.gearInventory) {
+                const existing = bestBySlot.get(gear.slotId);
+                if (!existing || (QUALITY_RANK[gear.quality] ?? 0) > (QUALITY_RANK[existing.quality] ?? 0)) {
+                  bestBySlot.set(gear.slotId, gear);
+                }
+              }
+              return Array.from(bestBySlot.values()).map((gear) => {
+                const isActive = ss.activeGearSlots.includes(gear.slotId);
+                const canToggle = !ss.gearLockedToday;
+                const atMax = ss.activeGearSlots.length >= 3 && !isActive;
 
-              return (
-                <TouchableOpacity
-                  key={gear.slotId}
-                  style={[
-                    styles.gearSlotCard,
-                    isActive && styles.gearSlotActive,
-                    !canToggle && styles.gearSlotLocked,
-                  ]}
-                  onPress={() => {
-                    if (!canToggle) return;
-                    AudioManager.playSfx('ui_tap');
-                    AudioManager.vibrate('light');
-                    if (isActive) {
-                      dispatch({
-                        type: 'SET_ACTIVE_GEAR',
-                        payload: ss.activeGearSlots.filter(s => s !== gear.slotId),
-                      });
-                    } else if (!atMax) {
-                      dispatch({
-                        type: 'SET_ACTIVE_GEAR',
-                        payload: [...ss.activeGearSlots, gear.slotId],
-                      });
-                    }
-                  }}
-                  activeOpacity={canToggle ? 0.7 : 1}
-                  disabled={!canToggle || (atMax && !isActive)}
-                >
-                  <MaterialCommunityIcons
-                    name={gear.icon as any}
-                    size={22}
-                    color={isActive ? colors.neonGreen : colors.textMuted}
-                  />
-                  <Text style={[styles.gearSlotName, isActive && { color: colors.textPrimary }]}>
-                    {gear.name}
-                  </Text>
-                  <Text style={[styles.gearSlotEffect, isActive && { color: colors.neonGreen }]}>
-                    {GEAR_SHORT[gear.slotId]}
-                  </Text>
-                  {isActive && (
-                    <View style={styles.gearEquippedDot} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+                return (
+                  <TouchableOpacity
+                    key={gear.slotId}
+                    style={[
+                      styles.gearSlotCard,
+                      isActive && styles.gearSlotActive,
+                      !canToggle && styles.gearSlotLocked,
+                    ]}
+                    onPress={() => {
+                      if (!canToggle) return;
+                      AudioManager.playSfx('ui_tap');
+                      AudioManager.vibrate('light');
+                      if (isActive) {
+                        dispatch({
+                          type: 'SET_ACTIVE_GEAR',
+                          payload: ss.activeGearSlots.filter(s => s !== gear.slotId),
+                        });
+                      } else if (!atMax) {
+                        dispatch({
+                          type: 'SET_ACTIVE_GEAR',
+                          payload: [...ss.activeGearSlots, gear.slotId],
+                        });
+                      }
+                    }}
+                    activeOpacity={canToggle ? 0.7 : 1}
+                    disabled={!canToggle || (atMax && !isActive)}
+                  >
+                    <MaterialCommunityIcons
+                      name={gear.icon as any}
+                      size={22}
+                      color={isActive ? colors.neonGreen : colors.textMuted}
+                    />
+                    <Text style={[styles.gearSlotName, isActive && { color: colors.textPrimary }]}>
+                      {gear.name}
+                    </Text>
+                    <Text style={[styles.gearSlotEffect, isActive && { color: colors.neonGreen }]}>
+                      {GEAR_SHORT[gear.slotId]}
+                    </Text>
+                    {isActive && (
+                      <View style={styles.gearEquippedDot} />
+                    )}
+                  </TouchableOpacity>
+                );
+              });
+            })()}
           </View>
 
           {/* Coach: gear matters */}
