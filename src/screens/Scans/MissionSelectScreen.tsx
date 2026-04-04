@@ -28,10 +28,20 @@ export default function MissionSelectScreen() {
     const mapDef = MAP_DEFS[mapId];
     const isCompleted = state.completedMapIds.includes(mapId);
 
-    // Generate a fresh sector for this map
-    const sector = generateSectorForMap(mapId);
+    // Only generate a fresh sector if:
+    // 1. We're switching to a different map than the one currently loaded, OR
+    // 2. The current sector for this map was fully completed (re-run)
+    const currentSector = state.seekerScans.currentSector;
+    const isResumingSameMap = state.currentMapId === mapId
+      && currentSector.tiles.length > 0
+      && !currentSector.completed;
+
     dispatch({ type: 'SET_CURRENT_MAP', payload: mapId });
-    dispatch({ type: 'LOAD_SECTOR_FOR_MAP', payload: sector });
+
+    if (!isResumingSameMap) {
+      const sector = generateSectorForMap(mapId);
+      dispatch({ type: 'LOAD_SECTOR_FOR_MAP', payload: sector });
+    }
 
     // Navigate to the scan screen
     nav.navigate('ScanMain', { mapId, briefing: isCompleted ? undefined : mapDef.briefing });

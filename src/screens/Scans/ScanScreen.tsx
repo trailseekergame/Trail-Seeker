@@ -614,7 +614,7 @@ export default function ScanScreen({ route }: any) {
 
   const handleDismissSessionEnd = () => {
     setShowSessionEnd(false);
-    saveGameState(state);
+    // Auto-save triggers via GameContext debounce — no manual save needed
     nav.goBack();
   };
 
@@ -639,8 +639,7 @@ export default function ScanScreen({ route }: any) {
     AudioManager.playSfx('sector_complete');
     setCombatEnemy(null);
     setCombatTileId(null);
-
-    saveGameState(state);
+    // Auto-save triggers via GameContext debounce
   };
 
   const handleCombatDefeat = (hpLost: number) => {
@@ -683,7 +682,7 @@ export default function ScanScreen({ route }: any) {
         dispatch({ type: 'EARN_SKR', payload: { amount: m.reward, milestoneId: m.id } });
       }
       dispatch({ type: 'CONSUME_RUN_BOOSTS' });
-      saveGameState(state);
+      // Auto-save triggers via GameContext debounce
     }, 50);
 
     dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
@@ -1613,7 +1612,7 @@ export default function ScanScreen({ route }: any) {
                   dispatch({ type: 'HEAL', payload: 20 }); // Restore to 20 HP
                 }
                 dispatch({ type: 'SET_CURRENT_MAP', payload: 'camp' });
-                setTimeout(() => saveGameState(state), 100);
+                // Auto-save triggers via GameContext debounce
                 nav.goBack();
               }}
               variant="primary"

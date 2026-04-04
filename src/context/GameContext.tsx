@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import {
   GameState,
   INITIAL_GAME_STATE,
@@ -725,11 +726,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       saveGameState(state);
-    }, 500);
+    }, 300);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [state, isLoading]);
+
+  // Immediate save when app goes to background
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  useEffect(() => {
+    const handleAppState = (next: AppStateStatus) => {
+      if (next === 'background' || next === 'inactive') {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveGameState(stateRef.current);
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppState);
+    return () => sub.remove();
+  }, []);
 
   return (
     <GameContext.Provider value={{ state, dispatch, isLoading }}>
