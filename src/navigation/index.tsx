@@ -19,6 +19,7 @@ import ArcadeScreen from '../screens/Arcade/ArcadeScreen';
 import MiniGameScreen from '../screens/Arcade/MiniGameScreen';
 import RPSScreen from '../screens/Arcade/RPSScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import TitleScreen from '../screens/TitleScreen';
 import DailyPlanScreen from '../screens/Scans/DailyPlanScreen';
 import MissionSelectScreen from '../screens/Scans/MissionSelectScreen';
 import ScanScreen from '../screens/Scans/ScanScreen';
@@ -230,6 +231,28 @@ function MainTabs() {
 
 // ─── Root Navigator ───
 
+// ─── Title Screen Wrapper (connects navigation) ───
+
+function TitleScreenWrapper() {
+  const nav = useNavigation<any>();
+  return (
+    <TitleScreen
+      onPlay={() => nav.navigate('Main')}
+      onNavigate={(screen: string) => {
+        if (screen === 'Settings') {
+          nav.navigate('Settings');
+        } else if (screen === 'Codex') {
+          nav.navigate('Main', { screen: 'CodexTab' });
+        } else if (screen === 'Arcade') {
+          nav.navigate('Main', { screen: 'ArcadeTab' });
+        } else if (screen === 'Stats') {
+          nav.navigate('Main', { screen: 'SettlementTab' });
+        }
+      }}
+    />
+  );
+}
+
 export default function AppNavigator() {
   const { state, isLoading } = useGame();
   const [splashDone, setSplashDone] = useState(false);
@@ -295,6 +318,7 @@ export default function AppNavigator() {
           <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : (
           <>
+            <RootStack.Screen name="Title" component={TitleScreenWrapper} />
             <RootStack.Screen name="Main" component={MainTabs} />
             <RootStack.Screen
               name="Settings"
