@@ -478,10 +478,12 @@ export default function DailyPlanScreen() {
             onPress={() => nav.navigate('MissionSelect')}
             size="lg"
             icon="map-marker-path"
-            disabled={ss.scansRemaining <= 0}
+            disabled={ss.scansRemaining <= 0 || state.playerHealth <= 0}
           />
           <Text style={styles.ctaSubtext}>
-            {ss.scansRemaining > 0
+            {state.playerHealth <= 0
+              ? 'Operator down. Heal at camp before deploying.'
+              : ss.scansRemaining > 0
               ? 'Pick a sector and spend your scans.'
               : ss.streakDay >= 1
               ? `Window closed. Day ${ss.streakDay} streak locked in — don't lose it tomorrow.`

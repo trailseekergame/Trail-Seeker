@@ -365,15 +365,42 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Daily attrition: HP drain (tox-storm exposure) + scrap upkeep (rover fuel)
       const DAILY_HP_DRAIN = 5;
       const DAILY_SCRAP_COST = 3;
-      const newHp = Math.max(0, state.playerHealth - DAILY_HP_DRAIN);
+      let newHp = Math.max(0, state.playerHealth - DAILY_HP_DRAIN);
       const newScrap = Math.max(0, state.resources.scrap - DAILY_SCRAP_COST);
+
+      // Death from attrition: reset sector progress
+      let sectorData = state.seekerScans;
+      if (newHp <= 0) {
+        // Mercy revive: set to 15 HP so player isn't permanently stuck
+        newHp = 15;
+        // Reset sector tiles (death penalty)
+        const resetTiles = sectorData.currentSector.tiles.map(tile => ({
+          ...tile,
+          cleared: false,
+          durability: tile.maxDurability,
+        }));
+        sectorData = {
+          ...sectorData,
+          currentSector: {
+            ...sectorData.currentSector,
+            tiles: resetTiles,
+            completed: false,
+          },
+        };
+      }
+
+      // Safety net: if player has 0 of everything, grant survival supplies
+      const finalScrap = (newScrap === 0 && state.resources.supplies === 0 && newHp <= 15)
+        ? 5 : newScrap;
+      const finalSupplies = (newScrap === 0 && state.resources.supplies === 0 && newHp <= 15)
+        ? 3 : state.resources.supplies;
 
       return {
         ...state,
         playerHealth: newHp,
-        resources: { ...state.resources, scrap: newScrap },
+        resources: { ...state.resources, scrap: finalScrap, supplies: finalSupplies },
         seekerScans: {
-          ...state.seekerScans,
+          ...sectorData,
           streakDay: newStreak,
           lastLoginDate: today,
         },
