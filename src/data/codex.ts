@@ -7,6 +7,52 @@ import { CodexEntry } from '../types';
  */
 const codexEntries: CodexEntry[] = [
   // ═══════════════════════════════════════════
+  // GUIDE — always visible, explains core mechanics
+  // ═══════════════════════════════════════════
+  {
+    id: 'codex-guide-overview',
+    category: 'guide',
+    title: 'How to Play',
+    content: 'You are an operator — a scavenger running solo outside Directorate control. Each day you get a limited window of Scans to search sectors for Scrap, Supplies, and rare gear. Use your scans wisely. Everything costs something out here.\n\n● Open Camp and tap Mission Board to pick a sector.\n● Each tile on the map is a scan target. Tap a tile, choose your scan type, and see what you pull.\n● Scrap repairs your rover. Supplies heal you. Both drain daily.\n● When your scans run out, the signal window closes until tomorrow.',
+    alwaysVisible: true,
+  },
+  {
+    id: 'codex-guide-scans',
+    category: 'guide',
+    title: 'Scan Types',
+    content: 'Three scan types, three risk levels:\n\n● SCOUT — Safe. Low risk, modest reward. Good for clearing tiles and mapping the sector.\n● SEEKER — Moderate risk. Better loot, but failed reads (whiffs) cost you HP and rover condition.\n● GAMBIT — All or nothing. Full power scan. Hit and you pull rare+ finds. Miss and it hurts.\n\nBetter gear reduces whiff chance and boosts rare drop rates. Consecutive daily logins (streaks) sharpen your reads further.',
+    alwaysVisible: true,
+  },
+  {
+    id: 'codex-guide-gear',
+    category: 'guide',
+    title: 'Gear & Loadout',
+    content: 'Gear drops from scans — the deeper you go, the better the finds. Equip up to 3 items (4 with the Pathfinder Module) from your backpack before deploying.\n\nGear has four zones: SENSOR (scan clarity), CORE (durability & scans), DRIVE (map progress), and WEAPON (combat damage).\n\nOnce you scan, your loadout locks for the session. Choose carefully.\n\nGear tiers: Standard → Enhanced → Ultra. Higher tiers come from harder maps and boss encounters.',
+    alwaysVisible: true,
+  },
+  {
+    id: 'codex-guide-combat',
+    category: 'guide',
+    title: 'Combat',
+    content: 'Some tiles contain hostiles — bosses and anomalies trigger turn-based combat.\n\nEnemies telegraph their next move: TARGETING (attack incoming), EXPOSED (vulnerable to damage), or SCANNING (dodge or get scanned).\n\n● ATK — Deal damage. Best when the enemy is EXPOSED.\n● DEF — Block incoming damage. Use when the enemy is TARGETING.\n● RUN — Escape. Costs you HP but gets you out.\n\nWin and you earn bonus scrap + rare drops. Lose and you take heavy damage with a forced retreat. Weapons boost your combat damage.',
+    alwaysVisible: true,
+  },
+  {
+    id: 'codex-guide-survival',
+    category: 'guide',
+    title: 'Survival & Stakes',
+    content: 'This isn\'t a safe run. Every day that passes costs you:\n\n● -5 HP and -3 Scrap daily decay.\n● If HP hits 0, your sector progress resets. You keep your gear but lose your map position.\n● Your rover takes damage from bad scans and combat. Repair at camp with Scrap.\n\nTrade at the Settlement: swap Scrap for Supplies and vice versa. Rates aren\'t generous, but they\'re better than dying.\n\nPlay daily. Streaks make your scans sharper. Miss a day and the streak resets.',
+    alwaysVisible: true,
+  },
+  {
+    id: 'codex-guide-streaks',
+    category: 'guide',
+    title: 'Streaks & Progression',
+    content: 'Show up every day and things get better:\n\n● Day 1: 4 scans.\n● Day 2+: Bonus scans stack, rare drop rates climb, signal clarity improves.\n● Day 7: Maximum streak. Best scan quality.\n\nMissing a day resets your streak to Day 1. Your gear and inventory stay, but the signal edge is gone.\n\nClear all tiles in a sector to advance to the next one. Complete maps to unlock harder zones with better loot.',
+    alwaysVisible: true,
+  },
+
+  // ═══════════════════════════════════════════
   // WORLD — unlocked via map completion + milestones
   // ═══════════════════════════════════════════
   {

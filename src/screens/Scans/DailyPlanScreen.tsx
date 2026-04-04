@@ -40,19 +40,22 @@ export default function DailyPlanScreen() {
   const devTapCount = useRef(0);
   const devTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerDevMode = useCallback(() => {
-    console.log('[DEV] ✅ Dev mode triggered — unlocking 99 scans + gear');
     dispatch({ type: 'UPDATE_SCAN_TOTAL', payload: 99 });
     dispatch({ type: 'DEV_UNLOCK_GEAR' });
+    // Also give full gear inventory if not already populated
+    if (ss.gearInventory.length < ALL_GEAR_ITEMS.length) {
+      dispatch({
+        type: 'INIT_SEEKER_SCANS',
+        payload: { gearInventory: ALL_GEAR_ITEMS, sector: ss.currentSector },
+      });
+    }
     AudioManager.playSfx('sector_complete');
     AudioManager.vibrate('heavy');
-  }, [dispatch]);
+  }, [dispatch, ss.gearInventory.length, ss.currentSector]);
   const handleDevTap = useCallback(() => {
-    if (!__DEV__) return;
     devTapCount.current += 1;
-    console.log(`[DEV] Tap ${devTapCount.current}/3`);
     if (devTapTimer.current) clearTimeout(devTapTimer.current);
     devTapTimer.current = setTimeout(() => {
-      console.log('[DEV] Tap timer reset');
       devTapCount.current = 0;
     }, 3000);
     if (devTapCount.current >= 3) {
@@ -61,8 +64,6 @@ export default function DailyPlanScreen() {
     }
   }, [triggerDevMode]);
   const handleDevLongPress = useCallback(() => {
-    if (!__DEV__) return;
-    console.log('[DEV] Long-press detected');
     triggerDevMode();
   }, [triggerDevMode]);
 

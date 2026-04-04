@@ -19,9 +19,9 @@ import AudioManager from '../services/audioManager';
 
 // ─── Types ───
 
-type Step = 'boot' | 'callsign' | 'origin' | 'rig' | 'avatar' | 'confirm';
+type Step = 'boot' | 'howtoplay' | 'callsign' | 'origin' | 'rig' | 'avatar' | 'confirm';
 
-const STEPS: Step[] = ['boot', 'callsign', 'origin', 'rig', 'avatar', 'confirm'];
+const STEPS: Step[] = ['boot', 'howtoplay', 'callsign', 'origin', 'rig', 'avatar', 'confirm'];
 
 const AVATAR_OPTIONS = [
   { id: 'operator_a' as const, label: 'OPERATOR A', desc: 'Relay Tech build. Lean, fast, cyan optics.', image: require('../assets/characters/operator_a.png') },
@@ -281,13 +281,54 @@ export default function OnboardingScreen() {
       {bootDone && (
         <NeonButton
           title="> CONTINUE"
-          onPress={() => goToStep('callsign')}
+          onPress={() => goToStep('howtoplay')}
           variant="primary"
           size="lg"
           style={styles.bootBtn}
         />
       )}
     </View>
+  );
+
+  // ═══════════════════════════════════════════
+  // STEP 1b: HOW TO PLAY
+  // ═══════════════════════════════════════════
+
+  const GUIDE_ITEMS = [
+    { icon: 'radar' as const, title: 'SCAN', desc: 'Use daily scans to search tiles for scrap, supplies, and gear. 3 modes: Scout (safe), Seeker (risky), Gambit (high reward).' },
+    { icon: 'cog' as const, title: 'EQUIP', desc: 'Gear drops from scans. Equip up to 3 items before deploying. Your loadout shapes every run.' },
+    { icon: 'sword-cross' as const, title: 'FIGHT', desc: 'Bosses and anomalies trigger combat. Read enemy telegraphs to attack, defend, or run.' },
+    { icon: 'heart-pulse' as const, title: 'SURVIVE', desc: 'HP and scrap decay daily. If HP hits 0, sector progress resets. Repair and heal at camp.' },
+    { icon: 'fire' as const, title: 'STREAK', desc: 'Play daily. Streaks sharpen scans and unlock better drops. Miss a day and it resets.' },
+  ];
+
+  const renderHowToPlay = () => (
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.howtoContainer}>
+      <Text style={styles.stepTitle}>{'> OPERATOR BRIEFING'}</Text>
+      <Text style={styles.stepSubtext}>Read this before you deploy. It\'s not getting repeated.</Text>
+
+      {GUIDE_ITEMS.map((item, i) => (
+        <View key={i} style={styles.guideCard}>
+          <View style={styles.guideIconWrap}>
+            <MaterialCommunityIcons name={item.icon} size={20} color={colors.neonGreen} />
+          </View>
+          <View style={styles.guideContent}>
+            <Text style={styles.guideTitle}>{item.title}</Text>
+            <Text style={styles.guideDesc}>{item.desc}</Text>
+          </View>
+        </View>
+      ))}
+
+      <Text style={styles.guideFooter}>Full guide available in the Codex anytime.</Text>
+
+      <NeonButton
+        title="> UNDERSTOOD"
+        onPress={() => goToStep('callsign')}
+        variant="primary"
+        size="lg"
+        style={styles.bootBtn}
+      />
+    </ScrollView>
   );
 
   // ═══════════════════════════════════════════
@@ -585,6 +626,7 @@ export default function OnboardingScreen() {
       </View>
 
       {!transitioning && step === 'boot' && renderBoot()}
+      {!transitioning && step === 'howtoplay' && renderHowToPlay()}
       {!transitioning && step === 'callsign' && renderCallsign()}
       {!transitioning && step === 'origin' && renderOrigin()}
       {!transitioning && step === 'rig' && renderRig()}
@@ -923,5 +965,68 @@ const styles = StyleSheet.create({
     fontFamily: fontMono,
     textAlign: 'center',
     marginTop: 4,
+  },
+
+  // ─── How to Play ───
+  howtoContainer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  stepTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.neonGreen,
+    fontFamily: fontMono,
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+  },
+  stepSubtext: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    marginBottom: spacing.lg,
+    lineHeight: 20,
+  },
+  guideCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.panelBorder,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    gap: spacing.md,
+  },
+  guideIconWrap: {
+    width: 36,
+    height: 36,
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '30',
+    backgroundColor: colors.neonGreen + '08',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guideContent: {
+    flex: 1,
+  },
+  guideTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontFamily: fontMono,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  guideDesc: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  guideFooter: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    textAlign: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
 });

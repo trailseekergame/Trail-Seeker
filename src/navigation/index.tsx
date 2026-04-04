@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useGame } from '../context/GameContext';
 import { useNotifications } from '../hooks/useNotifications';
 import AudioManager from '../services/audioManager';
-import { colors, fontSize } from '../theme';
+import { colors, fontSize, fontMono } from '../theme';
 
 // Screens
 import TrailScreen from '../screens/Trail/TrailScreen';
@@ -233,6 +233,8 @@ function MainTabs() {
 export default function AppNavigator() {
   const { state, isLoading } = useGame();
   const [splashDone, setSplashDone] = useState(false);
+  const [splashReady, setSplashReady] = useState(false);
+  const [pulseAnim] = useState(() => new Animated.Value(0.4));
   useNotifications();
 
   useEffect(() => {
@@ -240,28 +242,49 @@ export default function AppNavigator() {
     return () => { AudioManager.cleanup(); };
   }, []);
 
-  // Minimum 2s splash so the logo is always visible
+  // Minimum 2s before the splash can be dismissed
   useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 2000);
+    const timer = setTimeout(() => setSplashReady(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
+  // Pulse animation for "TAP TO CONTINUE"
+  useEffect(() => {
+    if (!splashReady) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [splashReady]);
+
   if (isLoading || !splashDone) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#060A0E', alignItems: 'center', justifyContent: 'center' }}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => { if (splashReady) setSplashDone(true); }}
+        style={splashStyles.container}
+      >
         <Image
           source={require('../assets/splash_banner.jpg')}
-          style={{ width: '90%', height: undefined, aspectRatio: 3.5, marginBottom: 24 }}
+          style={splashStyles.banner}
           resizeMode="contain"
         />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ width: 6, height: 6, backgroundColor: colors.neonGreen, opacity: 0.6 }} />
-          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: 'monospace', letterSpacing: 3 }}>
-            INITIALIZING
-          </Text>
-          <View style={{ width: 6, height: 6, backgroundColor: colors.neonGreen, opacity: 0.6 }} />
-        </View>
-      </View>
+        {!splashReady ? (
+          <View style={splashStyles.statusRow}>
+            <View style={splashStyles.dot} />
+            <Text style={splashStyles.statusText}>INITIALIZING</Text>
+            <View style={splashStyles.dot} />
+          </View>
+        ) : (
+          <Animated.Text style={[splashStyles.tapText, { opacity: pulseAnim }]}>
+            TAP TO CONTINUE
+          </Animated.Text>
+        )}
+      </TouchableOpacity>
     );
   }
 
@@ -291,3 +314,42 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#060A0E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  banner: {
+    width: '90%',
+    height: undefined,
+    aspectRatio: 3.5,
+    marginBottom: 24,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    backgroundColor: colors.neonGreen,
+    opacity: 0.6,
+  },
+  statusText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontFamily: fontMono,
+    letterSpacing: 3,
+  },
+  tapText: {
+    color: colors.neonGreen,
+    fontSize: 12,
+    fontFamily: fontMono,
+    letterSpacing: 4,
+    fontWeight: '600',
+  },
+});

@@ -158,7 +158,7 @@ export interface PlayerBackstory {
 }
 
 // ─── Codex Types ───
-export type CodexCategory = 'world' | 'zones' | 'factions' | 'enemies' | 'loot' | 'personal';
+export type CodexCategory = 'world' | 'zones' | 'factions' | 'enemies' | 'loot' | 'personal' | 'guide';
 
 export interface CodexEntry {
   id: string;

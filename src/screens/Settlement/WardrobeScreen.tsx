@@ -356,32 +356,77 @@ export default function WardrobeScreen() {
           const fill = accent + '06';
           return (
             <View style={styles.silhouetteContainer}>
-              {/* ── Head ── */}
-              <View style={[styles.exoHead, { borderColor: line }]} />
-              {/* ── Neck ── */}
-              <View style={[styles.exoNeck, { backgroundColor: line }]} />
-              {/* ── Shoulders + Torso ── */}
-              <View style={styles.exoShoulderRow}>
-                <View style={[styles.exoArm, { borderColor: line, backgroundColor: fill }]} />
-                <View style={[styles.exoTorso, { borderColor: line, backgroundColor: fill }]}>
-                  <Text style={[styles.exoLabel, { color: accent + '50' }]}>EXO</Text>
-                  <MaterialCommunityIcons name="shield-half-full" size={18} color={accent + '30'} />
+              <View style={styles.exoBody}>
+                {/* ── Head + Sensor gear ── */}
+                <View style={styles.exoHeadSection}>
+                  <View style={[styles.exoHead, { borderColor: line }]}>
+                    {installedByZone.sensor?.image && (
+                      <Image source={installedByZone.sensor.image} style={styles.gearOnBody} />
+                    )}
+                  </View>
+                  {installedByZone.sensor && (
+                    <Text style={[styles.gearOnBodyLabel, { color: ZONE_COLORS.sensor }]} numberOfLines={1}>
+                      {installedByZone.sensor.name}
+                    </Text>
+                  )}
                 </View>
-                <View style={[styles.exoArm, { borderColor: line, backgroundColor: fill }]} />
-              </View>
-              {/* ── Waist ── */}
-              <View style={[styles.exoWaist, { borderColor: line }]} />
-              {/* ── Legs ── */}
-              <View style={styles.exoLegRow}>
-                <View style={[styles.exoLeg, { borderColor: line, backgroundColor: fill }]} />
-                <View style={{ width: 6 }} />
-                <View style={[styles.exoLeg, { borderColor: line, backgroundColor: fill }]} />
-              </View>
-              {/* ── Boots ── */}
-              <View style={styles.exoBootRow}>
-                <View style={[styles.exoBoot, { borderColor: line }]} />
-                <View style={{ width: 14 }} />
-                <View style={[styles.exoBoot, { borderColor: line }]} />
+                {/* ── Neck ── */}
+                <View style={[styles.exoNeck, { backgroundColor: line }]} />
+                {/* ── Shoulders + Torso + Core gear ── */}
+                <View style={styles.exoShoulderRow}>
+                  {/* Left arm + weapon */}
+                  <View style={styles.exoArmSection}>
+                    <View style={[styles.exoArm, { borderColor: line, backgroundColor: fill }]}>
+                      {installedByZone.weapon?.image && (
+                        <Image source={installedByZone.weapon.image} style={styles.gearOnArm} />
+                      )}
+                    </View>
+                    {installedByZone.weapon && (
+                      <Text style={[styles.gearOnBodyLabel, { color: ZONE_COLORS.weapon }]} numberOfLines={1}>
+                        {installedByZone.weapon.name}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={[styles.exoTorso, { borderColor: line, backgroundColor: fill }]}>
+                    {installedByZone.core?.image ? (
+                      <Image source={installedByZone.core.image} style={styles.gearOnTorso} />
+                    ) : (
+                      <>
+                        <Text style={[styles.exoLabel, { color: accent + '50' }]}>EXO</Text>
+                        <MaterialCommunityIcons name="shield-half-full" size={18} color={accent + '30'} />
+                      </>
+                    )}
+                  </View>
+                  <View style={[styles.exoArm, { borderColor: line, backgroundColor: fill, marginTop: 4 }]} />
+                </View>
+                {installedByZone.core && (
+                  <Text style={[styles.gearOnBodyLabel, { color: ZONE_COLORS.core }]} numberOfLines={1}>
+                    {installedByZone.core.name}
+                  </Text>
+                )}
+                {/* ── Waist ── */}
+                <View style={[styles.exoWaist, { borderColor: line }]} />
+                {/* ── Legs + Drive gear ── */}
+                <View style={styles.exoLegRow}>
+                  <View style={[styles.exoLeg, { borderColor: line, backgroundColor: fill }]}>
+                    {installedByZone.drive?.image && (
+                      <Image source={installedByZone.drive.image} style={styles.gearOnLeg} />
+                    )}
+                  </View>
+                  <View style={{ width: 6 }} />
+                  <View style={[styles.exoLeg, { borderColor: line, backgroundColor: fill }]} />
+                </View>
+                {installedByZone.drive && (
+                  <Text style={[styles.gearOnBodyLabel, { color: ZONE_COLORS.drive }]} numberOfLines={1}>
+                    {installedByZone.drive.name}
+                  </Text>
+                )}
+                {/* ── Boots ── */}
+                <View style={styles.exoBootRow}>
+                  <View style={[styles.exoBoot, { borderColor: line }]} />
+                  <View style={{ width: 14 }} />
+                  <View style={[styles.exoBoot, { borderColor: line }]} />
+                </View>
               </View>
               {/* ── Callsign ── */}
               <Text style={[styles.silhouetteCallsign, { color: accent }]}>
@@ -389,20 +434,6 @@ export default function WardrobeScreen() {
               </Text>
               {state.backstory && (
                 <Text style={styles.silhouetteOrigin}>{state.backstory.archetype}</Text>
-              )}
-              {/* ── Equipped gear overlay ── */}
-              {Object.values(installedByZone).some(g => g?.image) && (
-                <View style={styles.gearOverlayRow}>
-                  {HARDPOINT_ORDER.map(zone => {
-                    const gear = installedByZone[zone];
-                    if (!gear?.image) return null;
-                    return (
-                      <View key={zone} style={styles.gearOverlaySlot}>
-                        <Image source={gear.image} style={styles.gearOverlayImage} />
-                      </View>
-                    );
-                  })}
-                </View>
               )}
             </View>
           );
@@ -731,11 +762,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingVertical: spacing.sm,
   },
+  exoBody: {
+    alignItems: 'center',
+  },
+  exoHeadSection: {
+    alignItems: 'center',
+  },
+  exoArmSection: {
+    alignItems: 'center',
+    marginTop: 4,
+  },
   exoHead: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderWidth: 1.5,
     borderColor: colors.panelBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   exoNeck: {
     width: 2,
@@ -751,7 +795,9 @@ const styles = StyleSheet.create({
     height: 56,
     borderWidth: 1.5,
     borderColor: colors.panelBorder,
-    marginTop: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   exoTorso: {
     width: 64,
@@ -783,6 +829,9 @@ const styles = StyleSheet.create({
     height: 48,
     borderWidth: 1.5,
     borderColor: colors.panelBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   exoBootRow: {
     flexDirection: 'row',
@@ -1341,25 +1390,32 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
 
-  // ─── Gear overlay on silhouette ───
-  gearOverlayRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  gearOverlaySlot: {
-    width: 28,
-    height: 28,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gearOverlayImage: {
-    width: 20,
-    height: 20,
+  // ─── Gear on paper doll ───
+  gearOnBody: {
+    width: 24,
+    height: 24,
     resizeMode: 'contain',
+  },
+  gearOnTorso: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+  },
+  gearOnArm: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
+  gearOnLeg: {
+    width: 16,
+    height: 16,
+    resizeMode: 'contain',
+  },
+  gearOnBodyLabel: {
+    fontSize: 7,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    letterSpacing: 1,
+    marginTop: 2,
   },
 });

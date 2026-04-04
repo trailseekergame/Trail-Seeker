@@ -9,6 +9,7 @@ import codexEntries from '../../data/codex';
 import { colors, spacing, fontSize, borderRadius } from '../../theme';
 
 const CATEGORIES: { key: CodexCategory; label: string; icon: string }[] = [
+  { key: 'guide', label: 'Guide', icon: 'book-open-page-variant' },
   { key: 'world', label: 'World', icon: 'earth' },
   { key: 'zones', label: 'Zones', icon: 'map-marker' },
   { key: 'factions', label: 'Factions', icon: 'account-group' },
@@ -19,7 +20,7 @@ const CATEGORIES: { key: CodexCategory; label: string; icon: string }[] = [
 
 export default function CodexScreen({ navigation }: any) {
   const { state } = useGame();
-  const [selectedCategory, setSelectedCategory] = useState<CodexCategory>('world');
+  const [selectedCategory, setSelectedCategory] = useState<CodexCategory>('guide');
 
   const visibleEntries = useMemo(() => {
     return codexEntries.filter((entry) => {
