@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import AudioManager from '../../services/audioManager';
+import { clearGameState } from '../../services/storage';
 import { useGame } from '../../context/GameContext';
 import { AVATARS } from '../../data/avatars';
 import { AvatarId } from '../../types';
@@ -114,8 +115,39 @@ export default function SettingsScreen() {
           <Text style={styles.avatarHint}>Cosmetic only. No gameplay effect.</Text>
         </View>
 
+        {/* ─── DANGER ZONE ─── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>DANGER ZONE</Text>
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={() => {
+              Alert.alert(
+                'Reset Game',
+                'This will erase all progress, gear, and settings. You will go through onboarding again. This cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Reset Everything',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await clearGameState();
+                      dispatch({ type: 'RESET_STATE' });
+                      AudioManager.vibrate('heavy');
+                    },
+                  },
+                ]
+              );
+            }}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="delete-alert" size={18} color={colors.neonRed} />
+            <Text style={styles.resetButtonText}>Reset Game</Text>
+          </TouchableOpacity>
+          <Text style={styles.resetHint}>Erases all progress. You will start from scratch.</Text>
+        </View>
+
         <View style={styles.footer}>
-          <Text style={styles.version}>v0.1.0</Text>
+          <Text style={styles.version}>v1.0.0</Text>
         </View>
       </ScrollView>
     </ScreenWrapper>
@@ -204,6 +236,29 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
+  },
+  // ─── Reset ───
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: colors.neonRed + '40',
+    backgroundColor: colors.neonRed + '08',
+  },
+  resetButtonText: {
+    fontSize: fontSize.md,
+    color: colors.neonRed,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+  resetHint: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   footer: {
     alignItems: 'center',

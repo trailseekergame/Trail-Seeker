@@ -119,40 +119,8 @@ export default function TitleScreen({ onPlay, onNavigate }: Props) {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* CONNECT WALLET */}
-        <TouchableOpacity
-          style={[
-            styles.walletButton,
-            walletConnected && { borderColor: accent },
-          ]}
-          onPress={handleConnectWallet}
-          activeOpacity={0.7}
-          disabled={connecting}
-        >
-          <View style={styles.walletRow}>
-            <MaterialCommunityIcons
-              name={walletConnected ? 'wallet-outline' : 'wallet-plus-outline'}
-              size={18}
-              color={walletConnected ? accent : colors.textPrimary}
-              style={{ marginRight: 8 }}
-            />
-            <Text
-              style={[
-                styles.walletButtonText,
-                walletConnected && { color: accent },
-              ]}
-            >
-              {connecting
-                ? 'CONNECTING...'
-                : walletConnected
-                ? `WALLET: ${shortAddress}`
-                : 'CONNECT WALLET'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-        <Text style={styles.walletSubtext}>
-          {walletConnected ? 'tap to disconnect' : 'save progress + earn rewards'}
-        </Text>
+        {/* CONNECT WALLET — hidden until MWA integration is live */}
+        {/* TODO: Uncomment when real Solana wallet adapter is wired up */}
 
         {/* ─── 2x2 Grid ─── */}
         <View style={styles.gridContainer}>
@@ -196,7 +164,7 @@ export default function TitleScreen({ onPlay, onNavigate }: Props) {
       </View>
 
       {/* ─── Footer ─── */}
-      <Text style={styles.versionText}>TRAIL SEEKER v0.1</Text>
+      <Text style={styles.versionText}>TRAIL SEEKER v1.0.0</Text>
     </View>
   );
 }
