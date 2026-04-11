@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   Animated,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
@@ -42,13 +43,61 @@ const COSMETIC_SHOP: CosmeticItem[] = [
   { id: 'shell_chrome', label: 'Chrome Finish', type: 'shell', value: 'chrome', price: 10 },
 ];
 
-const IDLE_RESPONSES = [
-  '*blinks*',
-  '*antenna spins*',
-  '*wobbles contentedly*',
-  '*hums a frequency*',
-  '*tilts curiously*',
+// ─── Speech bubble content ───
+
+const IDLE_CHATTER = [
+  '...scanning perimeter...',
+  '*antenna rotates slowly*',
+  'All quiet out here.',
+  '*low frequency hum*',
+  'Dust levels: nominal.',
+  'Miss the old relay frequencies.',
+  '*servos click*',
+  'Wind is picking up.',
+  'Signal trace... no, gone.',
+  'Running self-check... all green.',
+  '*optic lens refocuses*',
+  'Detecting micro-vibrations below.',
+  'Battery at acceptable levels.',
+  '*quiet whirr*',
 ];
+
+const TAP_RESPONSES = [
+  '*chirps*',
+  '*antenna spins excitedly*',
+  'Hey!',
+  '*wobbles*',
+  'Beep!',
+  '*tilts curiously*',
+  '*hums a frequency*',
+  'Oh? What is it?',
+  '*blinks rapidly*',
+  'Still here.',
+];
+
+const DAILY_TAP_RESPONSES = [
+  'Glad you came back.',
+  'Missed you out there.',
+  '*happy beeping sequence*',
+  'Drone-human bond: reinforced.',
+  'Finally! Someone to talk to.',
+  'Systems spike — it\'s you!',
+  '*antenna perks up immediately*',
+];
+
+// ─── Discovery overlay lines ───
+
+const DISCOVERY_LINES = [
+  'SIGNAL ACQUIRED — UNKNOWN UNIT',
+  'Designation: [UNNAMED]',
+  'Origin: Pre-collapse autonomous recon platform',
+  'Status: Operational. Lonely.',
+  '',
+  'It followed you home from the overpass.',
+  'Tap to say hello.',
+];
+
+// ─── Helpers ───
 
 function getMoodText(happiness: number): { text: string; color: string } {
   if (happiness > 80) return { text: 'OPERATIONAL — CONTENT', color: colors.neonGreen };
@@ -57,24 +106,58 @@ function getMoodText(happiness: number): { text: string; color: string } {
   return { text: 'CRITICAL — NEGLECTED', color: colors.neonRed };
 }
 
-function getHappinessColor(happiness: number): string {
-  if (happiness > 60) return colors.neonGreen;
-  if (happiness > 30) return colors.neonAmber;
+function getMoodGlowColor(happiness: number): string {
+  if (happiness > 80) return colors.neonGreen;
+  if (happiness > 50) return colors.neonCyan;
+  if (happiness > 20) return colors.neonAmber;
   return colors.neonRed;
 }
+
+// ─── Floating XP Particle ───
+
+function FloatingXPText({ value, onDone }: { value: string; onDone: () => void }) {
+  const floatY = useRef(new Animated.Value(0)).current;
+  const fadeOut = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(floatY, { toValue: -80, duration: 1200, useNativeDriver: true }),
+      Animated.timing(fadeOut, { toValue: 0, duration: 1200, useNativeDriver: true }),
+    ]).start(() => onDone());
+  }, [floatY, fadeOut, onDone]);
+
+  return (
+    <Animated.Text
+      style={[
+        styles.floatingXP,
+        { transform: [{ translateY: floatY }], opacity: fadeOut },
+      ]}
+    >
+      {value}
+    </Animated.Text>
+  );
+}
+
+// ─── Main Component ───
 
 export default function DroneScreen() {
   const { state, dispatch } = useGame();
   const drone = state.droneCompanion;
 
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [speechBubble, setSpeechBubble] = useState<string | null>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string }[]>([]);
+  const [showDiscovery, setShowDiscovery] = useState(drone.totalInteractions === 0);
+  const floatingIdRef = useRef(0);
 
   // ─── Animations ───
   const bobAnim = useRef(new Animated.Value(0)).current;
   const eyeGlowAnim = useRef(new Animated.Value(0.3)).current;
   const tapScaleAnim = useRef(new Animated.Value(1)).current;
   const idleTiltAnim = useRef(new Animated.Value(0)).current;
+  const moodGlowAnim = useRef(new Animated.Value(0)).current;
+  const discoveryFade = useRef(new Animated.Value(1)).current;
+  const speechFade = useRef(new Animated.Value(0)).current;
 
   // Idle bob — continuous breathing motion
   useEffect(() => {
@@ -100,7 +183,20 @@ export default function DroneScreen() {
     return () => glowLoop.stop();
   }, [eyeGlowAnim]);
 
-  // Random idle behaviors
+  // Mood-reactive glow pulse (speed changes with mood)
+  useEffect(() => {
+    const pulseDuration = drone.happiness > 80 ? 2500 : drone.happiness > 50 ? 2000 : drone.happiness > 20 ? 1500 : 800;
+    const moodLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(moodGlowAnim, { toValue: 1, duration: pulseDuration / 2, useNativeDriver: true }),
+        Animated.timing(moodGlowAnim, { toValue: 0, duration: pulseDuration / 2, useNativeDriver: true }),
+      ]),
+    );
+    moodLoop.start();
+    return () => moodLoop.stop();
+  }, [moodGlowAnim, drone.happiness]);
+
+  // Random idle behaviors — tilt
   useEffect(() => {
     const triggerIdle = () => {
       const delay = 8000 + Math.random() * 4000;
@@ -117,15 +213,60 @@ export default function DroneScreen() {
     return () => clearTimeout(timerRef.current);
   }, [idleTiltAnim]);
 
+  // Idle chatter — speech bubble every 6-10s
+  useEffect(() => {
+    if (showDiscovery) return;
+    const triggerChatter = () => {
+      const delay = 6000 + Math.random() * 4000;
+      return setTimeout(() => {
+        const line = IDLE_CHATTER[Math.floor(Math.random() * IDLE_CHATTER.length)];
+        showSpeechBubble(line);
+        chatterRef.current = triggerChatter();
+      }, delay);
+    };
+    const chatterRef = { current: triggerChatter() };
+    return () => clearTimeout(chatterRef.current);
+  }, [showDiscovery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const showSpeechBubble = useCallback((text: string) => {
+    setSpeechBubble(text);
+    speechFade.setValue(1);
+    Animated.timing(speechFade, { toValue: 0, duration: 500, delay: 3000, useNativeDriver: true }).start(() => {
+      setSpeechBubble(null);
+    });
+  }, [speechFade]);
+
+  const spawnFloatingText = useCallback((text: string) => {
+    const id = ++floatingIdRef.current;
+    setFloatingTexts(prev => [...prev, { id, text }]);
+  }, []);
+
+  const removeFloatingText = useCallback((id: number) => {
+    setFloatingTexts(prev => prev.filter(f => f.id !== id));
+  }, []);
+
   const today = new Date().toISOString().split('T')[0];
   const interactedToday = drone.lastInteraction === today;
 
   const handleTap = useCallback(() => {
+    if (showDiscovery) {
+      // Dismiss discovery overlay
+      Animated.timing(discoveryFade, { toValue: 0, duration: 400, useNativeDriver: true }).start(() => {
+        setShowDiscovery(false);
+      });
+      dispatch({ type: 'DRONE_INTERACT' });
+      AudioManager.playSfx('ui_confirm');
+      AudioManager.vibrate('heavy');
+      showSpeechBubble(DAILY_TAP_RESPONSES[Math.floor(Math.random() * DAILY_TAP_RESPONSES.length)]);
+      spawnFloatingText('+10 XP');
+      return;
+    }
+
     if (!interactedToday) {
       // Daily interaction — reward
       dispatch({ type: 'DRONE_INTERACT' });
       const scrapReward = Math.floor(Math.random() * 4); // 0-3
-      const suppliesReward = Math.random() < 0.3 ? 1 : 0; // 30% chance of 1 supply
+      const suppliesReward = Math.random() < 0.3 ? 1 : 0;
       if (scrapReward > 0 || suppliesReward > 0) {
         dispatch({
           type: 'APPLY_RESOURCE_CHANGES',
@@ -134,44 +275,40 @@ export default function DroneScreen() {
         const parts = [];
         if (scrapReward > 0) parts.push(`${scrapReward} scrap`);
         if (suppliesReward > 0) parts.push(`${suppliesReward} supply`);
-        setStatusMessage(`${drone.name} found ${parts.join(' and ')} in the dust!`);
+        showSpeechBubble(`Found ${parts.join(' and ')} in the dust!`);
       } else {
-        setStatusMessage(`${drone.name} chirps happily.`);
+        const line = DAILY_TAP_RESPONSES[Math.floor(Math.random() * DAILY_TAP_RESPONSES.length)];
+        showSpeechBubble(line);
       }
       AudioManager.playSfx('ui_confirm');
       AudioManager.vibrate('heavy');
+      spawnFloatingText('+10 XP');
 
-      // Tap animation: scale up and back
       Animated.sequence([
         Animated.timing(tapScaleAnim, { toValue: 1.1, duration: 150, useNativeDriver: true }),
         Animated.timing(tapScaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
       ]).start();
     } else {
       // Already interacted — random response
-      const response = IDLE_RESPONSES[Math.floor(Math.random() * IDLE_RESPONSES.length)];
-      setStatusMessage(response);
+      const response = TAP_RESPONSES[Math.floor(Math.random() * TAP_RESPONSES.length)];
+      showSpeechBubble(response);
       AudioManager.playSfx('ui_tap');
       AudioManager.vibrate('light');
 
-      // Small bounce
       Animated.sequence([
         Animated.timing(tapScaleAnim, { toValue: 1.05, duration: 100, useNativeDriver: true }),
         Animated.timing(tapScaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
       ]).start();
     }
-
-    // Clear status after 3 seconds
-    setTimeout(() => setStatusMessage(null), 3000);
-  }, [interactedToday, drone.name, dispatch, tapScaleAnim]);
+  }, [showDiscovery, interactedToday, dispatch, tapScaleAnim, discoveryFade, showSpeechBubble, spawnFloatingText]);
 
   const handleFeed = useCallback(() => {
     if (state.resources.supplies < 3) return;
     dispatch({ type: 'DRONE_FEED' });
-    setStatusMessage(`${drone.name} absorbs the supplies. Systems restored.`);
+    showSpeechBubble('*absorbs supplies* Systems restored.');
     AudioManager.playSfx('ui_confirm');
     AudioManager.vibrate('medium');
-    setTimeout(() => setStatusMessage(null), 3000);
-  }, [state.resources.supplies, drone.name, dispatch]);
+  }, [state.resources.supplies, dispatch, showSpeechBubble]);
 
   const handleRename = useCallback(() => {
     Alert.prompt(
@@ -205,7 +342,7 @@ export default function DroneScreen() {
   }, [dispatch]);
 
   const mood = getMoodText(drone.happiness);
-  const hpColor = getHappinessColor(drone.happiness);
+  const moodGlowColor = getMoodGlowColor(drone.happiness);
   const droneLevel = drone.level || 1;
   const droneXp = drone.xp || 0;
   const levelTitle = DRONE_LEVEL_TITLES[Math.min(droneLevel - 1, DRONE_LEVEL_TITLES.length - 1)];
@@ -214,6 +351,11 @@ export default function DroneScreen() {
   const tiltInterpolate = idleTiltAnim.interpolate({
     inputRange: [-1, 0, 1],
     outputRange: ['-4deg', '0deg', '4deg'],
+  });
+
+  const moodGlowOpacity = moodGlowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.05, drone.happiness > 80 ? 0.2 : drone.happiness > 20 ? 0.15 : 0.3],
   });
 
   return (
@@ -229,11 +371,32 @@ export default function DroneScreen() {
             <View style={[styles.xpBarFill, { width: `${Math.min(levelProgress.progress * 100, 100)}%` }]} />
             <Text style={styles.xpBarText}>{droneXp} / {levelProgress.next} XP</Text>
           </View>
-          <Text style={[styles.moodText, { color: mood.color }]}>{mood.text}</Text>
-          <View style={styles.happinessBar}>
-            <View style={[styles.happinessFill, { width: `${drone.happiness}%`, backgroundColor: hpColor }]} />
+        </View>
+
+        {/* ─── Compact Stats Row ─── */}
+        <View style={styles.statsRow}>
+          <View style={styles.statChip}>
+            <MaterialCommunityIcons name="heart-pulse" size={12} color={mood.color} />
+            <Text style={[styles.statChipValue, { color: mood.color }]}>{drone.happiness}</Text>
+            <Text style={styles.statChipLabel}>MOOD</Text>
+          </View>
+          <View style={styles.statChip}>
+            <MaterialCommunityIcons name="gesture-tap" size={12} color={colors.neonCyan} />
+            <Text style={[styles.statChipValue, { color: colors.neonCyan }]}>{drone.totalInteractions}</Text>
+            <Text style={styles.statChipLabel}>VISITS</Text>
+          </View>
+          <View style={styles.statChip}>
+            <Text style={[styles.statChipStatus, { color: mood.color }]}>{mood.text}</Text>
           </View>
         </View>
+
+        {/* ─── Speech Bubble ─── */}
+        {speechBubble && (
+          <Animated.View style={[styles.speechBubble, { opacity: speechFade }]}>
+            <Text style={styles.speechText}>{speechBubble}</Text>
+            <View style={styles.speechTail} />
+          </Animated.View>
+        )}
 
         {/* ─── Drone Sprite ─── */}
         <TouchableOpacity
@@ -241,6 +404,17 @@ export default function DroneScreen() {
           activeOpacity={0.9}
           style={styles.spriteContainer}
         >
+          {/* Mood-reactive glow behind sprite */}
+          <Animated.View
+            style={[
+              styles.moodGlow,
+              {
+                backgroundColor: moodGlowColor,
+                opacity: moodGlowOpacity,
+              },
+            ]}
+          />
+
           <Animated.View
             style={[
               styles.spriteWrapper,
@@ -270,20 +444,22 @@ export default function DroneScreen() {
             />
           </Animated.View>
 
-          {!interactedToday && (
+          {/* Floating XP text particles */}
+          {floatingTexts.map(f => (
+            <FloatingXPText
+              key={f.id}
+              value={f.text}
+              onDone={() => removeFloatingText(f.id)}
+            />
+          ))}
+
+          {!interactedToday && !showDiscovery && (
             <View style={styles.tapPrompt}>
               <MaterialCommunityIcons name="gesture-tap" size={16} color={colors.neonGreen} />
               <Text style={styles.tapPromptText}>TAP TO INTERACT</Text>
             </View>
           )}
         </TouchableOpacity>
-
-        {/* ─── Status Message ─── */}
-        {statusMessage && (
-          <View style={styles.statusBubble}>
-            <Text style={styles.statusText}>{statusMessage}</Text>
-          </View>
-        )}
 
         {/* ─── Action Buttons ─── */}
         <View style={styles.actionRow}>
@@ -317,7 +493,7 @@ export default function DroneScreen() {
             </View>
             <View style={styles.diagRow}>
               <Text style={styles.diagLabel}>Happiness</Text>
-              <Text style={[styles.diagValue, { color: hpColor }]}>{drone.happiness}/100</Text>
+              <Text style={[styles.diagValue, { color: mood.color }]}>{drone.happiness}/100</Text>
             </View>
             <View style={styles.diagRow}>
               <Text style={styles.diagLabel}>Eye Module</Text>
@@ -404,6 +580,32 @@ export default function DroneScreen() {
           </ScrollView>
         </View>
       </ScrollView>
+
+      {/* ─── First-time Discovery Overlay ─── */}
+      {showDiscovery && (
+        <Animated.View style={[styles.discoveryOverlay, { opacity: discoveryFade }]}>
+          <View style={styles.discoveryCard}>
+            <MaterialCommunityIcons name="access-point-network" size={32} color={colors.neonGreen} />
+            {DISCOVERY_LINES.map((line, i) => (
+              <Text
+                key={i}
+                style={[
+                  styles.discoveryLine,
+                  i === 0 && styles.discoveryHeader,
+                  line === '' && { height: 12 },
+                  i >= 5 && styles.discoveryFlavor,
+                ]}
+              >
+                {line}
+              </Text>
+            ))}
+            <View style={styles.discoveryTapHint}>
+              <MaterialCommunityIcons name="gesture-tap" size={20} color={colors.neonGreen} />
+              <Text style={styles.discoveryTapText}>TAP THE DRONE</Text>
+            </View>
+          </View>
+        </Animated.View>
+      )}
     </ScreenWrapper>
   );
 }
@@ -412,7 +614,7 @@ const styles = StyleSheet.create({
   // ─── Header ───
   header: {
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   droneName: {
     fontSize: fontSize.xl,
@@ -435,7 +637,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceLight,
     borderWidth: 1,
     borderColor: colors.neonCyan + '30',
-    marginBottom: 6,
+    marginBottom: 4,
     position: 'relative' as const,
     justifyContent: 'center' as const,
   },
@@ -453,46 +655,101 @@ const styles = StyleSheet.create({
     textAlign: 'center' as const,
     letterSpacing: 1,
   },
-  moodText: {
-    fontSize: fontSize.xs,
+
+  // ─── Compact Stats Row ───
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statChipValue: {
+    fontSize: fontSize.sm,
     fontWeight: '700',
     fontFamily: fontMono,
+  },
+  statChipLabel: {
+    fontSize: 7,
+    fontFamily: fontMono,
+    color: colors.textMuted,
+    letterSpacing: 1,
+  },
+  statChipStatus: {
+    fontSize: 8,
+    fontWeight: '800',
+    fontFamily: fontMono,
     letterSpacing: 2,
-    marginTop: 4,
   },
-  happinessBar: {
-    width: '60%',
-    height: 4,
-    backgroundColor: colors.surfaceLight,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
+
+  // ─── Speech Bubble ───
+  speechBubble: {
+    alignSelf: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+    maxWidth: '80%',
   },
-  happinessFill: {
-    height: '100%',
+  speechText: {
+    fontSize: fontSize.sm,
+    fontFamily: fontMono,
+    color: colors.neonGreen,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  speechTail: {
+    position: 'absolute',
+    bottom: -6,
+    alignSelf: 'center',
+    left: '50%',
+    marginLeft: -6,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: colors.neonGreen + '40',
   },
 
   // ─── Sprite ───
   spriteContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  moodGlow: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
   },
   spriteWrapper: {
-    width: 200,
-    height: 200,
+    width: 240,
+    height: 240,
     alignItems: 'center',
     justifyContent: 'center',
   },
   spriteImage: {
-    width: 200,
-    height: 200,
+    width: 240,
+    height: 240,
   },
   eyeGlow: {
     position: 'absolute',
     width: 16,
     height: 8,
-    top: 80,
-    left: 100,
+    top: 96,
+    left: 120,
     borderRadius: 4,
   },
   tapPrompt: {
@@ -509,22 +766,18 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 
-  // ─── Status ───
-  statusBubble: {
-    alignSelf: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  statusText: {
-    fontSize: fontSize.sm,
+  // ─── Floating XP ───
+  floatingXP: {
+    position: 'absolute',
+    top: 60,
+    fontSize: fontSize.md,
+    fontWeight: '800',
     fontFamily: fontMono,
     color: colors.neonGreen,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    letterSpacing: 2,
+    textShadowColor: colors.neonGreen,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
 
   // ─── Actions ───
@@ -654,5 +907,54 @@ const styles = StyleSheet.create({
     borderColor: colors.neonGreen + '60',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // ─── Discovery Overlay ───
+  discoveryOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  discoveryCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+    padding: spacing.lg,
+    alignItems: 'center',
+    maxWidth: 320,
+  },
+  discoveryLine: {
+    fontSize: fontSize.sm,
+    fontFamily: fontMono,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  discoveryHeader: {
+    fontSize: fontSize.xs,
+    fontWeight: '800',
+    color: colors.neonGreen,
+    letterSpacing: 2,
+    marginTop: spacing.md,
+    marginBottom: 4,
+  },
+  discoveryFlavor: {
+    color: colors.textMuted,
+    fontStyle: 'italic',
+  },
+  discoveryTapHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.lg,
+  },
+  discoveryTapText: {
+    fontSize: 10,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    color: colors.neonGreen,
+    letterSpacing: 2,
   },
 });
