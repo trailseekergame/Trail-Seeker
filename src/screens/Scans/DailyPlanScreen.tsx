@@ -11,7 +11,7 @@ import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import { GearSlotId } from '../../types';
 import { AVATARS } from '../../data/avatars';
-import { MAP_DEFS } from '../../data/sectorMaps';
+import { MAP_DEFS, MISSION_MAPS } from '../../data/sectorMaps';
 import gameBalance from '../../config/gameBalance.json';
 import { getDailyObjective } from '../../systems/dailyObjective';
 import { SKR_SHOP, SkrShopItem, getExtraScansFromBoost, ShopCategory } from '../../systems/skrEconomy';
@@ -529,6 +529,12 @@ export default function DailyPlanScreen() {
         )}
 
         {/* ─── 5. MISSION BOARD CTA ─── */}
+        {MISSION_MAPS.every(id => state.completedMapIds.includes(id)) && (
+          <View style={styles.allClearedBanner}>
+            <MaterialCommunityIcons name="medal" size={14} color={colors.neonAmber} />
+            <Text style={styles.allClearedText}>ALL SECTORS CLEARED — Re-run available for gear farming</Text>
+          </View>
+        )}
         <View style={styles.ctaContainer}>
           <NeonButton
             title="Mission Board"
@@ -1144,5 +1150,24 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.neonGreen,
     fontFamily: fontMono,
+  },
+
+  // ─── All Cleared Banner ───
+  allClearedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.lg,
+  },
+  allClearedText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    color: colors.neonAmber,
+    letterSpacing: 1,
+    flex: 1,
   },
 });

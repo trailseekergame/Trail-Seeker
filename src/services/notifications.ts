@@ -144,47 +144,69 @@ interface MessageTemplate {
  */
 function getDailyMessage(state: GameState): MessageTemplate {
   const name = state.playerName || 'Drifter';
-  const day = state.dayNumber;
-  const streak = Math.min(day, 7); // approximate streak from dayNumber
+  const dayNumber = state.dayNumber;
+  const streak = Math.min(dayNumber, 7);
+  const scansTotal = state.seekerScans.scansTotal;
+  const roverHealth = state.roverHealth;
+  const playerHealth = state.playerHealth;
   const visited = state.visitedNodes.length;
-  const totalNodes = 28; // zone01 node count
+  const totalNodes = 28;
 
-  // Pool of messages — pick one based on state
   const messages: MessageTemplate[] = [
     {
-      title: 'Seeker Scans Ready',
-      body: `${name}, your daily Scans are waiting. Pick your path and push your luck.`,
+      title: 'Signal Window Open',
+      body: `${name}, your scanner is charged. ${scansTotal} scans before the window closes.`,
     },
     {
-      title: 'The Trail Awaits',
-      body: `New sectors to uncover, ${name}. Your Scans reset — time to move.`,
+      title: 'Rig Powered Up',
+      body: `The static cleared, ${name}. Fresh scans are live — deploy when ready.`,
     },
     {
-      title: 'Fresh Scans Available',
-      body: `${name}, gear up and scan. ${totalNodes - visited} sectors still unexplored.`,
+      title: 'New Day, New Signal',
+      body: `${name}, the frequency shifted overnight. New reads available across the sector.`,
     },
     {
-      title: 'Daily Run Ready',
-      body: `The Rustbelt Verge doesn't wait, ${name}. Your Scans are live.`,
+      title: 'Camp Report',
+      body: `Scanner diagnostics complete. ${scansTotal} scans available. Rover condition: ${roverHealth}%. Move out when ready, ${name}.`,
+    },
+    {
+      title: 'The Trail Doesn\'t Wait',
+      body: `${name}, every day you don't scan is a day the Directorate gets closer to what you're looking for.`,
+    },
+    {
+      title: 'Operator Brief',
+      body: `Day ${dayNumber}. ${scansTotal} scans. ${name}, the wreckage won't search itself.`,
+    },
+    {
+      title: 'Free Band Relay',
+      body: `Intercepted chatter: "Good signal today." Your scans are live, ${name}.`,
+    },
+    {
+      title: 'Field Ready',
+      body: `${name}, rig is warm. ${totalNodes - visited} tiles still dark. Time to light them up.`,
     },
   ];
 
-  // Add context-specific messages
+  // Context-specific additions
   if (streak >= 5) {
     messages.push({
-      title: `Day ${streak} Streak`,
-      body: `${name}, your Day ${streak} bonus is live — boosted Scans and better odds today.`,
+      title: `Day ${streak} — Peak Signal`,
+      body: `${name}, your reads are the sharpest they've been. Don't waste this window.`,
     });
   }
-
-  if (visited > totalNodes * 0.7) {
+  if (roverHealth < 30) {
     messages.push({
-      title: 'Almost There',
-      body: `${name}, you've mapped ${visited} of ${totalNodes} sectors. The Verge Gate is close.`,
+      title: 'Rover Damaged',
+      body: `${name}, your rover is at ${roverHealth}%. Repair with scrap before your next run.`,
+    });
+  }
+  if (playerHealth < 30) {
+    messages.push({
+      title: 'Low HP Warning',
+      body: `${name}, you're running at ${playerHealth} HP. Heal at base before deploying.`,
     });
   }
 
-  // Pick a message deterministically based on the date (so it varies daily)
   const dateIndex = new Date().getDate() % messages.length;
   return messages[dateIndex];
 }
@@ -199,16 +221,28 @@ function getStreakWarningMessage(state: GameState): MessageTemplate {
 
   const messages: MessageTemplate[] = [
     {
-      title: 'Streak Bonus Cooling',
-      body: `${name}, your Day ${streak} streak bonus is still live. One Scan keeps it going.`,
+      title: 'Streak Cooling',
+      body: `${name}, Day ${streak} streak is still live. One scan keeps the signal sharp.`,
     },
     {
-      title: 'Don\'t Lose Your Edge',
-      body: `${name}, your ${streak}-day streak means better odds today. Worth a quick check-in.`,
+      title: 'Don\'t Go Dark',
+      body: `Your ${streak}-day streak means better reads, ${name}. Miss today and the frequency drifts.`,
     },
     {
-      title: 'Trail\'s Getting Cold',
-      body: `Your streak bonus drops tomorrow if you skip today, ${name}. A quick run keeps it.`,
+      title: 'Signal Degrading',
+      body: `${name}, your scanner calibration degrades without daily use. One scan holds the line.`,
+    },
+    {
+      title: 'Operator Warning',
+      body: `Day ${streak} bonus expires at midnight, ${name}. A single scan locks it in.`,
+    },
+    {
+      title: 'The Rig Remembers',
+      body: `${streak} days straight. Your rig is tuned to the frequency now, ${name}. Don't let it drift.`,
+    },
+    {
+      title: 'Last Call',
+      body: `${name}, your streak bonus is live until midnight. One quick scan — that's all it takes.`,
     },
   ];
 

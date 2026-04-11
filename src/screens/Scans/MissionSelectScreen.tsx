@@ -55,6 +55,43 @@ export default function MissionSelectScreen() {
           Pick a sector. Each job runs on your daily scan window.
         </Text>
 
+        {/* ─── Season Complete Card ─── */}
+        {MISSION_MAPS.every(id => state.completedMapIds.includes(id)) && (
+          <View style={styles.seasonCard}>
+            <MaterialCommunityIcons name="trophy" size={48} color={colors.neonGreen} />
+            <Text style={styles.seasonTitle}>SEASON COMPLETE</Text>
+            <Text style={styles.seasonLore}>
+              You've cleared every sector. The Directorate knows your callsign now.
+              The signal is still out there. Whatever AEGIS is broadcasting,
+              you're closer than anyone to finding it.
+            </Text>
+            <View style={styles.seasonStatsGrid}>
+              <View style={styles.seasonStatCell}>
+                <Text style={styles.seasonStatValue}>4/4</Text>
+                <Text style={styles.seasonStatLabel}>Maps Cleared</Text>
+              </View>
+              <View style={styles.seasonStatCell}>
+                <Text style={styles.seasonStatValue}>{state.totalScrapEarned}</Text>
+                <Text style={styles.seasonStatLabel}>Scrap Earned</Text>
+              </View>
+              <View style={styles.seasonStatCell}>
+                <Text style={styles.seasonStatValue}>{state.dayNumber}</Text>
+                <Text style={styles.seasonStatLabel}>Days Survived</Text>
+              </View>
+              <View style={styles.seasonStatCell}>
+                <Text style={styles.seasonStatValue}>{state.seekerScans.streakDay}</Text>
+                <Text style={styles.seasonStatLabel}>Streak Peak</Text>
+              </View>
+            </View>
+            <View style={styles.seasonDivider} />
+            <Text style={styles.seasonRerunTitle}>RE-RUN AVAILABLE</Text>
+            <Text style={styles.seasonRerunText}>
+              All sectors are open for farming. Better gear drops on repeat runs.
+              Keep your streak alive — new sectors are coming.
+            </Text>
+          </View>
+        )}
+
         {MISSION_MAPS.map((mapId) => {
           const mapDef = MAP_DEFS[mapId];
           const isUnlocked = state.unlockedMapIds.includes(mapId);
@@ -270,5 +307,82 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: spacing.sm,
     fontFamily: fontMono,
+  },
+
+  // ─── Season Complete ───
+  seasonCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.neonGreen + '60',
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+  },
+  seasonTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    color: colors.neonGreen,
+    letterSpacing: 3,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+  },
+  seasonLore: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontFamily: fontMono,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.lg,
+  },
+  seasonStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    width: '100%',
+    marginBottom: spacing.md,
+  },
+  seasonStatCell: {
+    width: '46%',
+    backgroundColor: colors.surfaceHighlight,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
+    padding: spacing.sm,
+    alignItems: 'center',
+  },
+  seasonStatValue: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    color: colors.neonGreen,
+  },
+  seasonStatLabel: {
+    fontSize: fontSize.xs,
+    fontFamily: fontMono,
+    color: colors.textMuted,
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  seasonDivider: {
+    width: '80%',
+    height: 1,
+    backgroundColor: colors.panelBorder,
+    marginVertical: spacing.md,
+  },
+  seasonRerunTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    color: colors.neonAmber,
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+  },
+  seasonRerunText: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
