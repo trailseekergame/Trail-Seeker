@@ -68,30 +68,41 @@ export default function ArcadeScreen({ navigation }: any) {
           />
         </Card>
 
-        {/* Companion Drone */}
-        <Card title="Companion Drone" icon="robot" accentColor={colors.neonGreen}>
-          <Text style={styles.gameDesc}>
-            {state.droneCompanion.name} is waiting at camp. Interact daily for small rewards.
-          </Text>
-          <View style={styles.droneStatusRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: state.droneCompanion.happiness > 50 ? colors.neonGreen : colors.neonAmber }]}>
-                {state.droneCompanion.happiness}
-              </Text>
-              <Text style={styles.statLabel}>Mood</Text>
+        {/* Companion Drone — unlocks at streak day 3 */}
+        {state.seekerScans.streakDay >= 3 ? (
+          <Card title="Companion Drone" icon="robot" accentColor={colors.neonGreen}>
+            <Text style={styles.gameDesc}>
+              {state.droneCompanion.name} is waiting at camp. Interact daily for small rewards.
+            </Text>
+            <View style={styles.droneStatusRow}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: state.droneCompanion.happiness > 50 ? colors.neonGreen : colors.neonAmber }]}>
+                  {state.droneCompanion.happiness}
+                </Text>
+                <Text style={styles.statLabel}>Mood</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{state.droneCompanion.totalInteractions}</Text>
+                <Text style={styles.statLabel}>Visits</Text>
+              </View>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{state.droneCompanion.totalInteractions}</Text>
-              <Text style={styles.statLabel}>Visits</Text>
-            </View>
-          </View>
-          <NeonButton
-            title={`Visit ${state.droneCompanion.name}`}
-            onPress={() => navigation.navigate('DroneCompanion')}
-            variant="primary"
-            icon="robot"
-          />
-        </Card>
+            <NeonButton
+              title={`Visit ${state.droneCompanion.name}`}
+              onPress={() => navigation.navigate('DroneCompanion')}
+              variant="primary"
+              icon="robot"
+            />
+          </Card>
+        ) : (
+          <Card title="???" icon="lock" accentColor={colors.textMuted}>
+            <Text style={styles.gameDesc}>
+              Your scanner is picking up a faint signal in the wreckage. Something's alive out there.
+            </Text>
+            <Text style={[styles.gameDesc, { color: colors.neonAmber, marginTop: spacing.xs }]}>
+              Unlocks at Day 3 streak.
+            </Text>
+          </Card>
+        )}
 
         {/* Leaderboard */}
         <Card title="Leaderboard" icon="trophy">
