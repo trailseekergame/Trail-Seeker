@@ -4,7 +4,7 @@ import ScreenWrapper from '../../components/common/ScreenWrapper';
 import Card from '../../components/common/Card';
 import NeonButton from '../../components/common/NeonButton';
 import { useGame } from '../../context/GameContext';
-import { colors, spacing, fontSize, borderRadius } from '../../theme';
+import { colors, spacing, fontSize, fontMono, borderRadius } from '../../theme';
 
 export default function ArcadeScreen({ navigation }: any) {
   const { state } = useGame();
@@ -65,6 +65,31 @@ export default function ArcadeScreen({ navigation }: any) {
             onPress={() => navigation.navigate('RPSDuel')}
             variant="primary"
             icon="sword-cross"
+          />
+        </Card>
+
+        {/* Companion Drone */}
+        <Card title="Companion Drone" icon="robot" accentColor={colors.neonGreen}>
+          <Text style={styles.gameDesc}>
+            {state.droneCompanion.name} is waiting at camp. Interact daily for small rewards.
+          </Text>
+          <View style={styles.droneStatusRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: state.droneCompanion.happiness > 50 ? colors.neonGreen : colors.neonAmber }]}>
+                {state.droneCompanion.happiness}
+              </Text>
+              <Text style={styles.statLabel}>Mood</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{state.droneCompanion.totalInteractions}</Text>
+              <Text style={styles.statLabel}>Visits</Text>
+            </View>
+          </View>
+          <NeonButton
+            title={`Visit ${state.droneCompanion.name}`}
+            onPress={() => navigation.navigate('DroneCompanion')}
+            variant="primary"
+            icon="robot"
           />
         </Card>
 
@@ -201,5 +226,11 @@ const styles = StyleSheet.create({
   rewardItem: {
     fontSize: fontSize.sm,
     color: colors.neonGreen,
+  },
+  droneStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xl,
+    marginBottom: spacing.md,
   },
 });

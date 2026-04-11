@@ -19,6 +19,8 @@ import {
   AvatarId,
   MapId,
   ActiveBoost,
+  DroneCosmetic,
+  DroneCompanionState,
 } from '../types';
 import { saveGameState, loadGameState } from '../services/storage';
 import { ALL_GEAR_ITEMS, STARTER_GEAR } from '../data/gearItems';
@@ -93,7 +95,34 @@ type GameAction =
   | { type: 'RPS_DRAW' }
   | { type: 'ADD_GEAR_ITEM'; payload: GearItem }
   | { type: 'MARK_GEAR_SEEN'; payload: string[] }
-  | { type: 'SET_ACCENT_COLOR'; payload: string };
+  | { type: 'SET_ACCENT_COLOR'; payload: string }
+  | { type: 'DRONE_INTERACT' }
+  | { type: 'DRONE_FEED' }
+  | { type: 'DRONE_UPGRADE_COSMETIC'; payload: { cosmeticId: string; cosmeticType: 'eyeColor' | 'antenna' | 'shell'; value: string } }
+  | { type: 'DRONE_SET_COSMETIC'; payload: Partial<DroneCosmetic> }
+  | { type: 'DRONE_SET_NAME'; payload: string };
+
+// ─── Drone Level System ───
+const DRONE_LEVEL_THRESHOLDS = [0, 50, 150, 300, 500];
+export const DRONE_LEVEL_TITLES = ['Scout Drone', 'Relay Drone', 'Signal Drone', 'Recon Drone', 'Bonded Companion'];
+
+function computeDroneLevel(xp: number): number {
+  let level = 1;
+  for (let i = DRONE_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= DRONE_LEVEL_THRESHOLDS[i]) {
+      level = i + 1;
+      break;
+    }
+  }
+  return level;
+}
+
+export function getDroneLevelProgress(xp: number, level: number): { current: number; next: number; progress: number } {
+  const current = DRONE_LEVEL_THRESHOLDS[level - 1] || 0;
+  const next = DRONE_LEVEL_THRESHOLDS[level] || DRONE_LEVEL_THRESHOLDS[DRONE_LEVEL_THRESHOLDS.length - 1];
+  if (level >= DRONE_LEVEL_THRESHOLDS.length) return { current, next, progress: 1 };
+  return { current, next, progress: (xp - current) / (next - current) };
+}
 
 // ─── Reducer ───
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -404,6 +433,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           streakDay: newStreak,
           lastLoginDate: today,
         },
+        droneCompanion: {
+          ...state.droneCompanion,
+          happiness: Math.max(0, state.droneCompanion.happiness - 8),
+        },
       };
     }
 
@@ -688,6 +721,73 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, rpsLosses: state.rpsLosses + 1 };
     case 'RPS_DRAW':
       return { ...state, rpsDraws: state.rpsDraws + 1 };
+
+    // ─── Drone Companion ───
+    case 'DRONE_INTERACT': {
+      const today = new Date().toISOString().split('T')[0];
+      const newXp = (state.droneCompanion.xp || 0) + 10;
+      return {
+        ...state,
+        droneCompanion: {
+          ...state.droneCompanion,
+          happiness: Math.min(100, state.droneCompanion.happiness + 15),
+          lastInteraction: today,
+          totalInteractions: state.droneCompanion.totalInteractions + 1,
+          xp: newXp,
+          level: computeDroneLevel(newXp),
+        },
+      };
+    }
+
+    case 'DRONE_FEED': {
+      if (state.resources.supplies < 3) return state;
+      const feedXp = (state.droneCompanion.xp || 0) + 5;
+      return {
+        ...state,
+        resources: { ...state.resources, supplies: state.resources.supplies - 3 },
+        droneCompanion: {
+          ...state.droneCompanion,
+          happiness: Math.min(100, state.droneCompanion.happiness + 25),
+          xp: feedXp,
+          level: computeDroneLevel(feedXp),
+        },
+      };
+    }
+
+    case 'DRONE_UPGRADE_COSMETIC': {
+      if (state.resources.scrap < 10) return state;
+      if (state.droneCompanion.unlockedCosmetics.includes(action.payload.cosmeticId)) return state;
+      return {
+        ...state,
+        resources: { ...state.resources, scrap: state.resources.scrap - 10 },
+        droneCompanion: {
+          ...state.droneCompanion,
+          unlockedCosmetics: [...state.droneCompanion.unlockedCosmetics, action.payload.cosmeticId],
+          cosmetic: {
+            ...state.droneCompanion.cosmetic,
+            [action.payload.cosmeticType]: action.payload.value,
+          },
+        },
+      };
+    }
+
+    case 'DRONE_SET_COSMETIC':
+      return {
+        ...state,
+        droneCompanion: {
+          ...state.droneCompanion,
+          cosmetic: { ...state.droneCompanion.cosmetic, ...action.payload },
+        },
+      };
+
+    case 'DRONE_SET_NAME':
+      return {
+        ...state,
+        droneCompanion: {
+          ...state.droneCompanion,
+          name: action.payload,
+        },
+      };
 
     default:
       return state;

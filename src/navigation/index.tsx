@@ -18,6 +18,7 @@ import CodexEntryScreen from '../screens/Codex/CodexEntryScreen';
 import ArcadeScreen from '../screens/Arcade/ArcadeScreen';
 import MiniGameScreen from '../screens/Arcade/MiniGameScreen';
 import RPSScreen from '../screens/Arcade/RPSScreen';
+import DroneScreen from '../screens/Arcade/DroneScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import TitleScreen from '../screens/TitleScreen';
 import DailyPlanScreen from '../screens/Scans/DailyPlanScreen';
@@ -165,6 +166,11 @@ function ArcadeStackNavigator() {
         name="RPSDuel"
         component={RPSScreen}
         options={{ title: 'Trail Standoff' }}
+      />
+      <ArcadeStack.Screen
+        name="DroneCompanion"
+        component={DroneScreen}
+        options={{ title: 'Companion Drone' }}
       />
     </ArcadeStack.Navigator>
   );

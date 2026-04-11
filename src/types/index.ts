@@ -180,6 +180,24 @@ export interface LeaderboardEntry {
   timestamp: number;
 }
 
+// ─── Drone Companion ───
+export type DroneCosmetic = {
+  eyeColor: string;
+  antenna: string;
+  shell: string;
+};
+
+export interface DroneCompanionState {
+  name: string;
+  happiness: number;
+  lastInteraction: string;
+  totalInteractions: number;
+  cosmetic: DroneCosmetic;
+  unlockedCosmetics: string[];
+  xp: number;
+  level: number;
+}
+
 // ─── Game State ───
 export type TrailOverReason = 'hp_zero' | 'run_complete';
 
@@ -256,6 +274,9 @@ export interface GameState {
   rpsWins: number;
   rpsLosses: number;
   rpsDraws: number;
+
+  // Drone companion
+  droneCompanion: DroneCompanionState;
 }
 
 export interface ActiveBoost {
@@ -343,6 +364,16 @@ export const INITIAL_GAME_STATE: GameState = {
   rpsWins: 0,
   rpsLosses: 0,
   rpsDraws: 0,
+  droneCompanion: {
+    name: 'UNIT-7',
+    happiness: 50,
+    lastInteraction: '',
+    totalInteractions: 0,
+    cosmetic: { eyeColor: '#00E89C', antenna: 'default', shell: 'default' },
+    unlockedCosmetics: ['default'],
+    xp: 0,
+    level: 1,
+  },
 };
 
 // ─── Seeker Scan System ───

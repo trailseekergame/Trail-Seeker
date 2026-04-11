@@ -67,9 +67,9 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     resourceRate: 0.20,
     requiresCompleted: [],
     briefing:
-      'The overpass buckled during the orbital strikes. Directorate marked it condemned — meaning nobody\'s picked it clean yet. Your scanner should cut through the rebar.',
+      'The Directorate rerouted Highway 7 through a compliance corridor in 2061. The original overpass was left to collapse — nobody was supposed to need it anymore. Eighteen years of weather and neglect buried supply caches, abandoned vehicles, and the electronics inside them under concrete and rebar. Directorate patrols avoid the unstable structure. Your scanner reads salvage signatures all through the wreckage. Whatever you pull out of here, nobody\'s coming to claim it.',
     debriefing:
-      'The overpass is stripped. Signal traces point deeper — a relay array east of here, still broadcasting on a dead frequency.',
+      'The overpass is stripped clean. Your scanner picked up signal traces during the last pass — a relay array east of here, still broadcasting on a dead frequency. Worth investigating.',
     unlocksMap: 'relay_field',
   },
 
@@ -87,9 +87,9 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     resourceRate: 0.16,
     requiresCompleted: ['broken_overpass'],
     briefing:
-      'Pre-collapse relay station. The Directorate gutted it for parts but the underground vault is still sealed. Your scanner can reach what they couldn\'t.',
+      'This was a pre-collapse military communications array — thirty dishes pointed at satellites that stopped answering decades ago. The Directorate gutted the surface hardware for parts, but the underground data vault was sealed by a security protocol that predates AEGIS. The machine can\'t override its own predecessor. The dishes still hum with residual power, and whatever\'s stored in that vault hasn\'t been touched in thirty years. Free Band chatter says the data inside is worth more than a year of scrap runs.',
     debriefing:
-      'Vault cracked. The data cores are yours. Back to camp — your gear needs recalibrating after running that deep.',
+      'Vault cracked. The data cores are yours — pre-collapse intel that the Directorate would kill to keep buried. Back to camp for recalibration. Your rig earned this one.',
   },
   broken_overpass_hard: {
     id: 'broken_overpass_hard',
@@ -105,9 +105,9 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     resourceRate: 0.15,
     requiresCompleted: ['broken_overpass'],
     briefing:
-      'Hardened mode. Same overpass, worse company. The Directorate sent reinforcements. Enemies hit harder, tiles take more hits, but the salvage is worth it.',
+      'The Directorate noticed the scanning activity. Reinforcement drones have been deployed to the overpass wreckage and the surrounding perimeter is flagged for reclamation. The salvage that\'s left is deeper — buried under layers that your first pass couldn\'t reach. Armored drones run patrol loops through the rubble. The risk is real, but so is what\'s down there. Operators who ran this zone before you either got rich or didn\'t come back.',
     debriefing:
-      'You made it back. Again. The overpass has nothing left to give. Time to move on.',
+      'You made it back. Again. The overpass has nothing left to give — but what you pulled from the deep layers will keep you running for a while. The Directorate will notice the gap in their inventory.',
   },
   relay_field_hard: {
     id: 'relay_field_hard',
@@ -123,9 +123,9 @@ export const MAP_DEFS: Record<MapId, MapDef> = {
     resourceRate: 0.12,
     requiresCompleted: ['relay_field'],
     briefing:
-      'Hardened mode. Directorate Wardens guard every corridor. Your scanner will need to cut through active jamming.',
+      'The vault is breached. The Directorate knows, and Warden-class enforcement platforms now patrol every corridor inside the array. Active jamming blankets the entire sector — your scanner will fight for every read. But the deepest data cores are still intact, and they contain pre-collapse research that the Directorate actively catalogued for destruction. This is the most dangerous ground you\'ve walked. It\'s also the most valuable.',
     debriefing:
-      'The vault is empty now. Whatever was worth taking, you took it. Season complete.',
+      'The vault is empty now. Whatever the Directorate wanted destroyed, you pulled it out first. This is the kind of data that changes things — if it reaches the right hands. Season complete.',
   },
 };
 
