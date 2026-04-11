@@ -516,13 +516,13 @@ export async function checkAndSendWeeklyReport(): Promise<boolean> {
   const todayStr = today.toISOString().split('T')[0];
   if (lastReport === todayStr) return false;
 
-  console.log('[Analytics] Generating weekly report...');
+  // console.log('[Analytics] Generating weekly report...');
 
   const aggregate = await aggregateWeekly();
 
   // Skip if no data
   if (aggregate.totalSessions === 0) {
-    console.log('[Analytics] No sessions this week, skipping report.');
+    // console.log('[Analytics] No sessions this week, skipping report.');
     return false;
   }
 
@@ -532,8 +532,8 @@ export async function checkAndSendWeeklyReport(): Promise<boolean> {
   await AsyncStorage.setItem(STORAGE_KEYS.WEEKLY_AGGREGATE, JSON.stringify(aggregate));
 
   // Log the report (always available in dev console)
-  console.log('[Analytics] Weekly Report:');
-  console.log(body);
+  // console.log('[Analytics] Weekly Report:');
+  // console.log(body);
 
   // Open device email client with pre-filled report
   // In production, replace this with a server-side API call
@@ -580,8 +580,8 @@ export async function getEventCount(): Promise<number> {
 export async function forceSendReport(): Promise<void> {
   const aggregate = await aggregateWeekly();
   const { subject, body } = formatWeeklyReport(aggregate);
-  console.log('[Analytics] FORCED Weekly Report:');
-  console.log(body);
+  // console.log('[Analytics] FORCED Weekly Report:');
+  // console.log(body);
 
   const { Linking } = require('react-native');
   const mailtoUrl = `mailto:${DEV_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -599,5 +599,5 @@ export async function clearAnalytics(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEYS.DAILY_EVENTS);
   await AsyncStorage.removeItem(STORAGE_KEYS.WEEKLY_AGGREGATE);
   await AsyncStorage.removeItem(STORAGE_KEYS.LAST_REPORT_DATE);
-  console.log('[Analytics] All analytics data cleared.');
+  // console.log('[Analytics] All analytics data cleared.');
 }

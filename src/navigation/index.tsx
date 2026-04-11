@@ -200,7 +200,7 @@ function MainTabs() {
         component={TrailStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="map-marker-path" label="Trail" focused={focused} />
+            <TabIcon icon="radar" label="Scans" focused={focused} />
           ),
         }}
       />
@@ -209,7 +209,7 @@ function MainTabs() {
         component={SettlementStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="home-group" label="Camp" focused={focused} />
+            <TabIcon icon="home-group" label="Base" focused={focused} />
           ),
         }}
       />

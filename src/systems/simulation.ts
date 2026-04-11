@@ -217,6 +217,6 @@ export function runFullSimulation(): string {
   lines.push(hr);
 
   const report = lines.join('\n');
-  console.log(report);
+  // console.log(report);
   return report;
 }

@@ -7,7 +7,7 @@ import { SeekerScanState, ScanResult, GearSlotId } from '../types';
 export function logSessionSummary(ss: SeekerScanState): void {
   const results = ss.sessionResults;
   if (results.length === 0) {
-    console.log('[Session] No scans this session.');
+    // console.log('[Session] No scans this session.');
     return;
   }
 
@@ -72,7 +72,7 @@ export function logSessionSummary(ss: SeekerScanState): void {
     '═══════════════════════════════════════',
   ];
 
-  console.log(lines.join('\n'));
+  // console.log(lines.join('\n'));
 }
 
 /**
@@ -80,11 +80,5 @@ export function logSessionSummary(ss: SeekerScanState): void {
  */
 export function logGambitResult(result: ScanResult, streakDay: number, gear: GearSlotId[]): void {
   if (result.scanType !== 'gambit') return;
-  console.log(
-    `[Gambit] Day${streakDay} | Gear: ${gear.join(',')} | ` +
-    `${result.outcome === 'whiff' ? 'WHIFF' : result.outcome.toUpperCase()}` +
-    `${result.lootName ? ` (${result.lootName})` : ''}` +
-    `${result.droneProc ? ' [DRONE SAVED]' : ''}` +
-    ` | +${result.sectorProgress} tiles`
-  );
+  // Gambit logging disabled for production
 }

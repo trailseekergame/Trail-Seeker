@@ -72,7 +72,7 @@ let seasonPoolBalance = 0;
  *       @solana/wallet-adapter for web/Phantom deep link.
  */
 export async function connectWallet(): Promise<WalletState> {
-  console.log('[Solana] connectWallet');
+  // console.log('[Solana] connectWallet');
   // TODO: Replace with MWA:
   // const authResult = await transact(async (wallet) => {
   //   return wallet.authorize({ identity: { name: 'Trail Seeker' } });
@@ -96,7 +96,7 @@ export async function connectWallet(): Promise<WalletState> {
  * Disconnect wallet. Clears local state.
  */
 export async function disconnectWallet(): Promise<void> {
-  console.log('[Solana] disconnectWallet');
+  // console.log('[Solana] disconnectWallet');
   walletState = { ...DEFAULT_WALLET };
 }
 
@@ -112,7 +112,7 @@ export function getWalletState(): WalletState {
  */
 export async function refreshBalances(): Promise<WalletState> {
   if (!walletState.connected || !walletState.publicKey) return walletState;
-  console.log('[Solana] refreshBalances for', walletState.publicKey);
+  // console.log('[Solana] refreshBalances for', walletState.publicKey);
   // TODO: const connection = new Connection(clusterApiUrl('mainnet-beta'));
   // walletState.balance = await connection.getBalance(new PublicKey(walletState.publicKey)) / LAMPORTS_PER_SOL;
   // walletState.skrOnChain = await getTokenAccountBalance(walletState.publicKey, SKR_MINT);
@@ -138,8 +138,8 @@ export async function refreshBalances(): Promise<WalletState> {
 export async function depositSkrToProfile(
   amount: number,
 ): Promise<TransactionResult & { deposited: number }> {
-  console.log(`[Solana] depositSkrToProfile(${amount} $SKR)`);
-  console.log(`  Player ${walletState.publicKey} → Treasury ${TREASURY_PUBKEY}`);
+  // console.log(`[Solana] depositSkrToProfile(${amount} $SKR)`);
+  // console.log(`  Player ${walletState.publicKey} → Treasury ${TREASURY_PUBKEY}`);
 
   if (!walletState.connected) {
     return { success: false, deposited: 0, error: 'Wallet not connected' };
@@ -192,8 +192,8 @@ export async function withdrawSkrFromProfile(
   amount: number,
   playerProfileBalance: number,
 ): Promise<TransactionResult & { withdrawn: number }> {
-  console.log(`[Solana] withdrawSkrFromProfile(${amount} $SKR)`);
-  console.log(`  Treasury ${TREASURY_PUBKEY} → Player ${walletState.publicKey}`);
+  // console.log(`[Solana] withdrawSkrFromProfile(${amount} $SKR)`);
+  // console.log(`  Treasury ${TREASURY_PUBKEY} → Player ${walletState.publicKey}`);
 
   if (!walletState.connected) {
     return { success: false, withdrawn: 0, error: 'Wallet not connected' };
@@ -243,7 +243,7 @@ export async function spendSkrOnChain(
   amount: number,
   reason: string,
 ): Promise<TransactionResult & { burned: number; pooled: number }> {
-  console.log(`[Solana] spendSkrOnChain(${amount} $SKR) — ${reason}`);
+  // console.log(`[Solana] spendSkrOnChain(${amount} $SKR) — ${reason}`);
 
   if (!walletState.connected) {
     return { success: false, burned: 0, pooled: 0, error: 'Wallet not connected' };
@@ -255,8 +255,8 @@ export async function spendSkrOnChain(
   const burnHalf = Math.ceil(amount / 2);
   const poolHalf = amount - burnHalf;
 
-  console.log(`  → Burn: ${burnHalf} to ${BURN_ADDRESS}`);
-  console.log(`  → Pool: ${poolHalf} to ${SEASON_POOL_PUBKEY}`);
+  // console.log(`  → Burn: ${burnHalf} to ${BURN_ADDRESS}`);
+  // console.log(`  → Pool: ${poolHalf} to ${SEASON_POOL_PUBKEY}`);
 
   // TODO: Build atomic transaction:
   // const burnIx = createBurnInstruction(playerATA, skrMint, playerPubkey, burnHalf * DECIMALS);
@@ -297,7 +297,7 @@ export function getSeasonPoolBalance(): number {
 /** Request devnet airdrop (development only) */
 export async function requestAirdrop(amount: number = 1): Promise<boolean> {
   if (!__DEV__) return false;
-  console.log(`[Solana Dev] requestAirdrop(${amount} SOL)`);
+  // console.log(`[Solana Dev] requestAirdrop(${amount} SOL)`);
   walletState.balance += amount;
   return true;
 }

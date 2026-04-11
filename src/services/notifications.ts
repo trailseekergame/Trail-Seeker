@@ -101,7 +101,7 @@ export async function requestPermissions(): Promise<boolean> {
   if (!Notifications || !Device) return false;
   try {
     if (!Device.isDevice) {
-      console.log('[Notifications] Must use physical device for push notifications');
+      // console.log('[Notifications] Must use physical device for push notifications');
       return false;
     }
 
@@ -110,7 +110,7 @@ export async function requestPermissions(): Promise<boolean> {
 
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
-      console.log('[Notifications] Permission not granted');
+      // console.log('[Notifications] Permission not granted');
       return false;
     }
 
@@ -291,7 +291,7 @@ export async function scheduleReminders(state: GameState): Promise<void> {
     },
   });
 
-  console.log(`[Notifications] Daily reminder scheduled in ${Math.round(dailySeconds / 3600)}h`);
+  // console.log(`[Notifications] Daily reminder scheduled in ${Math.round(dailySeconds / 3600)}h`);
 
   // ── Streak warning (only for 3+ day streaks) ──
   const streak = Math.min(state.dayNumber, 7);
