@@ -99,17 +99,16 @@ const ACCENT_COLORS = [
 // ─── Boot Lines ───
 
 const BOOT_LINES = [
-  '> BIOS POST ............................... OK',
-  '> MEM CHECK: 4096K ........................ OK',
-  '> SIGNAL ARRAY ........................ OFFLINE',
-  '> DIRECTORATE AUTH .................. NOT FOUND',
-  '> GPS MODULE ........................... JAMMED',
-  '> ROVER LINK ............................ FOUND',
+  '> SEEKER RIG v2.4.1 — BOOTLOADER',
+  '> SCANNING OPERATOR PROFILE...',
+  '> WARNING: Memory banks corrupted. Identity data unrecoverable.',
+  '> Last known position: UNKNOWN',
+  '> Directorate network status: HOSTILE',
+  '> Free Band relay: 1 signal detected',
+  '> RIG STATUS: Functional. Minimal supplies.',
   '',
-  '> WARNING: NO OPERATOR ID DETECTED',
-  '> WARNING: UNAUTHORIZED ACCESS — LOG SUPPRESSED',
-  '',
-  '> TERMINAL READY. AWAITING INPUT.',
+  '> You are alone. You are outside the system.',
+  '> Begin operator registration to restore rig access.',
 ];
 
 // ─── Component ───

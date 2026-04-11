@@ -62,13 +62,18 @@ export function resolveScan(
   scanType: ScanType,
   tileId: string,
   state: SeekerScanState,
+  radioEffect?: { type: string; mapId?: string; value: number },
 ): ScanResult {
   const activeGear = state.activeGearSlots;
   const inventory = state.gearInventory;
   const streakDay = state.streakDay;
 
   // 1. Roll for whiff
-  const whiffRate = getEffectiveWhiffRate(scanType, streakDay, activeGear, inventory);
+  let whiffRate = getEffectiveWhiffRate(scanType, streakDay, activeGear, inventory);
+  // Apply radio whiff_reduction effect
+  if (radioEffect?.type === 'whiff_reduction') {
+    whiffRate = Math.max(0, whiffRate - radioEffect.value);
+  }
   const whiffRoll = Math.random();
 
   let droneProc = false;
@@ -158,7 +163,8 @@ export function resolveScan(
   }
 
   // Shift probabilities (boost rare/legendary, reduce common)
-  const totalBoost = Math.min(streakRareBoost + opticsBoost, rails.max_rare_chance_boost);
+  const radioRareBoost = radioEffect?.type === 'rare_boost' ? radioEffect.value : 0;
+  const totalBoost = Math.min(streakRareBoost + opticsBoost + radioRareBoost, rails.max_rare_chance_boost);
   if (totalBoost > 0 && lootTable.rare !== undefined) {
     lootTable.rare = (lootTable.rare || 0) + totalBoost;
     if (opticsBoost > 0) opticsProc = true;

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, ImageBackground, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -22,6 +22,7 @@ import { saveGameState } from '../../services/storage';
 import { checkMilestones, applyResourceBoost, applyDamageReduction } from '../../systems/skrEconomy';
 import CombatOverlay from '../../components/scans/CombatOverlay';
 import { createEnemy, Enemy } from '../../systems/combatEngine';
+import { getDailyTransmission } from '../../data/radioTransmissions';
 
 // ─── Constants ───
 
@@ -124,6 +125,15 @@ export default function ScanScreen({ route }: any) {
   const [milestoneNames, setMilestoneNames] = useState<string[]>([]);
   const lastScannedTileRef = useRef<string | null>(null);
   const sessionStartRef = useRef(ss.sessionStartTime);
+
+  // Radio effect for today — apply to scans if mapId matches (or no mapId restriction)
+  const radioEffect = useMemo(() => {
+    const tx = getDailyTransmission(state.dayNumber || 1);
+    if (!tx.effect) return undefined;
+    if (tx.effect.type === 'hp_regen') return undefined; // Applied on camp screen
+    if (tx.effect.mapId && tx.effect.mapId !== mapId) return undefined;
+    return { type: tx.effect.type, mapId: tx.effect.mapId, value: tx.effect.value };
+  }, [state.dayNumber, mapId]);
 
   // Resolving animation values
   const resolvePulse = useRef(new Animated.Value(1)).current;
@@ -325,7 +335,7 @@ export default function ScanScreen({ route }: any) {
     AudioManager.playSfx('scan_press');
     AudioManager.vibrate('light');
 
-    let result = resolveScan(selectedScan, selectedTile.id, ss);
+    let result = resolveScan(selectedScan, selectedTile.id, ss, radioEffect);
 
     // Shielded scan: force non-whiff by re-rolling until success
     if (ss.shieldedNextScan && result.outcome === 'whiff') {
@@ -351,6 +361,11 @@ export default function ScanScreen({ route }: any) {
     const tileType = selectedTile.type === 'cleared' ? 'unknown' : selectedTile.type;
     const rewards = computeScanRewards(result.outcome, result.scanType, tileType, selectedTile.flavor);
     result = { ...result, ...rewards };
+
+    // Apply radio scrap_bonus effect
+    if (radioEffect?.type === 'scrap_bonus' && result.outcome !== 'whiff') {
+      result = { ...result, scrapAwarded: result.scrapAwarded + radioEffect.value };
+    }
 
     // Override field note with authored flavor text if present
     if (selectedTile.flavor) {

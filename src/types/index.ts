@@ -167,6 +167,7 @@ export interface CodexEntry {
   content: string;
   alwaysVisible?: boolean;
   icon?: string;
+  image?: any;
 }
 
 // ─── Leaderboard ───

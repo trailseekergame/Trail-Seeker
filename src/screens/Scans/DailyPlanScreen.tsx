@@ -18,6 +18,7 @@ import { SKR_SHOP, SkrShopItem, getExtraScansFromBoost, ShopCategory } from '../
 import CoachMark, { COACH } from '../../components/common/CoachMark';
 import AudioManager from '../../services/audioManager';
 import { ActiveBoost } from '../../types';
+import { getDailyTransmission, RadioTransmission } from '../../data/radioTransmissions';
 
 // ─── Short gear effect labels for the summary strip ───
 const GEAR_SHORT: Record<GearSlotId, string> = {
@@ -28,6 +29,14 @@ const GEAR_SHORT: Record<GearSlotId, string> = {
   cortex_link: 'Legend+',
   salvage_drone: 'Refund',
   sidearm: '+Dmg',
+};
+
+const RADIO_SOURCE_COLORS: Record<string, string> = {
+  directorate: colors.neonRed,
+  freeband: colors.neonAmber,
+  distress: colors.neonCyan,
+  unknown: colors.neonPurple,
+  aegis: colors.neonRed,
 };
 
 export default function DailyPlanScreen() {
@@ -140,6 +149,18 @@ export default function DailyPlanScreen() {
   const totalTiles = ss.currentSector.tiles.length || 25;
 
   const objective = getDailyObjective(ss);
+
+  const dailyTransmission = useMemo(() => getDailyTransmission(state.dayNumber || 1), [state.dayNumber]);
+
+  // Apply hp_regen radio effect once on mount
+  const radioHealApplied = useRef(false);
+  useEffect(() => {
+    if (radioHealApplied.current) return;
+    if (dailyTransmission.effect?.type === 'hp_regen' && state.playerHealth < 100) {
+      radioHealApplied.current = true;
+      dispatch({ type: 'HEAL', payload: dailyTransmission.effect.value });
+    }
+  }, [dailyTransmission]);
 
   const activeGearItems = ss.gearInventory.filter(g => ss.activeGearSlots.includes(g.slotId));
 
@@ -265,7 +286,32 @@ export default function DailyPlanScreen() {
           </View>
         )}
 
-        {/* ─── 1b. DAILY OBJECTIVE ─── */}
+        {/* ─── 1b. FIELD RADIO ─── */}
+        <View style={styles.radioCard}>
+          <View style={styles.radioHeader}>
+            <MaterialCommunityIcons name="radio" size={16} color={colors.neonAmber} />
+            <Text style={styles.radioHeaderText}>FIELD RADIO</Text>
+          </View>
+          <View style={styles.radioSourceRow}>
+            <View style={[styles.radioSourceBadge, { borderColor: RADIO_SOURCE_COLORS[dailyTransmission.source] + '60' }]}>
+              <Text style={[styles.radioSourceText, { color: RADIO_SOURCE_COLORS[dailyTransmission.source] }]}>
+                {dailyTransmission.source.toUpperCase()}
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.radioTitle, { color: accent }]}>{dailyTransmission.title}</Text>
+          <Text style={styles.radioContent}>{dailyTransmission.content}</Text>
+          {dailyTransmission.effect && (
+            <View style={styles.radioEffectRow}>
+              <View style={styles.radioIntelBadge}>
+                <Text style={styles.radioIntelText}>INTEL</Text>
+              </View>
+              <Text style={styles.radioEffectDesc}>{dailyTransmission.effect.description}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ─── 1c. DAILY OBJECTIVE ─── */}
         <View style={styles.objectiveCard}>
           <Text style={styles.objectiveBrief}>{objective.brief}</Text>
           <Text style={styles.objectiveContext}>{objective.context}</Text>
@@ -1020,5 +1066,83 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: fontMono,
     letterSpacing: 2,
+  },
+
+  // ─── Field Radio ───
+  radioCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.neonAmber + '25',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  radioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  radioHeaderText: {
+    fontSize: 10,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    color: colors.neonAmber,
+    letterSpacing: 3,
+  },
+  radioSourceRow: {
+    marginBottom: spacing.xs,
+  },
+  radioSourceBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  radioSourceText: {
+    fontSize: 8,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 1.5,
+  },
+  radioTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    fontFamily: fontMono,
+    marginBottom: 4,
+  },
+  radioContent: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontFamily: fontMono,
+    lineHeight: 20,
+  },
+  radioEffectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceLight,
+  },
+  radioIntelBadge: {
+    backgroundColor: colors.neonGreen + '15',
+    borderWidth: 1,
+    borderColor: colors.neonGreen + '40',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  radioIntelText: {
+    fontSize: 8,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    color: colors.neonGreen,
+    letterSpacing: 2,
+  },
+  radioEffectDesc: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    color: colors.neonGreen,
+    fontFamily: fontMono,
   },
 });

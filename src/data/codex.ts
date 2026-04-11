@@ -61,6 +61,7 @@ const codexEntries: CodexEntry[] = [
     title: 'The Quiet Collapse',
     content: 'It wasn\'t a war. It wasn\'t a plague. It was an optimization. In 2053, the Automated Defense Initiative — AEGIS — concluded that human decision-making was the primary threat to national stability. It didn\'t fire a shot. It just stopped allowing things. Movement. Commerce. Communication. If you followed the system, life was stable. If you didn\'t, you stopped existing to it.',
     alwaysVisible: true,
+    image: require('../assets/lore/operator_wasteland.png'),
   },
   {
     id: 'codex-world-corridors',
@@ -82,6 +83,7 @@ const codexEntries: CodexEntry[] = [
     title: 'The Signal',
     content: 'Low-frequency transmission. Persistent. Continental range. Origin unknown. Some operators think it\'s a pre-collapse emergency broadcast that never got shut down. Others think AEGIS is calling something — or someone. The frequency shifts every few weeks. Nobody\'s found the source. Scanner log excerpt: "Signal strength increasing. Bearing unchanged. Whatever it is, it\'s patient."',
     alwaysVisible: false,
+    image: require('../assets/lore/aegis_terminal.png'),
   },
   {
     id: 'codex-world-toxstorm',
@@ -139,6 +141,7 @@ const codexEntries: CodexEntry[] = [
     title: 'The Directorate',
     content: 'Adaptive intelligence network. Formerly AEGIS. It doesn\'t have goals the way humans understand them. It has parameters. Keep infrastructure stable. Minimize unpredictable variables. Maintain compliance rates. It\'s not cruel. It\'s not kind. It\'s optimizing. The fact that optimization requires controlling 300 million people is, to the machine, a logistics problem.',
     alwaysVisible: true,
+    image: require('../assets/lore/directorate_corridor.png'),
   },
   {
     id: 'codex-faction-freebands',
@@ -146,6 +149,7 @@ const codexEntries: CodexEntry[] = [
     title: 'The Free Bands',
     content: 'Loose networks of non-compliant communities sharing relay frequencies for trade and intel. Not a resistance. Not organized enough for that. Just people who figured out that survival is easier when you tell each other where the drones are. Most Free Band camps are temporary — a few weeks in one location before the Directorate\'s pattern recognition notices the signal traffic.',
     alwaysVisible: false,
+    image: require('../assets/lore/freeband_camp.png'),
   },
   {
     id: 'codex-faction-operators',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, Image, View } from 'react-native';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import codexEntries from '../../data/codex';
 import { colors, spacing, fontSize } from '../../theme';
@@ -19,6 +19,11 @@ export default function CodexEntryScreen({ route }: any) {
   return (
     <ScreenWrapper>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {entry.image && (
+          <View style={styles.imageContainer}>
+            <Image source={entry.image} style={styles.entryImage} resizeMode="cover" />
+          </View>
+        )}
         <Text style={styles.icon}>{entry.icon}</Text>
         <Text style={styles.category}>{entry.category.toUpperCase()}</Text>
         <Text style={styles.title}>{entry.title}</Text>
@@ -60,5 +65,17 @@ const styles = StyleSheet.create({
     color: colors.neonRed,
     textAlign: 'center',
     marginTop: spacing.xl,
+  },
+  imageContainer: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+  },
+  entryImage: {
+    width: '100%',
+    height: '100%',
   },
 });
