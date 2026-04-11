@@ -87,6 +87,25 @@ export function resolveScan(
     }
 
     const { fieldNote } = generateLootData('whiff');
+
+    // Near-miss: on Gambit whiffs, show what WOULD have dropped
+    let nearMissItem: string | undefined;
+    let nearMissRarity: string | undefined;
+    if (scanType === 'gambit') {
+      const tierCfg = (config.risk_tiers as any).gambit;
+      const table = { ...tierCfg.loot_table };
+      const roll = Math.random();
+      let cum = 0;
+      let tier: ScanOutcome = 'common';
+      for (const [t, c] of Object.entries(table)) {
+        cum += c as number;
+        if (roll < cum) { tier = t as ScanOutcome; break; }
+      }
+      const { lootName } = generateLootData(tier);
+      nearMissItem = lootName;
+      nearMissRarity = tier;
+    }
+
     return {
       scanType,
       outcome: 'whiff',
@@ -103,6 +122,8 @@ export function resolveScan(
       playerDamage: 0,
       roverDamage: 0,
       scrapValue: 0,
+      nearMissItem,
+      nearMissRarity,
     };
   }
 

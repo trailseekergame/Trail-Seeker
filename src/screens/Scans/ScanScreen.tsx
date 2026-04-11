@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, ImageBackground, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useGame } from '../../context/GameContext';
@@ -9,7 +9,7 @@ import { colors, spacing, fontSize, borderRadius, fontMono } from '../../theme';
 import ScreenWrapper from '../../components/common/ScreenWrapper';
 import NeonButton from '../../components/common/NeonButton';
 import SkillCheck from '../../components/trail/SkillCheck';
-import { ScanType, ScanResult, ScanOutcome, SectorTile } from '../../types';
+import { ScanType, ScanResult, ScanOutcome, SectorTile, GearZone } from '../../types';
 import { trackScan, trackGearLoadout, trackSession } from '../../services/analytics';
 import { logSessionSummary, logGambitResult } from '../../systems/sessionLogger';
 import { getDailyObjective, getSessionSummary, getReturnHook } from '../../systems/dailyObjective';
@@ -52,6 +52,27 @@ const OUTCOME_DISPLAY: Record<string, { banner: string; color: string; icon: str
   rare: { banner: 'Buried Cache', color: colors.neonGreen, icon: 'star-four-points' },
   legendary: { banner: 'Pre-Collapse Tech', color: '#FFD700', icon: 'trophy' },
   component: { banner: 'Relic Fragment', color: colors.neonPurple, icon: 'hexagon-outline' },
+};
+
+const QUALITY_COLORS: Record<string, string> = {
+  standard: colors.textSecondary,
+  enhanced: colors.neonCyan,
+  perfected: colors.neonGreen,
+  ultra: colors.neonPurple,
+};
+
+const ZONE_LABELS: Record<GearZone, string> = {
+  sensor: 'SENSOR',
+  core: 'CORE',
+  drive: 'DRIVE',
+  weapon: 'WEAPON',
+};
+
+const ZONE_COLORS: Record<GearZone, string> = {
+  sensor: colors.neonCyan,
+  core: colors.neonGreen,
+  drive: colors.neonAmber,
+  weapon: colors.neonRed,
 };
 
 // ─── Resolving animation durations ───
@@ -827,6 +848,14 @@ export default function ScanScreen({ route }: any) {
                 const isCleared = tile.cleared;
                 const isSelected = selectedTile?.id === tile.id;
 
+                // Danger adjacency: is this fog tile next to a boss or anomaly?
+                const adjacentDanger = !isCleared && !scannable
+                  ? tile.adjacentTo.some(adjId => {
+                      const adj = ss.currentSector.tiles.find(t => t.id === adjId);
+                      return adj && !adj.cleared && (adj.type === 'boss' || adj.type === 'anomaly');
+                    })
+                  : false;
+
                 return (
                   <TouchableOpacity
                     key={col}
@@ -843,11 +872,21 @@ export default function ScanScreen({ route }: any) {
                           : colors.neonAmber + '40',
                         borderWidth: 2,
                       },
+                      // Danger adjacency glow on fog tiles
+                      adjacentDanger && styles.tileDangerAdjacent,
                     ]}
                     onPress={() => handleTileSelect(tile)}
                     disabled={!scannable || ss.scansRemaining <= 0}
                     activeOpacity={0.6}
                   >
+                    {/* Fog tile: show ? icon or danger warning */}
+                    {!isCleared && !scannable && (
+                      <MaterialCommunityIcons
+                        name={adjacentDanger ? 'alert' : 'help'}
+                        size={adjacentDanger ? 12 : 10}
+                        color={adjacentDanger ? colors.neonRed + '50' : colors.textMuted + '30'}
+                      />
+                    )}
                     {(isCleared || scannable) && (
                       <MaterialCommunityIcons
                         name={(isCleared ? TILE_ICONS.cleared : (tile.flavor?.icon || TILE_ICONS[tile.type])) as any}
@@ -862,6 +901,22 @@ export default function ScanScreen({ route }: any) {
                         }
                         style={isCleared ? { opacity: 0.5 } : undefined}
                       />
+                    )}
+                    {/* Loot hint for scannable resource tiles */}
+                    {scannable && !isCleared && tile.type === 'resource' && (
+                      <View style={styles.tileLootHint}>
+                        <MaterialCommunityIcons name="diamond-stone" size={7} color={colors.neonCyan + '60'} />
+                      </View>
+                    )}
+                    {/* Danger hint for scannable anomaly/boss tiles */}
+                    {scannable && !isCleared && (tile.type === 'anomaly' || tile.type === 'boss') && (
+                      <View style={styles.tileDangerHint}>
+                        <MaterialCommunityIcons
+                          name={tile.type === 'boss' ? 'skull' : 'alert-rhombus'}
+                          size={7}
+                          color={tile.type === 'boss' ? colors.neonRed + '60' : colors.neonAmber + '60'}
+                        />
+                      </View>
                     )}
                     {/* Type label for scannable tiles */}
                     {scannable && !isCleared && (
@@ -1278,6 +1333,27 @@ export default function ScanScreen({ route }: any) {
                       <Text style={styles.whiffHint}>
                         Dead air. The signal was there and then it wasn't. Choose a different approach or move on.
                       </Text>
+                      {/* Near-miss reveal for Gambit whiffs */}
+                      {lastResult.nearMissItem && (
+                        <View style={styles.nearMissBox}>
+                          <MaterialCommunityIcons
+                            name="eye-off"
+                            size={18}
+                            color={(OUTCOME_DISPLAY[lastResult.nearMissRarity || 'common']?.color || colors.textMuted) + '80'}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.nearMissLabel, { color: (OUTCOME_DISPLAY[lastResult.nearMissRarity || 'common']?.color || colors.textMuted) + '80' }]}>
+                              SIGNAL LOST
+                            </Text>
+                            <Text style={[styles.nearMissName, { color: (OUTCOME_DISPLAY[lastResult.nearMissRarity || 'common']?.color || colors.textMuted) + '99' }]}>
+                              {lastResult.nearMissItem}
+                            </Text>
+                            <Text style={styles.nearMissFlavor}>
+                              {['So close. The frequency collapsed.', 'It was right there.', 'The signal died mid-lock.', 'Almost had it. Almost.'][Math.floor(Math.random() * 4)]}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
                       <CoachMark
                         id={COACH.FIRST_WHIFF}
                         text="Dead signals are the cost of pushing hard. Scout scans almost never miss. Gambits miss often — but pay off big."
@@ -1343,31 +1419,69 @@ export default function ScanScreen({ route }: any) {
                     />
                   )}
 
-                  {/* Gear drop — hide on whiff */}
-                  {lastResult.gearDrop && effectiveOutcome !== 'whiff' && (
-                    <View style={[
-                      styles.gearDropRow,
-                      lastResult.gearDropItem?.quality === 'ultra' && { borderColor: colors.neonPurple + '60', backgroundColor: colors.neonPurple + '15' },
-                    ]}>
-                      <MaterialCommunityIcons
-                        name={lastResult.gearDropItem?.quality === 'ultra' ? 'star-four-points' : 'trophy'}
-                        size={16}
-                        color={lastResult.gearDropItem?.quality === 'ultra' ? colors.neonPurple : colors.neonAmber}
-                      />
-                      <View>
-                        <Text style={[
-                          styles.gearDropText,
-                          lastResult.gearDropItem?.quality === 'ultra' && { color: colors.neonPurple },
-                        ]}>
-                          {lastResult.gearDropItem?.quality === 'ultra' ? 'ULTRA DROP: ' : 'Found: '}
-                          {lastResult.gearDrop}
+                  {/* Gear drop card — hide on whiff */}
+                  {lastResult.gearDrop && effectiveOutcome !== 'whiff' && (() => {
+                    const gearItem = lastResult.gearDropItem;
+                    const qColor = gearItem ? (QUALITY_COLORS[gearItem.quality] || colors.textSecondary) : colors.neonAmber;
+                    const zColor = gearItem ? (ZONE_COLORS[gearItem.zone] || colors.textMuted) : colors.textMuted;
+                    const isUltra = gearItem?.quality === 'ultra';
+                    return (
+                      <View style={[
+                        styles.gearRevealCard,
+                        { borderColor: qColor + '50' },
+                        isUltra && { borderColor: colors.neonPurple + '80', backgroundColor: colors.neonPurple + '12' },
+                      ]}>
+                        {/* Header label */}
+                        <Text style={[styles.gearRevealHeader, { color: isUltra ? colors.neonPurple : colors.neonAmber }]}>
+                          {isUltra ? 'ULTRA GEAR DROP' : 'GEAR FOUND'}
                         </Text>
-                        {lastResult.gearDropItem && (
-                          <Text style={styles.gearDropDesc}>{lastResult.gearDropItem.shortDesc}</Text>
-                        )}
+
+                        <View style={styles.gearRevealBody}>
+                          {/* Pixel art image or fallback icon */}
+                          {gearItem?.image ? (
+                            <Image source={gearItem.image} style={styles.gearRevealImage} resizeMode="contain" />
+                          ) : (
+                            <View style={[styles.gearRevealIconBox, { borderColor: qColor + '40' }]}>
+                              <MaterialCommunityIcons
+                                name={(gearItem?.icon || 'trophy') as any}
+                                size={32}
+                                color={qColor}
+                              />
+                            </View>
+                          )}
+
+                          {/* Info column */}
+                          <View style={styles.gearRevealInfo}>
+                            <Text style={[styles.gearRevealName, { color: qColor }]}>
+                              {lastResult.gearDrop}
+                            </Text>
+
+                            {/* Quality + Zone badges */}
+                            <View style={styles.gearRevealBadges}>
+                              {gearItem && (
+                                <View style={[styles.gearRevealQualityBadge, { borderColor: qColor + '50' }]}>
+                                  <Text style={[styles.gearRevealQualityText, { color: qColor }]}>
+                                    {gearItem.quality.toUpperCase()}
+                                  </Text>
+                                </View>
+                              )}
+                              {gearItem && (
+                                <View style={[styles.gearRevealZoneBadge, { borderColor: zColor + '50' }]}>
+                                  <Text style={[styles.gearRevealZoneText, { color: zColor }]}>
+                                    {ZONE_LABELS[gearItem.zone] || 'GEAR'}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+
+                            {gearItem && (
+                              <Text style={styles.gearRevealDesc}>{gearItem.shortDesc}</Text>
+                            )}
+                          </View>
+                        </View>
                       </View>
-                    </View>
-                  )}
+                    );
+                  })()}
 
                   {/* Damage taken */}
                   {(lastResult.playerDamage > 0 || lastResult.roverDamage > 0) && (
@@ -1807,6 +1921,21 @@ const styles = StyleSheet.create({
   tileClearedIcon: {
     color: colors.textMuted,
     opacity: 0.5,
+  },
+  tileDangerAdjacent: {
+    opacity: 0.35,
+    borderColor: colors.neonRed + '30',
+    borderWidth: 1,
+  },
+  tileLootHint: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+  },
+  tileDangerHint: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
   },
   tileTypeLabel: {
     fontSize: 6,
@@ -2472,5 +2601,113 @@ const styles = StyleSheet.create({
     color: colors.neonPurple,
     opacity: 0.7,
     textAlign: 'center',
+  },
+
+  // ─── Gear Reveal Card ───
+  gearRevealCard: {
+    borderWidth: 1.5,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    marginTop: spacing.md,
+  },
+  gearRevealHeader: {
+    fontSize: 9,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 3,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  gearRevealBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  gearRevealImage: {
+    width: 56,
+    height: 56,
+  },
+  gearRevealIconBox: {
+    width: 56,
+    height: 56,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  gearRevealInfo: {
+    flex: 1,
+  },
+  gearRevealName: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    fontFamily: fontMono,
+  },
+  gearRevealBadges: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 4,
+  },
+  gearRevealQualityBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  gearRevealQualityText: {
+    fontSize: 8,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+  gearRevealZoneBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  gearRevealZoneText: {
+    fontSize: 8,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 1,
+  },
+  gearRevealDesc: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    fontFamily: fontMono,
+    marginTop: 4,
+  },
+
+  // ─── Near-Miss (Gambit Whiff) ───
+  nearMissBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.textMuted + '30',
+    backgroundColor: colors.surface + '40',
+  },
+  nearMissLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    fontFamily: fontMono,
+    letterSpacing: 2,
+    opacity: 0.7,
+  },
+  nearMissName: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    fontFamily: fontMono,
+    marginTop: 2,
+  },
+  nearMissFlavor: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontFamily: fontMono,
+    fontStyle: 'italic',
+    marginTop: 2,
+    opacity: 0.6,
   },
 });

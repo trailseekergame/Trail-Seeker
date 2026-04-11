@@ -434,6 +434,8 @@ export interface ScanResult {
   scrapValue: number;     // How much scrap the loot item is worth if scrapped
   gearDrop?: string;      // Name of gear item found (authored tiles only)
   gearDropItem?: GearItem; // Full gear item to add to inventory
+  nearMissItem?: string;   // Name of what almost dropped on Gambit whiff
+  nearMissRarity?: string; // Rarity of what almost dropped
 }
 
 export interface SeekerScanState {
