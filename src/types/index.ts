@@ -205,7 +205,11 @@ export type AvatarId = 'operator_a' | 'operator_b';
 
 export type MapId = 'camp' | 'broken_overpass' | 'relay_field' | 'broken_overpass_hard' | 'relay_field_hard';
 
+/** Bump this when GameState shape changes. Migrations run in storage.ts */
+export const CURRENT_SCHEMA_VERSION = 1;
+
 export interface GameState {
+  schemaVersion: number;
   // Player identity
   playerName: string;
   avatarId: AvatarId;
@@ -294,6 +298,7 @@ export type BoostEffect =
   | 'reduced_damage';      // take N% less HP/Rover damage
 
 export const INITIAL_GAME_STATE: GameState = {
+  schemaVersion: CURRENT_SCHEMA_VERSION,
   playerName: 'Drifter',
   avatarId: 'operator_a',
   backstory: null,

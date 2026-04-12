@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GameState, INITIAL_GAME_STATE, LeaderboardEntry, GearItem } from '../types';
+import { GameState, INITIAL_GAME_STATE, CURRENT_SCHEMA_VERSION, LeaderboardEntry, GearItem } from '../types';
 import { ALL_GEAR_ITEMS } from '../data/gearItems';
 
 /** Migrate old gear items that are missing zone/lore fields */
@@ -30,6 +30,33 @@ const STORAGE_KEYS = {
 } as const;
 
 /**
+ * Schema migration system.
+ * Each migration runs once, upgrading save data from version N to N+1.
+ * Add new migrations at the bottom of the array when CURRENT_SCHEMA_VERSION is bumped.
+ *
+ * Example — when you bump CURRENT_SCHEMA_VERSION to 2:
+ *   { from: 1, migrate: (s) => { s.newField = 'default'; return s; } }
+ */
+const MIGRATIONS: { from: number; migrate: (state: any) => any }[] = [
+  // { from: 1, migrate: (s) => { /* v1 → v2 changes */ return s; } },
+];
+
+function runMigrations(saved: Partial<GameState>): Partial<GameState> {
+  let version = (saved as any).schemaVersion || 0;
+  let state = { ...saved } as any;
+
+  for (const migration of MIGRATIONS) {
+    if (version === migration.from) {
+      state = migration.migrate(state);
+      version = migration.from + 1;
+      state.schemaVersion = version;
+    }
+  }
+
+  return state;
+}
+
+/**
  * Persistence layer using AsyncStorage
  */
 export async function saveGameState(state: GameState): Promise<void> {
@@ -44,7 +71,11 @@ export async function loadGameState(): Promise<GameState> {
   try {
     const json = await AsyncStorage.getItem(STORAGE_KEYS.GAME_STATE);
     if (json) {
-      const saved = JSON.parse(json) as Partial<GameState>;
+      let saved = JSON.parse(json) as Partial<GameState>;
+
+      // Run schema migrations
+      saved = runMigrations(saved);
+
       // Deep-merge seekerScans so new fields get defaults
       const mergedScans = {
         ...INITIAL_GAME_STATE.seekerScans,
@@ -54,7 +85,20 @@ export async function loadGameState(): Promise<GameState> {
         // Migrate old gear items that are missing zone/lore
         gearInventory: (saved.seekerScans?.gearInventory || []).map(migrateGearItem),
       };
-      return { ...INITIAL_GAME_STATE, ...saved, seekerScans: mergedScans };
+
+      // Deep-merge droneCompanion so new fields get defaults
+      const mergedDrone = {
+        ...INITIAL_GAME_STATE.droneCompanion,
+        ...(saved.droneCompanion || {}),
+      };
+
+      return {
+        ...INITIAL_GAME_STATE,
+        ...saved,
+        seekerScans: mergedScans,
+        droneCompanion: mergedDrone,
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+      };
     }
   } catch (e) {
     console.error('Failed to load game state:', e);
