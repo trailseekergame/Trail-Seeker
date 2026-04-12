@@ -91,15 +91,14 @@ export default function DailyPlanScreen() {
     if (devTapTimer.current) clearTimeout(devTapTimer.current);
     devTapTimer.current = setTimeout(() => {
       devTapCount.current = 0;
-    }, 3000);
-    if (devTapCount.current >= 3) {
+    }, 2000);
+    if (devTapCount.current >= 7) {
       devTapCount.current = 0;
       triggerDevMode();
     }
   }, [triggerDevMode]);
-  const handleDevLongPress = useCallback(() => {
-    triggerDevMode();
-  }, [triggerDevMode]);
+  // Long-press disabled for production — use 7-tap only
+  const handleDevLongPress = useCallback(() => {}, []);
 
   // Initialize gear if somehow empty (should not happen — GameContext handles first boot)
   useEffect(() => {
